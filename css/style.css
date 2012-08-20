@@ -147,6 +147,10 @@ blockquote {
 	background:url(/images/dotted.png) repeat-x 0 1.4em;
 }
 
+#left h1 a {
+    color:#333;
+}
+
 
 #left h2 {
 	color:#333;
