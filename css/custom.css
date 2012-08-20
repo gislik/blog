@@ -1,0 +1,105 @@
+pre {
+    font-size: 12px;
+}
+
+#portrait {
+    margin-right: 10px;
+    float: left;
+    border: 1px solid gray;
+}
+
+#left ul li {
+    padding-bottom: 4px;
+}
+
+ul.feed {
+    list-style-type: none;
+    margin-left: 0;
+    padding-left: 0;
+}
+
+ul.feed li.snippet {
+    padding-bottom: 4px;	
+    display: none;
+}
+
+ul.snippet li.snippet {
+    display: block;
+}
+
+.hidden {
+    display: none;
+}
+
+/* Override default values */
+
+#header {
+    width: 860px;
+}
+
+#nav {
+    float: right;
+}
+
+#copyright {
+    width: auto;
+}
+
+html,body {
+    height: auto;
+}
+
+#left ul, #left ol {
+    color:#333;
+}
+
+div.PubNote {
+    line-height:1.5em;
+    text-align:justify;
+    padding-top: 1em;
+}
+
+input {
+    font-size: 14px;	
+}
+
+input.inline {
+    display: inline;
+}
+
+div.blogs div {
+    margin-bottom: 10px;
+}
+
+input.blogtitle {
+    font-size: 18px;
+    width: 400px;
+}
+
+div.blogs .link {
+    text-align: right;
+    padding-bottom: 30px;
+}
+
+span.private {
+    color: gray;
+}
+
+span.private h1 {
+    color: gray;
+}
+
+span.private h2 {
+    color: gray;
+}
+
+#lang {
+    position: absolute;
+    left: 830px;
+    top: 40px;
+    z-index: 10;
+}
+
+#lang a {
+    background-color: transparent;
+}

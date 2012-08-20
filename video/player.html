@@ -1,0 +1,22 @@
+<html>
+<head>
+<style>
+body {
+	margin: 0;
+	padding: 0;
+}
+</style>
+</head>
+<body>
+<div id="container"><a href="http://www.macromedia.com/go/getflashplayer">Get the Flash Player</a> to see this player.</div> 
+<script type="text/javascript" src="swfobject.js"></script> 
+<script type="text/javascript"> 
+	var filename = location.search.substring(1);
+	var s1 = new SWFObject("player.swf","ply","600","450","9","#FFFFFF");
+	s1.addParam("allowfullscreen","true");
+	s1.addParam("allowscriptaccess","always");
+	s1.addParam("flashvars","controlbar=over&file="+filename+".flv&image="+filename+".jpg");
+	s1.write("container");
+</script> 
+</body>
+</html>

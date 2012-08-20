@@ -1,0 +1,593 @@
+---
+title: Optical-mouse scanner & location awareness
+author: Gísli Kristjánsson
+tags:
+id: 21
+timestamp: 18.02.2010 20:14:44
+filename: 2010-02-18-optical-mouse-scanner-location-awareness.html
+---
+
+<p>One of the problems in the world of moving robots is the task of figuring out where robot is. One way is to mount a GPS-module on the robot. Simpler solutions might include methods that measure how many rounds the wheels have spun and (with the help of the diameter of the wheels and our friend&nbsp;&pi;)&nbsp;calculate the distance travelled. What if the wheel spins or slides? Then the robot "thinks" it's further along than it actually is.</p>
+<p>Andri suggested an alternative; how about using a cheap&nbsp;little device everyone owns and is especially made to measure distances (even in 2 dimensions!). The device referred to is an (optical) mouse. All it does is to measure distances, translate them into coordinates and deliver them to the computer it is attached to. The question we asked ourselves was what if we can somehow circumvent all this logic and read the measurements directly.</p>
+<blockquote>
+<p><span style="line-height: normal; font-family: Helvetica, times, serif; font-size: 12px; "><span style="font-family: georgia, times, serif; font-size: 14px; line-height: 21px;"><span style="color: #cc6600; font-style: italic;">All this device does all day long is to measure distances but a heart surgery was needed.&nbsp;By doing that we ended up creating an optical-mouse scanner.</span></span></span></p>
+</blockquote>
+<p>The first thing was to perform a heart-surgery on our mouse and figure out what components it is made of. Upon opening the mouse up we found a microchip with some sort of a serial number which we googled and stumbled upon its <a href="http://dl.dropbox.com/u/387524/AV02-1184EN.pdf">datasheet</a>. The datasheet was a pleasent reading and we discovered that this $5 device was quite remarkable; it was equipped with a camera, a microchip and an pattern recognition microchip. The way an optical mouse works is to take a picture (18x18 px) of a 1x1mm surface and compare its pattern with the pattern from the privously taken picture. By calculating the movement of the pattern it's able to figure out how far it has been moved between the two frames. Pretty clever!</p>
+<p>By powering the mouse and reading the registers from the microchip through a serial communication line (using the protocol described in the datasheet) we were able to read the measurements. We had succeeded in our original endaevour.&nbsp;</p>
+<p>Now armed with the powers to communicate with the mouse what was there to stop us from trying to read the image the optical mouse camera was taking? Answer: Nothing. Reading the datasheet provided us with the necessary knowledge. It is actually quite simple: You just need know that the image is stored as a 18x18 pixels with each pixel being a 8bit grayscale value (0-255). Just read the data serially and compose on the other end. This seemed to work but each frame received was such a small fraction of the surface (1x1mm) we could hardly "see" anything on the picture taken. The solution to that is to combine all the pictures taken and draw them on a canvas related to the coordinates we were reading from the mouse. By doing that we ended up creating an optical-mouse scanner.</p>
+<p style="text-align: left;"><img src="http://dl.dropbox.com/u/387524/mousecamera.png" alt="optical-mouse scanner" width="500" height="94" /></p>
+<p>Reads: i&eth;na&eth;arverkfr&aelig;&eth;i (industrial engineering)</p>
+
+
+---
+title: Line-following robot
+author: Gísli Kristjánsson
+tags: 
+id: 20
+timestamp: 12.12.2009 16:08:53
+filename: 2009-12-12-line-following-robot.html
+---
+
+<p style="text-align: left;">On our mission to learn Robotics an opportunity presented it self; a <a href="http://rafnem.hi.is/ieee/news/view/17">line-following competition</a>&nbsp;hosted by <em><a href="http://www.ieee.is/">IEEE Iceland</a></em>, November 22<sup>nd</sup>, 2009.&nbsp;What was known beforehand was this:</p>
+<ul>
+<li>Track is a 25mm black line on a white 1250x2500mm board</li>
+<li>Lines perpendicular will cross the track</li>
+<li>The toughest turn will have a radius of 100mm</li>
+<li>Five light gates will measure the distance made and 2 points given for each gate</li>
+<li>Each team gets two attempts</li>
+<li>The team with the most points and then the best time will win</li>
+</ul>
+<div>Some limitations on the robot were:</div>
+<ul>
+<li>Height 200mm</li>
+<li>Length 250mm</li>
+<li>Width 200mm</li>
+</ul>
+<div>What we came up with a was a "racer" which can be seen on the following photos:</div>
+<p style="text-align: center;"><img style="border: 1px solid black" src="http://dl.dropbox.com/u/387524/racer1.jpg" alt="Picture of Racer car 1" /><img style="margin-left: 10px; margin-right: 10px; border: 1px solid black" src="http://dl.dropbox.com/u/387524/racer2.jpg" alt="Picture of Racer car 2" width="240" height="320" /></p>
+<p>On the front is the <a href="../show/18">Arduino board</a> with connections to the motor controller which was used to control the motors. The controller can pulse the motors to decrease the 9V from the batteries and change the direction of the motors. This way (and with the help of the steel ball on the front rotating in all directions) the the racer could make any kind of turns and in fact turn on the spot - making it very maneuverable. A plate with LEDs was mounted under the racer with light sensors. The light sensors measure the light reflected from the surface under the racer and therefore sensing where the 25mm black track was.</p>
+<p style="text-align: center;"><img style="border: 1px solid black" src="http://dl.dropbox.com/u/387524/racer3.jpg" alt="Picture of Racer car 3" width="240" height="320" /></p>
+<p>We assigned the sensors a value from -3 (the sensor second furthest to the left) to +3 (the sensor second furthest to the right). As can be seen from the picture there are 8 sensors but because the Arduino board only has 6 analog inputs and we were unable to connect a comparator to connect the remaining 2 to the digital inputs of the board we left the two sensors on the edges unused.</p>
+<p>Armed with a way to control the motors and measure the location of the track the only thing left was to create a steering controller. After some pondering we decided to go with a <a href="http://en.wikipedia.org/wiki/PID_controller">PID controller</a> which I implemented in C++. The aim of the PID controller was to keep the average of the values of the sensors equal to zero. The code for the whole project can be found <a href="http://dl.dropbox.com/u/387524/line_following_racer.zip">here</a>.</p>
+<p>When we arrived it was announced that the track was a modeled after the <a href="http://www.formula1.com/races/in_detail/japan_820/circuit_diagram.html">F1 Suzuka track in Japan.</a>&nbsp;After a few test rounds where we tweaked the parameters of our racers we were ready to go.&nbsp;</p>
+<p style="text-align: center;"><img src="http://dl.dropbox.com/u/387524/brautin.png" alt="The race track" width="498" height="255" /></p>
+<p>Four teams participated in the competition and we were the first team to race. We decided to be on the safe side and we reduced the speed to be sure to finish the track. And we did. Our time 29 seconds. None of the other teams made a successful lap. As we had the lead we decided to try for a faster lap. This time we however we went too fast into one of the turns and the racer lost control. Fortunately none of the other teams made it either and we were declared the winners with 10 points and a time of 29 seconds :)</p>
+
+
+---
+title: From HAppS to Happstack
+author: Gísli Kristjánsson
+tags: 
+id: 19
+timestamp: 13.10.2009 00:13:47
+filename: 2009-10-13-from-happs-to-happstack.html
+---
+
+<p>I have been dreading porting my Blog application from <em>HAppS</em> to <a href="happstack.com"><em>Happstack</em></a> for a long time now. It is however apparent that <em>HAppS</em> is dying and <em>Happstack</em> (a fork of <em>HAppS</em> designed to take things further) was the only way to roll.</p>
+<blockquote><em>... a refreshingly innovative web application server written in Haskell. Leveraging the MACID state system, Happstack offers robust and scalable data access without the headache of managing a traditional RDBMS such as MySQL.</em></blockquote>
+<p>The <a href="http://www.darcsweb.com:5003/r/mae/happstack-stable/snapshot/current/content/pretty/happstack/RELEASE_NOTES">RELEASE_NOTES</a> file had some guidelines for porting existing applications to <em>Happstack</em>. In my case it turned out to be really easy:</p>
+<ol>
+<li>Install <em>Happstack </em> 
+<ul>
+<li>
+<pre>sudo cabal install happstack</pre>
+</li>
+</ul>
+</li>
+<li>Change <em>HAppS</em> to <em>Happstack</em> in all .hs-files           
+<ul>
+<li>
+<pre>find . -type f -name '*.hs' -exec sed -i.bak 's/HAppS/Happstack/g' {} \;</pre>
+</li>
+</ul>
+</li>
+<li>Change&nbsp;unServerPartT to&nbsp;runServerPartT           
+<ul>
+<li>
+<pre>find . -type f -name '*.hs' -exec sed -i.bak \</pre>
+<pre>'s/unServerPartT/runServerPartT/g' {} \;</pre>
+</li>
+</ul>
+</li>
+<li>Change all instances of [ServerPartT m a] to ServerPartT with <em>msum</em></li>
+<li>Compile my code again</li>
+</ol>
+<div>Well this sounds almost too easy. And it is. I alway got the error <em>Unsupported socket</em> - both on my Mac (development machine) and on my Linux box (the production machine). On <a href="http://groups.google.com/group/HAppS/msg/0c9a0d0fd7c6aff0"><em>Google Groups</em></a> I found someone saying that it's a problem with how <em>Haskell's Templating System</em> handles &nbsp;<em>IPv6. </em>The solution was to change <em>Happstack.Server.HTTP.Socket.acceptLite</em> to:</div>
+<div><br /></div>
+<div><span style="color: #000000; font-family: fixed-width, monospace; font-size: 10px; ">&gt; -- | alternative implementation of accept to work around EAI_AGAIN errors&nbsp;<br />&gt; acceptLite :: S.Socket -&gt; IO (Handle, S.HostName, S.PortNumber)&nbsp;<br />&gt; acceptLite sock = do&nbsp;<br />&gt; &nbsp; (sock', addr) &lt;- S.accept sock&nbsp;<br />&gt; &nbsp; h &lt;- S.socketToHandle sock' ReadWriteMode&nbsp;<br />&gt; &nbsp; (N.PortNumber p) &lt;- N.socketPort sock'&nbsp;<br />
+<p>&gt; &nbsp; let peer = case addr of&nbsp;<br />&gt; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;(S.SockAddrInet _ ha) &nbsp; &nbsp; &nbsp;-&gt; showHostAddress ha&nbsp;<br />&gt; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;(S.SockAddrInet6 _ _ ha _) -&gt; showHostAddress6 ha&nbsp;<br />&gt; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;_ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;-&gt; error "Unsupported socket"</p>
+<p>&gt; &nbsp; return (h, peer, p)&nbsp;</p>
+</span></div>
+<div>Actually I used the time to cabalize my code. Outlining the dependencies means that <em><a href="http://www.haskell.org/cabal">Cabal</a></em> takes care of downloading all the necessary packages. To date my cabal file looks like this:</div>
+<pre><div>name: &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;gisliblog</div><div>version: &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 0.0</div><div>synopsis: &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Personal website</div><div>description: &nbsp; &nbsp; &nbsp; &nbsp; </div><div>category: &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Web</div><div>license: &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; BSD3</div><div>license-file: &nbsp; &nbsp; &nbsp; &nbsp;LICENSE</div><div>author: &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;G&iacute;sli Kristj&aacute;nsson</div><div>maintainer: &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;gislik hamstur.is</div><div>build-depends: &nbsp; &nbsp; &nbsp; base,feed,nano-md5,hscolour,json,curl,HStringTemplate,happstack</div><div>build-type: &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Simple</div><div>hs-source-dirs:<span style="white-space:pre">  </span> &nbsp; &nbsp; src</div><div><br /></div><div>executable: &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;gisli.hamstur.is</div><div>main-is: &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; src/Main.hs</div><div>ghc-options: <span style="white-space:pre">   </span> &nbsp; &nbsp; -isrc &nbsp; &nbsp; &nbsp; &nbsp;</div></pre>
+<div><br /></div>
+<div>Also having everything in a <em><a href="http://git-scm.com/">git</a></em>&nbsp;repository meant that I could port the code in a special branch and merge the branches when the code compiled successfully. The next steps are to port my brothers photo site to <em>Happstack</em> and then look into taking the advantage of the new API which has been simplified in many ways. For example</div>
+<div><br /></div>
+<div>This:</div>
+<pre>&nbsp;&nbsp; &nbsp;uriRest :: Monad m =&gt; (String -&gt; ServerPartT m a) -&gt; ServerPartT m a</pre>
+<pre>&nbsp;&nbsp; &nbsp;uriRest handle = withRequest $ \rq -&gt;</pre>
+<pre>&nbsp;&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;unServerPartT (handle (rqURL rq)) rq</pre>
+<div>Becomes this:</div>
+<pre>&nbsp;&nbsp; &nbsp;uriRest :: (ServerMonad m, Monad m) =&gt; (String -&gt; m a) -&gt; m a</pre>
+<pre>&nbsp;&nbsp; &nbsp;uriRest handle = askRq &gt;&gt;= handle . rqURL</pre>
+<p>&nbsp;</p>
+<div>That's it for now.</div>
+<div><br /></div>
+<div>P.S. On a different note I just placed an order for the <em>Arduino Duemilanove</em> microcontroller board. It should be arriving this week. I'm all excited so the next blog could be about that.</div>
+
+
+---
+title: Rise of the Mechatron
+author: Gísli Kristjánsson
+tags: 
+id: 18
+timestamp: 28.09.2009 19:36:28
+filename: 2009-09-28-rise-of-the-mechatron.html
+---
+
+<p>Mechatronics is an interest that my colleague Andri and I share. For some months we have been trying to initiate a Mechatronics project but for some reason we never seem to be able to start even though we're both pretty motivated.</p>
+<blockquote>
+<p>Armed with the new coordinates it was relatively easy to have a computer draw up what our Wall-E &laquo;saw&raquo;&nbsp;</p>
+</blockquote>
+<p>Earlier this summer we met up and did a warm-up exercise. The purpose of the exercise was to get familiarized with the newly bought analog sonar. We hooked the sonar to a stepper motor that with the help of a <a href="http://www.parallax.com/tabid/295/Default.aspx">BASIC Stamp Microcontroller</a> turned the sonar 90&deg; while measuring the distance to the next object. This way we got a reading in the Polar-plane which was then projected onto the XY-plane. Armed with the new coordinates it was relatively easy to have a computer draw up what our Wall-E &laquo;saw&raquo;.&nbsp;On the right is our version of Wall-E.&nbsp;</p>
+<p style="text-align: center;"><img style="float: left;" src="http://dl.getdropbox.com/u/387524/walle-org.png" alt="Wall-E" width="246" height="363" />&nbsp;&nbsp; &nbsp; &nbsp; &nbsp;&nbsp;<img src="http://dl.getdropbox.com/u/387524/walle-ag%2Bgk.png" alt="Our Wall-E" width="247" height="330" /></p>
+<p style="text-align: center;">&nbsp;</p>
+<p>Last week we decided to switch to the ATmega microcontroller on the <a href="http://arduino.cc/en/Main/ArduinoBoardDuemilanove">Arduino Duemilanove</a> microcontroller board.</p>
+<p style="text-align: center;"><img src="http://arduino.cc/en/uploads/Main/ArduinoDuemilanove.jpg" alt="ArduinoDuemilanove" width="500" height="360" /></p>
+<p style="text-align: left;"><span style="color: #555555; font-family: Verdana, Geneva, Arial, sans-serif; font-size: 10px; line-height: 15px;">The Arduino Duemilanove ("2009") is a microcontroller board based on the&nbsp;<span class="wikiword">ATmega168</span>&nbsp;(<a class="urllink" style="color: #111111; text-decoration: none; padding-bottom: 0px; border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: #bbbbbb;" rel="nofollow" href="http://www.atmel.com/dyn/resources/prod_documents/doc2545.pdf">datasheet</a>) or&nbsp;<span class="wikiword">ATmega328</span>&nbsp;(<a class="urllink" style="color: #111111; text-decoration: none; padding-bottom: 0px; border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: #bbbbbb;" rel="nofollow" href="http://www.atmel.com/dyn/resources/prod_documents/doc8161.pdf">datasheet</a>). It has 14 digital input/output pins (of which 6 can be used as PWM outputs), 6 analog inputs, a 16&nbsp;<span class="wikiword">MHz</span>&nbsp;crystal oscillator, a USB connection, a power jack, an ICSP header, and a reset button. It contains everything needed to support the microcontroller; simply connect it to a computer with a USB cable or power it with a AC-to-DC adapter or battery to get started</span></p>
+<p><span style="color: #555555; font-family: Verdana, Geneva, Arial, sans-serif; font-size: 10px; line-height: 15px;"> </span></p>
+<p>Arduino can sense the environment by receiving input from a variety of sensors and can affect its surroundings by controlling lights, motors, and other actuators. The microcontroller on the board is programmed using the&nbsp;<a class="wikilink" style="color: #111111; text-decoration: none; padding-bottom: 0px; border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: #bbbbbb;" href="http://arduino.cc/en/Reference/HomePage">Arduino programming language</a>&nbsp;(based on&nbsp;<a class="urllink" style="color: #111111; text-decoration: none; padding-bottom: 0px; border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: #bbbbbb;" rel="nofollow" href="http://wiring.org.co/">Wiring</a>) and the Arduino development environment (based on&nbsp;<a class="urllink" style="color: #111111; text-decoration: none; padding-bottom: 0px; border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: #bbbbbb;" rel="nofollow" href="http://www.processing.org/">Processing</a>). Arduino projects can be stand-alone or they can communicate with software on running on a computer (e.g. Flash, Processing, MaxMSP). We intend to control the Arduino with a <a href="http://beagleboard.org/">Beagle Board</a>.&nbsp;</p>
+<p>What our little Mechatron is supposed to do in the end is very unclear. We are mainly going to have loads of fun while learning the ropes of mechatronic. This week we'll receive two (<a href="http://www.sparkfun.com/commerce/product_info.php?products_id=9301">1</a>, <a href="http://www.sparkfun.com/commerce/product_info.php?products_id=9300">2</a>) books to start our journey. As we progress I'll be posting the results on this blog.</p>
+<p>&nbsp;</p>
+
+
+---
+title: Model migration
+author: Gísli Kristjánsson
+tags: 
+id: 17
+timestamp: 05.05.2009 21:44:04
+filename: 2009-05-05-model-migration.html
+---
+
+<p>My <a href="http://baldurkristjans.is">brother</a> has been asking me for a new feature for some time now. It's a simple video feature where instead of showing a picture when clicked on a video begins to play. I had been holding this project off for a while because I knew that model migration would probably be a hazzle.</p>
+<blockquote>
+<p>I can recommend the <a href="http://www.longtailvideo.com/">LongTail</a> FLV video player. It can handle FLV, MP4, MP3, AAC, JPG, PNG and GIF files. It also supports RTMP, HTTP, live streaming, various playlists formats, a wide range of settings and an extensive javascript API.</p>
+</blockquote>
+<p>What exactly is model migration? Well, when you model your data you come up with something like this:</p>
+<pre>data Photo = Photo {</pre>
+<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; photoName&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; :: String</pre>
+<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ,photoText&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; :: String</pre>
+<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ,photoDate&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; :: AppDate</pre>
+<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ,photoCategory&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; :: Maybe CategoryID</pre>
+<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ,photoCategoryCover :: Bool -- Calculated</pre>
+<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ,photoCover&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; :: Bool -- Calculated</pre>
+<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ,photoSeriesCover&nbsp;&nbsp; :: Bool -- Calculated</pre>
+<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ,photoOrder&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; :: Int</pre>
+<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ,photoCategoryOrder :: Int</pre>
+<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ,photoSeriesOrder&nbsp;&nbsp; :: Int -- Calculated</pre>
+<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ,photoCreated&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; :: AppDate</pre>
+<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ,photoModified&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; :: Maybe AppDate</pre>
+<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; } deriving (Show, Read, Eq, Data, Typeable)</pre>
+<p><br />When you start to use your model HAppS records your data into this structure in a binary form. Now let's say that you need to add a field for the name of the video to be played instead of showing the picture you get something like this:</p>
+<pre>data Photo = Photo {</pre>
+<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; photoName&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; :: String</pre>
+<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ,photoText&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; :: String</pre>
+<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ,photoDate&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; :: AppDate</pre>
+<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ,photoCategory&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; :: Maybe CategoryID</pre>
+<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ,photoCategoryCover :: Bool -- Calculated</pre>
+<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ,photoCover&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; :: Bool -- Calculated</pre>
+<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ,photoSeriesCover&nbsp;&nbsp; :: Bool -- Calculated</pre>
+<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ,photoOrder&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; :: Int</pre>
+<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ,photoCategoryOrder :: Int</pre>
+<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ,photoSeriesOrder&nbsp;&nbsp; :: Int -- Calculated</pre>
+<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ,photoVideo&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; :: Maybe String -- THE ONLY DIFFERENCE!</pre>
+<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ,photoCreated&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; :: AppDate</pre>
+<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ,photoModified&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; :: Maybe AppDate</pre>
+<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; } deriving (Show, Read, Eq, Data, Typeable)</pre>
+<p>Notice that I've only added the <em>photoVideo</em> field. The problem is however that when HAppS tries to read in the old structure it does not know how to map it to the new structure (model). That's when you need to worry about model migration.</p>
+<p>Fortunatelly it's super easy in HAppS. In my case the Photo model was in a module called <em>Model.Photo</em>. To migrate you just have to execute the following steps</p>
+<ol>
+<li>Copy the file <em>Photo.hs</em> to <em>Photo1.hs</em> and change the module name to <em>Model.Photo1</em></li>
+<li>Add this to <em>Model.Photo</em>:<br />
+<pre>import qualified Model.Photo1 as P1</pre>
+<pre>instance Migrate P1.Photo Photo where</pre>
+<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; migrate p1 = Photo {</pre>
+<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; photoName&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = (P1.photoName p1)</pre>
+<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ,photoText&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = (P1.photoText p1)</pre>
+<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ,photoDate&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = (P1.photoDate p1)</pre>
+<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ,photoCategory&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = (P1.photoCategory p1)</pre>
+<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ,photoCategoryCover = (P1.photoCategoryCover p1)</pre>
+<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ,photoCover&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = (P1.photoCover p1)</pre>
+<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ,photoSeriesCover&nbsp;&nbsp; = (P1.photoSeriesCover p1)</pre>
+<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ,photoOrder&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = (P1.photoOrder p1)</pre>
+<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ,photoCategoryOrder = (P1.photoCategoryOrder p1)</pre>
+<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ,photoSeriesOrder&nbsp;&nbsp; = (P1.photoSeriesOrder p1)</pre>
+<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ,photoVideo&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = Nothing</pre>
+<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ,photoCreated&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = (P1.photoCreated p1)</pre>
+<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ,photoModified&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = (P1.photoModified p1)</pre>
+<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; } </pre>
+<pre><br /></pre>
+<pre>instance Version Photo where</pre>
+<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; mode = extension 2 (Proxy :: Proxy P1.Photo)</pre>
+</li>
+<li>You're all set. Compile and restart HAppS.</li>
+</ol>
+<p>When HAppS starts up again it knows exactly how to transform the old structure into the new one.</p>
+<p>Happy migration!</p>
+
+
+---
+title: baldurkristjans.is - screen cast, code and more
+author: Gísli Kristjánsson
+tags: 
+id: 16
+timestamp: 20.01.2009 19:14:32
+filename: 2009-01-20-baldurkristjans.is-screen-cast-code-and-more.html
+---
+
+<p>As mentioned in my <a href="http://twitter.com/gislik/statuses/1121717423">tweed</a>&nbsp;my brother's online <a href="http://baldurkristjans.is">photo album</a> went live last Thursday. Since then I've been trying to think not so much about it because this project had started to consume my brain leaving little space for anything else (including <a href="http://conqueringsleepapnea.com/images/insomnia_2.jpg">sleeping</a>). I'm happy with the responses he's been getting over the last couple of days - and the most important thing; he's happy.</p>
+<p>Readers of this blog know by now that this website was entirely written in <span style="font-style: italic;">Haskell/HAppS</span> and I loved writing it. In this post I'll attempt to discuss some of the more interesting parts of the site and show you a <a href="http://www.screencast-o-matic.com/">screen cast</a> of the administrative panel.</p>
+<p>
+<object width="600" height="450" data="../../video/player.swf" type="application/x-shockwave-flash">
+<param name="wmode" value="opaque" />
+<param name="flashvars" value="controlbar=over&amp;file=http://dl.getdropbox.com/u/387524/baldurkristjans.is.flv&amp;image=http://dl.getdropbox.com/u/387524/baldurkristjans.is.jpg&amp;location=http://dl.getdropbox.com/u/387524/baldurkristjans.is.jpg" />
+<param name="src" value="../../video/player.swf" />
+</object>
+</p>
+<p>Because I'm using HAppS there is no need for a database. <a href="http://hackage.haskell.org/cgi-bin/hackage-scripts/package/HAppS-State">HAppS-State</a> simply persist my native data structure. The photos are represented as maps of photos, like this:</p>
+<pre>type Photos = Map PhotoID Photo
+
+type PhotoID = String
+
+data Photo = Photo {
+                     photoName          :: String
+                    ,photoText          :: String
+                    ,photoDate          :: AppDate
+                    ,photoCategory      :: Maybe CategoryID
+                    ,photoCategoryCover :: Bool -- Calculated
+                    ,photoCover         :: Bool -- Calculated
+                    ,photoSeriesCover   :: Bool -- Calculated
+                    ,photoOrder         :: Int
+                    ,photoCategoryOrder :: Int
+                    ,photoSeriesOrder   :: Int -- Calculated
+                    ,photoCreated       :: AppDate
+                    ,photoModified      :: Maybe AppDate
+                    } deriving (Show, Read, Eq, Data, Typeable)
+</pre>
+<p>Some of the fields are have a <span style="font-style: italic;">Calculated&nbsp;</span>comment. These fields do not depend on being persisted (this is of course not enforced by HAppS in any way) but they are rather calculated when needed and handed over to the templates where they control how the photo is rendered.</p>
+<p>To warm up let's take a look at one of the simplest controller action (Controller.Photo.list):</p>
+<pre>list :: WebT IO LayoutResponse
+list = liftIO $ do
+     env           &lt;- appEnv :: IO (AppEnv String String)
+     photos        &lt;- query ListPhotos
+     photo         &lt;- liftM (pidToPhoto photos) $ query GetCoverPhoto
+     photoTemplate &lt;- liftM (attr "photo" photo) $ parseTemplate env "photos_show"
+     returnLayout Nothing (attrSession "body" photoTemplate)
+</pre>
+<p>Normally a controller action would have a type of <span style="font-style: italic;">WebT IO Response </span>but I've created the <span style="font-style: italic;">LayoutResponse </span>type to be able to wrap the master layout around the template (in this case photos_show). The variable <span style="font-style: italic;">photos</span> has the the <span style="font-style: italic;">Photos</span>&nbsp;(a map of <span style="font-style: italic;">Photo) </span>and <span style="font-style: italic;">GetCoverPhoto </span>returns the <span style="font-style: italic;">Photo ID (pid) </span>of the cover photo which is then looked up with the function <span style="font-style: italic;">pidToPhoto</span>&nbsp;in the photos map. The cover photo then gets assigned to the <span style="font-style: italic;">photo</span>&nbsp;template variable. When the photo template has been parsed it self gets assigned to the <span style="font-style: italic;">body</span>&nbsp;template variable which is returned from the controller action and handed to the <span style="font-style: italic;"><a href="../../src/Helper.hs">wrapLayout</a> </span>function which purpose is to transform <span style="font-style: italic;">LayoutResponse</span> to <span style="font-style: italic;">Response</span>.&nbsp;&nbsp;This is a very common practice in my code.</p>
+<p>One of the more interesting controller actions is the one serving the photos. When a <a href="http://baldurkristjans.is/photos/2009/h540/4d2c1cb884f327e9fc2adcccda4f97fd.jpg">photo</a> is requested the request gets handed to the <span style="font-style: italic;">Photo </span>controller. If the photo does exist it is served directly but if it does not exist it is resized according to the directory name it's contained in, i.e. h540 (meaning fix the height at 540 pixels), provided that the requested size is allowed (appears in <span style="font-style: italic;">sizes.txt)</span></p>
+<pre>legalSizes :: IO [String]
+legalSizes = liftM lines (readFile "sizes.txt")
+
+serveFile' :: FilePath -&gt; [FilePath] -&gt; FilePath -&gt; ServerPartT IO Response
+serveFile' orgsDir _ dir = let resize size f f' im = do
+                                      (w, h) &lt;- imageSize im
+                                      let (fix, l) = splitAt 1 size
+                                      let l' = read l :: Int
+                                      let (w', h') = if fix == "w"
+                                                        then (l', (l'*h)`div`w)
+                                                        else ((l'*w)`div`h, l')
+                                      let geometry = (P.show w')++"x"++(P.show h')
+                                      status &lt;- liftIO $ rawSystem "convert" 
+                                                                      ["-geometry"
+                                                                      ,geometry
+                                                                      ,"-quality"
+                                                                      ,(P.show quality)
+                                                                      ,f
+                                                                      ,f']
+                                      case status of
+                                           ExitFailure code -&gt; fail.P.show $ code
+                                           ExitSuccess      -&gt; return ()                                           
+                           in 
+                           let resizePhoto size f f' = do
+                                case map toLower (takeExtension f) of
+                                     ".jpg" -&gt; loadJpegFile f &gt;&gt;= resize size f f' 
+                                     ".png" -&gt; loadPngFile f &gt;&gt;= resize size f f'
+                                     ".gif" -&gt; loadGifFile f &gt;&gt;= resize size f f' 
+                           in
+       withRequest $ \req -&gt; do
+           currentDir &lt;- liftIO getCurrentDirectory
+           let (year:size:pid:_) = rqPaths req
+           let file = joinPath [currentDir, orgsDir, year, pid]
+           let file' = joinPath [currentDir, dir, drop 1.rqUri $ req]
+           doesExist &lt;- liftIO.doesFileExist $ file'
+           sizes &lt;- liftIO $ legalSizes
+           let fixedRqPaths = map (drop 1).groupBy (\_ y -&gt; y/='/') $ rqUri req
+           let serveFile'' = do
+               modifyResponse serveHeaders
+               unServerPartT (fileServe [] dir) $ req { rqPaths=fixedRqPaths }
+           if doesExist
+              then serveFile''
+              else if size `elem` sizes
+                      then do
+                           liftIO $ createDirectoryIfMissing True (takeDirectory file')
+                           liftIO $ resizePhoto size file file'               
+                           serveFile''
+                      else noHandle
+</pre>
+<p>As you can see I spawn&nbsp;<span style="font-style: italic;">convert </span>from <span style="font-style: italic;"><a href="http://www.imagemagick.org">ImageMagick </a></span>in a different process<span style="font-style: italic;">&nbsp;</span>to resize my photos. There are&nbsp;<a href="http://hackage.haskell.org/cgi-bin/hackage-scripts/package/hsmagick">bindings</a> to <span style="font-style: italic;">ImageMagick</span>&nbsp;&nbsp;available for <span style="font-style: italic;">Haskell </span>but was unable to install them. Initially I wanted to go for a much simpler option and use the&nbsp;<a href="http://libgd.org"><span style="font-style: italic;">GD library</span></a> which is a much simpler library and its <a href="http://hackage.haskell.org/cgi-bin/hackage-scripts/package/gd">bindings </a>seemed much simpler. The problem was however that the <span style="font-style: italic;">GD library </span>decreased the quality of the photo.</p>
+<pre>GHCi, version 6.10.1: http://www.haskell.org/ghc/  :? for help
+Loading package ghc-prim ... linking ... done.
+Loading package integer ... linking ... done.
+Loading package base ... linking ... done.
+Prelude&gt; :m +Graphics.GD 
+Prelude Graphics.GD&gt; loadJpegFile "405ba7c1fc3aefcbe3cf4471ef1b781f.jpg"
+<span style="white-space: pre;">        </span>&gt;&gt;= resizeImage 600 400&nbsp;
+<span style="white-space: pre;">        </span>&gt;&gt;= saveJpegFile 100 "gd-405ba7c1fc3aefcbe3cf4471ef1b781f.jpg"
+</pre>
+<div><img src="http://dl.getdropbox.com/u/387524/gd-405ba7c1fc3aefcbe3cf4471ef1b781f.jpg" alt="Converted with GD" width="600" height="400" /></div>
+<div><br /></div>
+<pre>$ mogrify -geometry 600x400
+405ba7c1fc3aefcbe3cf4471ef1b781f.jpg im-405ba7c1fc3aefcbe3cf4471ef1b781f.jpg</pre>
+<div><img src="http://dl.getdropbox.com/u/387524/im-405ba7c1fc3aefcbe3cf4471ef1b781f.jpg" alt="Converted with ImageMagick" width="600" height="400" /><br /></div>
+<p>The second is much richer in colors and identical to the source while the first one created with <span style="font-style: italic;">GD library&nbsp;</span>is brighter and generally lower in quality. This was a big surprise and a let-down but I'll just be using <span style="font-style: italic;">ImageMagick</span> in the future. I wish someone would update the bindings though. For the purpose of creating small <a href="http://baldurkristjans.is/images/series/10/456300/colorful-reykjavik">images containing only text</a> the GD library seemed sufficient:<span style="color: #000000; font-family: Verdana; font-size: 10px; font-style: normal; line-height: normal; white-space: pre;"> </span></p>
+<pre>newImage ((width rect)-1, height'+1) 
+         &gt;&gt;= fillImage (rgb 0 0 0)
+         &gt;&gt;= drawString "fonts/current.otf" size 0 (x,y) title 
+                        (rgb (v r1 r2) (v g1 g2) (v b1 b2)) 
+         &gt;&gt;= savePngFile filename</pre>
+<p>Lastly I'd like to point out how one handles files submitted through HTML forms. The trick is to use <span style="font-style: italic;">inputFilename</span>&nbsp;and <span style="font-style: italic;">inputValue</span>&nbsp;like this:</p>
+<pre>handleData = do
+           photo  &lt;- lookInput "photo"
+           cid    &lt;- look "cid" `mplus` return ""
+           series &lt;- look "series" `mplus` return ""
+           let Just name = inputFilename photo `mplus` Just ""
+           let contents = inputValue photo
+           return (name, contents, cid, series)
+</pre>
+<p>I hope this post is of use for someone and if you've some questions please leave a comment.</p>
+
+
+---
+title: I've been busy over christmas...
+author: Gísli Kristjánsson
+tags: 
+id: 15
+timestamp: 05.01.2009 03:16:34
+filename: 2009-01-05-I've-been-busy-over-christmas....html
+---
+
+<p>... but there's no activity on your blog you may say. Well I decided to do my <a href="http://baldurkristjans.is/">brother</a> a favor. He is a professional photographer working for a photo gallery called <a href="http://magg.is/"><em>Magg</em></a> but with his own <em>clientele</em>. Now facing changes in the photographic scene as the recession begins to creep in he wanted to strengthen his own professional presence. The vehicle for such a requirement was an online photo gallery (due to open this week) with some of his more artistic images.</p>
+<p>Initially I was going to create the gallery with <a href="http://python.org/"><em>Python</em></a> and <a href="http://sqlite.org/"><em>SQLite</em></a> but I found myself always going back to hacking on my bloging platform. That was until I found the reason why; I had so much fun programming in <em>Haskell</em>. Armed with this new knowledge I decided to jump into the deeper end of the pool and rewrite (what little I had already done in <em>Python</em>) in <em>Haskell</em>. I was able to re-use much of my work from the bloging platform experience but this time around further investigation was needed to fulfill some of the requirements, such as uploading (multiple) photos, rescaling them and soforth. I will happily share my solution with you in coming blog posts although naturally I cannot give you access to the administrative side of the gallery. Instead I'll post some photos with some explanation or even create a screen cast of the admin part.</p>
+<p>With very few photos in the system it does perform remarkably well and I am very interested in what the site will feel like with a few hundreds or even thousands of photos in there.</p>
+<p>The next steps for my blog will be to Tag-enable it. I am thinking about extending the Tags into Series where each blog in the Series will have links to the other posts in the series in a chronological order. This way I'll be able to group a number of blog posts and present them as a whole.</p>
+<p><em>P.S. As you have duly noticed I've begun to blog in English (at least where the topic is Haskell). I hope this goes well with everyone :)</em></p>
+
+
+---
+title: Vonbrigði
+author: Gísli Kristjánsson
+tags: icelandic
+id: 14
+timestamp: 09.12.2008 22:44:06
+filename: 2008-12-09-vonbrigði.html
+---
+
+<p>&THORN;&oacute; tilgangurinn me&eth; &thorn;essu bloggi s&eacute; a&eth; f&aacute; &uacute;tr&aacute;s fyrir n&ouml;rdaskap, me&eth; &thorn;v&iacute; a&eth; l&aelig;ra <span style="font-style: italic;">Haskell,</span>&nbsp;er hann ekki s&iacute;&eth;ur a&eth; stu&eth;la a&eth; umr&aelig;&eth;u &aacute;hugaf&oacute;lks um <span style="font-style: italic;">Haskell </span>og &thorn;v&iacute; &aacute;kva&eth; &eacute;g a&eth; gera <a href="http://www.google.is/search?source=ig&amp;hl=is&amp;rlz=&amp;q=Haskell&amp;btnG=Google+leit&amp;meta=lr%3Dlang_is">&ouml;rlitla</a> k&ouml;nnun &aacute; m&ouml;gulegum markh&oacute;pi fyrir svona blogg. M&eacute;r til mikilla vonbrig&eth;a vir&eth;ist enginn &aacute; &Iacute;slandi hafa &aacute;huga &aacute; &thorn;essu forritunarm&aacute;li &thorn;v&iacute; &thorn;etta eru ni&eth;urst&ouml;&eth;urnar fyrir utan &thorn;&aelig;r s&iacute;&eth;ur sem &eacute;g &aacute;tti:</p>
+<ul>
+<li><a href="http://hugi.is/">Hugi</a> er me&eth; f&aacute;t&aelig;klegan <a href="http://www.hugi.is/heimspeki/tenglar.php?path=/Computers/Programming/Languages/Haskell/">tenglalista</a></li>
+<li>Baldur Fj&ouml;lnisson <a href="http://gammon.blog.is/blog/gammon/entry/523499/">minnist</a> &aacute; Haskell&nbsp;</li>
+<li>Ragnar Frosti <a href="http://www.ragnarfrosti.com/blog/old_blog/2007/11/">b&ouml;lvar</a> &thorn;v&iacute;</li>
+<li>Einar &THORN;&oacute;r giskar &aacute; Haskell &iacute; <a href="http://einar.wordpress.com/2006/05/14/&thorn;ekki&eth;i-mali&eth;/">spurningakeppni</a> Einars J&oacute;nssonar</li>
+<li>Og, Sigurlaug <a href="http://sigurlaugh.blogspot.com/2004_10_01_archive.html">segist</a> hafa veri&eth; a&eth; lesa um Haskell</li>
+</ul>
+<blockquote>
+<p>Fyrir utan Arnar &thorn;&aacute; held &eacute;g a&eth;&nbsp;<span style="font-style: italic;">Haskell-</span>samf&eacute;lagi&eth; &aacute; &Iacute;slandi s&eacute; ekki til og &eacute;g hef &thorn;v&iacute; og mun &thorn;v&iacute; tala fyrir daufum eyrum h&eacute;rna &aacute; &thorn;essu bloggi.&nbsp;</p>
+</blockquote>
+<p>&Aacute; s&iacute;&eth;ustu vikum hef &eacute;g &thorn;&oacute; teki&eth; eftir <a href="http://www.hvergi.net/author/arnar/">Arnari</a> nokkrum Birgissyni (syni <a href="http://biggibraga.blog.is/blog/biggibraga/">Birgis &THORN;&oacute;rs Bragasonar</a>) sem &eacute;g man eftir &uacute;r Verzl&oacute;. Hann hefur veri&eth; a&eth; skrifa um <span style="font-style: italic;">Haskell</span>&nbsp;erlendis, b&aelig;&eth;i &aacute; p&oacute;stlista og einnig ranns&oacute;knargreinar. &THORN;a&eth; er svona spurning hvort ma&eth;ur eigi a&eth; setja sig &iacute; samband vi&eth; hann.&nbsp;</p>
+<p>Fyrir utan Arnar &thorn;&aacute; held &eacute;g a&eth; <span style="font-style: italic;">Haskell-</span>samf&eacute;lagi&eth; &aacute; &Iacute;slandi s&eacute; ekki til og &eacute;g hef &thorn;v&iacute; og mun &thorn;v&iacute; tala fyrir daufum eyrum h&eacute;rna &aacute; &thorn;essu bloggi. &THORN;ess vegna er &eacute;g a&eth; velta &thorn;v&iacute; fyrir m&eacute;r a&eth; gera tvennt; annars vegar &uacute;tv&iacute;kka umfj&ouml;llunarefni bloggsins og hins vegar skrifa &aacute; ensku (til &thorn;ess a&eth; n&aacute; til st&aelig;rri h&oacute;ps &thorn;egar umfj&ouml;llunarefni&eth; er <span style="font-style: italic;">Haskell</span>). &Eacute;g er me&eth; nokkrar hugmyndir sem &eacute;g hef&eth;i &aacute;huga &aacute; a&eth; skrifa um eftir a&eth; &thorn;etta bloggkerfi er komi&eth; vel &aacute; koppinn &thorn;v&iacute; mig langar, seinna meir, til &thorn;ess a&eth; sko&eth;a betur hlj&oacute;&eth; og mynd og &yacute;mislegt sem &thorn;v&iacute; tengist &aacute;samt p&aelig;lingum &uacute;r fj&aacute;rm&aacute;lageiranum. Hitt er svo anna&eth; a&eth; &eacute;g er b&uacute;inn a&eth; gera &thorn;a&eth; a&eth; forgangsverkefni fyrir &thorn;etta blogg a&eth; b&uacute;a til <span style="font-style: italic;"><a href="http://diveintomark.org/archives/2004/05/28/howto-atom-id">Atom-</a></span><a href="http://diveintomark.org/archives/2004/05/28/howto-atom-id">straum</a>, brenna bloggi&eth; me&eth; <a href="http://feedburner.com/">Feedburner.com<span style="color: #333333;">&nbsp;og&nbsp;</span></a><a href="http://twitterfeed.com/">f&aelig;&eth;a</a> &thorn;v&iacute; yfir &iacute; Twitter. &THORN;a&eth; m&aacute; &thorn;v&iacute; b&uacute;ast vi&eth; &thorn;v&iacute; a&eth; n&aelig;sta f&aelig;rsla um bloggi&eth; ver&eth;i &aacute; ensku.</p>
+
+
+---
+title: Gísli kemur að HAppS-vörðu
+author: Gísli Kristjánsson
+tags: icelandic
+id: 13
+timestamp: 06.12.2008 23:21:03
+filename: 2008-12-06-gisli-kemur-að-happs-vörðu.html
+---
+
+<p>&Iacute; fyrirs&ouml;gninni er &eacute;g a&eth; v&iacute;sa &iacute; v&ouml;r&eth;u &iacute; merkingunni <span style="font-style: italic;">Milestone. </span>Loksins kom a&eth; &thorn;v&iacute; a&eth; &thorn;essi vefur er or&eth;inn <span style="font-style: italic;">HAppS/Haskell-</span>v&aelig;ddur. &Aacute;&eth;ur var &thorn;essi vefur stat&iacute;skur en d&yacute;nam&iacute;kin bygg&eth;i &aacute; &ouml;&eth;rum &thorn;j&oacute;nustum, s.s. <span style="font-style: italic;">Google Notebook</span><span style="font-style: italic;">. JavaScript</span>&nbsp;var nota&eth; til &thorn;ess a&eth; br&uacute;a bili&eth; &aacute; milli &thorn;j&oacute;nustanna og vefs&iacute;&eth;unnar. &Aacute;st&aelig;&eth;urnar fyrir &thorn;essu fyrirkomulagi voru 2.</p>
+<ol>
+<li>&Eacute;g haf&eth;i ekki &aacute;huga &aacute; &thorn;v&iacute; a&eth; b&uacute;a til heilt vefkerfi. &THORN;a&eth; hef &eacute;g gert einum of oft og n&uacute; &aacute; t&iacute;mum er h&aelig;gt a&eth; n&yacute;ta s&eacute;r parta fr&aacute; &ouml;&eth;rum og p&uacute;sla &thorn;eim saman &iacute; sitt eigi&eth; kerfi.</li>
+<li>&Eacute;g haf&eth;i ekki n&aelig;ga &thorn;ekkingu &aacute; <span style="font-style: italic;">Haskell</span>&nbsp;til &thorn;ess a&eth; geta b&uacute;i&eth; til vefkerfi.&nbsp;</li>
+</ol>
+<p>&THORN;egar &eacute;g f&oacute;r a&eth; sko&eth;a&nbsp;<span style="font-style: italic;">HAppS</span>&nbsp;var m&eacute;r&nbsp;<a style="color: #cc6600; text-decoration: none;" href="../show/5">tj&aacute;&eth;</a>&nbsp;a&eth; ekki v&aelig;ri heppilegt a&eth; byrja &aacute; &thorn;eim endanum. Eftir &aacute; a&eth; hyggja er &eacute;g hjartanlega samm&aacute;la &thorn;v&iacute; a&eth; byrja einhvers sta&eth;ar annars sta&eth;ar. &THORN;v&iacute; &thorn;r&aacute;tt fyrir a&eth; hafa fengi&eth; &thorn;essa v&iacute;sbendingu t&oacute;k &thorn;a&eth; mig um 3 tilraunir til &thorn;ess a&eth; komast inn &iacute; <span style="font-style: italic;">Haskell</span>-hugsunarh&aacute;ttinn.&nbsp;</p>
+<p style="text-align: center;"><img src="http://farm4.static.flickr.com/3181/3095639499_75de3a88d1.jpg" alt="Stj&oacute;rnbor&eth; bloggsins m&iacute;ns" width="500" height="418" /></p>
+<p><a href="../../src/Controller/Blog.hs">Bloggi&eth;</a> var s&aacute; hluti sem &eacute;g &aacute;kva&eth; a&eth; byrja &aacute; og til &thorn;ess a&eth; koma &thorn;v&iacute; &iacute; kring &thorn;urfti &eacute;g a&eth; sm&iacute;&eth;a <a href="../../src/AppState/User.hs">notenda</a>- og <a href="../../src/AppState/Session.hs">setukerfi</a> <span style="font-style: italic;">(user and session management system)</span>. Me&eth;&nbsp;<a href="http://en.wikipedia.org/wiki/Openid"><span style="font-style: italic;">OpenID</span></a>&nbsp;er h&aelig;gt a&eth; l&aacute;ta a&eth;ra vefi, eins og <span style="font-style: italic;">Google, Yahoo! </span>og<span style="font-style: italic;"> Facebook,</span>&nbsp;halda utan um notandanafni&eth; og lykilor&eth;i&eth;. &Iacute; seinni p&oacute;stum &aelig;tla &eacute;g a&eth; fjalla betur um hvernig <span style="font-style: italic;">OpenID</span>&nbsp;virkar.&nbsp;Einnig &aelig;tla &eacute;g &iacute; seinni p&oacute;stum a&eth; r&aelig;&eth;a &thorn;a&eth; sem &eacute;g hef l&aelig;rt og v&iacute;sa &iacute; <a href="../../src">k&oacute;&eth;ann</a> minn sem d&aelig;mi. &Iacute; &thorn;essum p&oacute;sti langar mig &thorn;&oacute; til &thorn;ess a&eth; r&aelig;&eth;a uppsetninguna &iacute; gr&oacute;fum dr&aacute;ttum:</p>
+<p style="text-align: center;"><img src="http://farm4.static.flickr.com/3143/3095639497_6a2ba0b718.jpg" alt="Innskr&aacute;ningargluggi bloggsins m&iacute;ns" width="500" height="418" /></p>
+<p>&THORN;egar bei&eth;ni um vefs&iacute;&eth;u kemur inn tekur <span style="font-style: italic;"><a href="../../src/Main.hs">HAppS</a></span>&nbsp;&aacute; m&oacute;ti bei&eth;ninni &nbsp;og &aacute;framsendir hana &aacute; r&eacute;tta <a href="../../src/Controller">st&yacute;ru</a><span style="font-style: italic;">&nbsp;(controller). </span>St&yacute;ran hefur s&iacute;&eth;an samband vi&eth; st&ouml;&eth;uv&eacute;lina, <span style="font-style: italic;"><a href="http://hackage.haskell.org/cgi-bin/hackage-scripts/package/HAppS-State">HAppS-State</a></span>, og gerir anna&eth; hvort fyrirspurnir &aacute; henni e&eth;a breytingar. A&eth; lokum eru <a href="../../src/Model">g&ouml;gnin</a> <span style="font-style: italic;">(model)</span> &uacute;r st&ouml;&eth;uv&eacute;linni send fram &iacute; birtingarlagi&eth; <span style="font-style: italic;">(view) </span>en &thorn;ar tekur<span style="font-style: italic;"> <a href="http://hackage.haskell.org/cgi-bin/hackage-scripts/package/HStringTemplate">HStringTemplate</a>&nbsp;&nbsp;</span>vi&eth; &thorn;eim og breytir &iacute; <span style="font-style: italic;">HTML.</span></p>
+<p>N&aelig;stu skref eru a&eth; b&aelig;ta vi&eth; stu&eth;ningi fyrir t&ouml;g, athugasemdir og <span style="font-style: italic;">TrackBack </span><span style="font-style: italic;">&aacute;samt &thorn;v&iacute; a&eth; tengja eitthvert myndakerfi vi&eth; bloggi&eth;</span><span style="font-style: italic;">&nbsp;</span>en &eacute;g &aelig;tla a&eth;eins a&eth; b&iacute;&eth;a me&eth; &thorn;a&eth; &thorn;ar sem &eacute;g &aelig;tla a&eth; einbeita m&eacute;r a&eth; &ouml;&eth;ru <a href="http://baldurkristjans.is">verkefni</a> fyrir Baldur br&oacute;&eth;ur.</p>
+
+
+---
+title: Bloggið, Real World Haskell og HAppS
+author: Gísli Kristjánsson
+tags: icelandic
+id: 12
+timestamp: 21.11.2008 01:20:35
+filename: 2008-11-21-bloggid-real-world-haskell-og-happs.html
+---
+
+<p><span style="line-height: normal;">Af einhverri &aacute;st&aelig;&eth;u er &eacute;g andvaka n&uacute;na en &thorn;a&eth; er mj&ouml;g skr&iacute;ti&eth; &iacute; lj&oacute;si &thorn;ess a&eth; &eacute;g var &iacute; nuddi fyrr &iacute; dag og nuddarinn t&oacute;k svo vel &aacute; m&eacute;r a&eth; &eacute;g var vi&eth; &thorn;a&eth; a&eth; sofna um kv&ouml;ldmatarleyti&eth;. N&uacute;na hins vegar er &eacute;g gla&eth;vakandi.<br /><br />M&eacute;r fannst &thorn;v&iacute; a&eth; &eacute;g g&aelig;ti nota&eth; t&iacute;mann og hent einni stuttri f&aelig;rslu h&eacute;r inn (skammast m&iacute;n fyrir a&eth; &thorn;a&eth; s&eacute;u r&uacute;mir 3 m&aacute;nu&eth;ir li&eth;nir fr&aacute; s&iacute;&eth;ustu f&aelig;rslu). S&iacute;&eth;ustu vikur hefur &thorn;&oacute; talsvert veri&eth; a&eth; st&uacute;dera<em>Haskell</em>&nbsp;me&eth; &thorn;a&eth; a&eth; lei&eth;arlj&oacute;si a&eth; skrifa meira af &thorn;essari s&iacute;&eth;u &iacute; &thorn;v&iacute;. N&uacute;na &iacute; desember kemur &uacute;t b&oacute;kin&nbsp;<a style="color: #cc6600; text-decoration: none;" href="http://www.realworldhaskell.com/blog/"><em>Real World Haskell</em></a>, &uacute;tgefin af&nbsp;<em>O'Reilly</em>, sem h&aelig;gt er a&eth; lesa &oacute;keypis &iacute; heilu lagi &aacute;&nbsp;<a style="color: #cc6600; text-decoration: none;" href="http://book.realworldhaskell.org/">netinu</a>. &Eacute;g er b&uacute;inn a&eth; lesa megni&eth; af henni og ver&eth; &eacute;g a&eth; hr&oacute;sa b&aelig;&eth;i &thorn;essu framtaki og l&iacute;ka g&aelig;&eth;i b&oacute;karinnar. Loksins er &eacute;g farinn a&eth; setja hlutina &iacute; samhengi og strax eftir a&eth; &eacute;g var b&uacute;inn a&eth; lesa hana t&oacute;kst m&eacute;r a&eth; b&uacute;a til gr&aelig;ju sem tekur&nbsp;<em>CSV</em>-skjal me&eth; n&ouml;fnum og heimilisf&ouml;ngum, flettir &thorn;eim upp &aacute;&nbsp;<a style="color: #cc6600; text-decoration: none;" href="http://ja.is/simaskra">ja.is&nbsp;</a>og skilar s&iacute;man&uacute;merinu til baka inn &iacute; n&yacute;ja&nbsp;<em>CSV</em>-skr&aacute;. Fram a&eth; &thorn;eim t&iacute;mapunkti gat &eacute;g eing&ouml;ngu skrifa&eth; forrit sem voru svona u.&thorn;.b. 2-5 l&iacute;nur.<br /><br />Eftir a&eth; vera kominn me&eth; &ouml;rl&iacute;ti&eth; meira sj&aacute;lfstraust &aacute;kva&eth; &eacute;g a&eth; l&iacute;ta &aacute;&nbsp;<em>HAppS</em>&nbsp;&aacute; n&yacute;. Vi&eth; g&uacute;glun (er h&aelig;gt a&eth; nota &thorn;etta or&eth; svona?) fann &eacute;g s&iacute;&eth;una&nbsp;<a style="color: #cc6600; text-decoration: none;" href="http://happstutorial.com/">happstutorial.com</a>&nbsp;sem er eins og l&eacute;ni&eth; gefur til kynna lei&eth;beiningas&iacute;&eth;a sem fer skref fyrir skref me&eth; manni &iacute; gegnum&nbsp;<em>HAppS</em>. &Aacute; s&iacute;&eth;unni &aacute; &thorn;&oacute; eftir a&eth; kl&aacute;ra &thorn;ann hluta sem sn&yacute;r a&eth;&nbsp;<em>HAppS.State</em>&nbsp;en &thorn;a&eth; er s&aacute; hluti sem geymir g&ouml;gnin. M&eacute;r til mikillar &aacute;n&aelig;gju t&oacute;k &eacute;g eftir &thorn;v&iacute; &thorn;egar &eacute;g setti lei&eth;beiningarnar upp &aacute; t&ouml;lvunni minni voru &thorn;essir hlutar kl&aacute;rir og &eacute;g gat fr&aelig;&eth;st betur en nokkurn t&iacute;man &aacute;&eth;ur um &thorn;a&eth; hvernig ma&eth;ur geymir g&ouml;gn. Ennfremur &uacute;tsk&yacute;ra &thorn;essar lei&eth;beiningar hvernig ma&eth;ur getur nota&eth;&nbsp;<a style="color: #cc6600; text-decoration: none;" href="http://hackage.haskell.org/cgi-bin/hackage-scripts/package/HStringTemplate">HStringTemplate</a>&nbsp;sem byggir &aacute; h&ouml;nnun&nbsp;<a style="color: #cc6600; text-decoration: none;" href="http://www.stringtemplate.org/">StringTemplate</a>&nbsp;fyrir&nbsp;<em>Java</em>,&nbsp;<em>C#</em>&nbsp;og&nbsp;<em>Python</em>.&nbsp;<a style="color: #cc6600; text-decoration: none;" href="http://softwaresimply.blogspot.com/">&THORN;essi</a>&nbsp;s&iacute;&eth;a hefur l&iacute;ka a&eth; geyma hagn&yacute;tar uppl&yacute;singar um forritun &iacute;&nbsp;<em>HAppS</em>.<br /><br />&Eacute;g er &thorn;v&iacute; kominn vel af sta&eth; me&eth; &thorn;a&eth; a&eth; flytja bloggi&eth; mitt &uacute;r venjulegri&nbsp;textaskr&aacute;&nbsp;yfir &iacute; d&yacute;nam&iacute;ska &uacute;tg&aacute;fu, skrifa&eth;a fyrir&nbsp;<em>HAppS</em>. &Aacute; n&aelig;stu vikum mun &eacute;g skrifa um &thorn;a&eth; sem &eacute;g l&aelig;ri og ver&eth;ur n&aelig;sti p&oacute;stur &thorn;v&iacute; um setustj&oacute;rnun&nbsp;<em>(session management)</em>&nbsp;og hvernig h&aelig;gt er a&eth; &uacute;tf&aelig;ra sl&iacute;kt &iacute;&nbsp;<em>Haskell</em>.</span></p>
+
+
+---
+title: Facebook
+author: Gísli Kristjánsson
+tags: icelandic
+id: 11
+timestamp: 07.08.2008 01:06:57
+filename: 2008-08-07-facebook.html
+---
+
+<p><span style="line-height: normal;">&THORN;egar &eacute;g var staddur &uacute;ti &aacute;&nbsp;<a style="color: #cc6600; text-decoration: none;" href="http://maps.google.com/maps?f=q&amp;hl=en&amp;geocode=&amp;q=Ocana,+Spain&amp;ie=UTF8&amp;t=h&amp;z=11&amp;iwloc=addr">Sp&aacute;ni</a>&nbsp;&iacute;&nbsp;<a style="color: #cc6600; text-decoration: none;" href="http://youtube.com/user/gislikristjans">fallhl&iacute;fast&ouml;kkinu</a>&nbsp;(sj&aacute; fyrri f&aelig;rslu) &thorn;&aacute; t&oacute;k &eacute;g eftir &thorn;v&iacute; a&eth; strax &aacute; fyrsta degi voru allir b&uacute;nir a&eth; "h&uacute;kka s&eacute;r saman" &aacute;&nbsp;<em><a style="color: #cc6600; text-decoration: none;" href="http://facebook.com/">Facebook</a>&nbsp;(FB)</em>. &Eacute;g hef &iacute; nokkurn t&iacute;ma haft illan bifur &aacute; &ouml;llu svona. &Eacute;g held a&eth; &thorn;a&eth; hafi veri&eth;&nbsp;<em><a style="color: #cc6600; text-decoration: none;" href="http://myspace.com/">MySpace</a></em>&nbsp;sem ey&eth;ilagi &thorn;etta fyrir m&eacute;r - &thorn;v&iacute;l&iacute;kt kaos!<br /><br />En &thorn;egar &eacute;g &aacute;tta&eth;i mig &aacute; &thorn;v&iacute; a&eth; mig langa&eth;i til &thorn;ess a&eth; halda sambandi vi&eth; &thorn;ennan h&oacute;p og til &thorn;ess a&eth; vera alveg sannleikanum sannkv&aelig;mur &thorn;&aacute; var &eacute;g ekki a&eth; fara hringja &iacute; &thorn;au (og sennilega ekki einu sinni a&eth; fara a&eth; senda &thorn;eim t&ouml;lvup&oacute;st). &Eacute;g &aacute;kva&eth; &thorn;v&iacute; a&eth; leggja&nbsp;<em>FB</em>-hrokann minn til hli&eth;ar og skr&aacute; mig inn.<br /></span></p>
+<blockquote>
+<p><span style="line-height: normal;">Og, ver&eth; a&eth; vi&eth;urkenna a&eth;&nbsp;<em>FB</em>&nbsp;er ekki svo gali&eth; eftir allt saman.</span></p>
+<p><span style="line-height: normal;"><br /></span></p>
+</blockquote>
+<p><span style="line-height: normal;">Til &thorn;ess a&eth; gera langa s&ouml;gu stutta er &eacute;g gj&ouml;rsamlega fallinn. Og, ver&eth; a&eth; vi&eth;urkenna a&eth;&nbsp;<em>FB</em>&nbsp;er ekki svo gali&eth; eftir allt saman. Ma&eth;ur er n&uacute; farinn a&eth; gera allt &thorn;etta helsta; "adda vinum", skrifa &aacute; veggi og &aacute;&eth;ur en &eacute;g veit af ver&eth; &eacute;g farinn a&eth; senda s&yacute;ndarbj&oacute;ra! Reyndar held &eacute;g a&eth; &thorn;a&eth; s&eacute; langt (ef einhvern t&iacute;mann) &iacute; a&eth; &eacute;g fari a&eth; senda s&yacute;ndarbj&oacute;ra. &THORN;egar &eacute;g hugsa um &thorn;a&eth; &thorn;&aacute; er &thorn;a&eth; sennilega s&aacute; &thorn;&aacute;ttur sem pirrar mig mest.<br /><br />Reyndar s&eacute; &eacute;g n&uacute;na a&eth; &thorn;etta er fr&aacute;b&aelig;r lei&eth; til &thorn;ess a&eth; halda sambandi vi&eth; f&oacute;lk (og &thorn;&aacute; s&eacute;rstaklega f&oacute;lk sem ma&eth;ur hittir ekki &aacute; &ouml;llu j&ouml;fnu). &Eacute;g er t.d. b&uacute;inn a&eth; finna t&yacute;nda &aelig;skuf&eacute;laga, bekkjarf&eacute;laga og a&eth;ra sem &eacute;g var b&uacute;inn a&eth; missa af.&nbsp;<br /><br />&THORN;a&eth; sem m&eacute;r finnst hins vegar lang mest spennandi er&nbsp;<em>FB</em>-&thorn;r&oacute;unarumhverfi&eth; sj&aacute;lft. &Eacute;g hef nefnilega lengi gengi&eth; me&eth; hugmynd &iacute; maganum en hef einhvern veginn aldrei komi&eth; m&eacute;r &iacute; a&eth; framkv&aelig;ma hana vegna &thorn;ess a&eth; &thorn;a&eth; til &thorn;ess a&eth; geta framkv&aelig;mt hana &thorn;arf &eacute;g a&eth; gera heil &oacute;sk&ouml;p &aacute;&eth;ur. &THORN;a&eth; magna&eth;a er a&eth;&nbsp;<em>FB</em>&nbsp;eru &thorn;essi heilu &oacute;sk&ouml;&eth; og &eacute;g get einbeitt m&eacute;r a&eth; &thorn;v&iacute; a&eth; framkv&aelig;ma hugmyndina sj&aacute;lfa.<br /><br />&THORN;a&eth; sem er l&iacute;ka spennandi vi&eth; a&eth; &thorn;r&oacute;a &thorn;etta &aacute;&nbsp;<em>FB</em>&nbsp;er fj&ouml;ldi notenda. &THORN;a&eth; er h&aelig;gt a&eth; koma hugmyndum &iacute; dreifingu &aacute; mj&ouml;g sk&ouml;mmum t&iacute;ma til mj&ouml;g margra og ef m&eacute;r tekst vel til &aelig;tti a&eth; vera h&aelig;gt a&eth; hafa tekjur af &thorn;essu.<br /><br />Plani&eth; er &thorn;v&iacute; a&eth; sko&eth;a&nbsp;<em>FB</em>-&thorn;r&oacute;unarumhverfi&eth; betur. &Eacute;g er b&uacute;inn a&eth; vera a&eth; forrita &aacute;kve&eth;inn feril (upphaf vi&eth;skipta) &iacute; vinnunni upp &aacute; s&iacute;&eth;kasti&eth;. Til &thorn;ess hef &eacute;g veri&eth; a&eth; nota&nbsp;<em><a style="color: #cc6600; text-decoration: none;" href="http://python.org/">Python</a></em>&nbsp;og er gj&ouml;rsamlega &aacute;stfanginn af &thorn;v&iacute; forritunarm&aacute;li. &THORN;a&eth; virkar eins og hugur manns. Hins vegar hef &eacute;g veri&eth; a&eth; velta &thorn;v&iacute; fyrir m&eacute;r hvort &thorn;a&eth; s&eacute; heppilegt sem&nbsp;<em>FB</em>-forritunarm&aacute;l og er eiginlega kominn a&eth; &thorn;eirri ni&eth;urst&ouml;&eth;u a&eth; svo s&eacute; ekki vegna &aacute;lags &aacute;&nbsp;<em>FB</em>-hugb&uacute;na&eth;.&nbsp;<em><a style="color: #cc6600; text-decoration: none;" href="http://haskell.org/">Haskell</a></em>&nbsp;er ekki me&eth; allt of g&oacute;&eth;an stu&eth;ning vi&eth; vefforritun (og &thorn;a&eth; tekur lengri t&iacute;ma a&eth; koma s&eacute;r inn &iacute; &thorn;a&eth; en &eacute;g hef). &Eacute;g hef &thorn;v&iacute; veri&eth; a&eth; horfa til&nbsp;<em><a style="color: #cc6600; text-decoration: none;" href="http://erlang.org/">Erlang</a></em>&nbsp;sem vir&eth;ist vera kj&ouml;ri&eth; &iacute; &thorn;essum a&eth;st&aelig;&eth;um.<br /><br />&Eacute;g skrifa meira um &thorn;essar p&aelig;lingar &thorn;egar &thorn;&aelig;r eru komnar lengra &aacute; veg.</span></p>
+
+
+---
+title: Fallhlífastökk
+author: Gísli Kristjánsson
+tags: icelandic
+id: 10
+timestamp: 13.07.2008 19:17:35
+filename: 2008-07-13-fallhlifastokk.html
+---
+
+<p><span style="line-height: normal;">
+<div style="font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 10px; background-image: initial; background-repeat: initial; background-attachment: initial; -webkit-background-clip: initial; -webkit-background-origin: initial; background-color: #ffffff; height: 100%; font: normal normal normal 14px/normal georgia, times, serif; color: #333333; background-position: initial initial; padding: 0px; margin: 0px;">
+<p style="line-height: 1.5em; text-align: justify;"><span style="line-height: normal;">
+<div style="font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 10px; background-image: initial; background-repeat: initial; background-attachment: initial; -webkit-background-clip: initial; -webkit-background-origin: initial; background-color: #ffffff; height: 100%; font: normal normal normal 14px/normal georgia, times, serif; color: #333333; background-position: initial initial; padding: 0px; margin: 0px;">
+<p style="line-height: 1.5em; text-align: justify; "><span style="line-height: normal;">Fyrir tveimur vikum &aacute;kva&eth; &eacute;g a&eth; fara til Sp&aacute;nar og st&ouml;kkva &iacute;&nbsp;<a style="color: #cc6600; text-decoration: none;" href="http://www.youtube.com/watch?v=yoNpY6zTSUs&amp;feature=PlayList&amp;p=76AEA674CC7EA08E&amp;index=5">fallhl&iacute;f</a>. Viku s&iacute;&eth;ar var &eacute;g staddur &iacute; litlum b&aelig;, n&aacute;nar tilteki&eth; &iacute;&nbsp;<a style="color: #cc6600; text-decoration: none;" href="http://maps.google.com/maps?f=q&amp;hl=en&amp;geocode=&amp;q=Ocana,+Spain&amp;sll=37.0625,-95.677068&amp;sspn=30.323858,48.867187&amp;ie=UTF8&amp;ll=39.984486,-3.499832&amp;spn=0.228861,0.381775&amp;z=11&amp;g=Ocana,+Spain&amp;iwloc=addr">Oca&ntilde;a</a>&nbsp;sem er 30 km su&eth;ur af Madr&iacute;d, eftir a&eth; hafa flogi&eth; til Alicante og keyrt &thorn;a&eth;an.</span></p>
+<p><span style="line-height: normal;">Fyrsta daginn var &eacute;g settur &iacute; sk&oacute;la og &thorn;urfti &eacute;g, &aacute;samt bretanum Chris sem &eacute;g kynntist &aacute;g&aelig;tlega, a&eth; l&aelig;ra allt sem h&aelig;gt er a&eth; hugsa s&eacute;r &aacute;&eth;ur en ma&eth;ur stekkur &uacute;t. N&aelig;sta dag h&oacute;fst balli&eth;. &THORN;&aacute; var sett &aacute; mig fallhl&iacute;f og fari&eth; upp &iacute; 12.500 fet (c.a. 4 km). Nokkrum sek&uacute;ndum s&iacute;&eth;ar var &eacute;g kominn &aacute; 200 km hra&eth;a (ni&eth;ur &aacute; vi&eth; :). Kennarinn minn, Andy, og a&eth;sto&eth;arkennarinn, Mike, (sem st&ouml;kk fyrstu 3 st&ouml;kkin me&eth; okkur) stukku me&eth; m&eacute;r og s&aacute;u til &thorn;ess a&eth; allt v&aelig;ri eftir b&oacute;kinni.</span></p>
+<p style="line-height: 1.5em; text-align: justify; "><span style="line-height: normal;">&THORN;v&iacute;l&iacute;kur tryllir! &Aacute; me&eth;an ma&eth;ur er a&eth; n&aacute; lokahra&eth;a (um 120 m&iacute;lna hra&eth;i) &thorn;&aacute; l&iacute;&eth;ur manni eins og ma&eth;ur s&eacute; a&eth; falla. &THORN;essi tilfinning er allsr&aacute;&eth;andi fyrstu 10 sek&uacute;ndurnar. &THORN;egar ma&eth;ur hefur n&aacute;&eth; lokahra&eth;a er &thorn;etta meira eins og a&eth; flj&oacute;ta og hefur ma&eth;ur um 1 m&iacute;n&uacute;tu &iacute; loftinu &aacute;&eth;ur en ma&eth;ur &thorn;arf a&eth; opna fallhl&iacute;fina.<br /><br />N&aacute;mskei&eth;i&eth; byggist upp &aacute; 7 stigum og ef ma&eth;ur &thorn;arf ekki a&eth; endurtaka neitt stig &thorn;&aacute; eru &thorn;etta 7 st&ouml;kk. &Eacute;g henti video-i af st&ouml;kkunum 7 inn &aacute; YouTube en mig langar til &thorn;ess a&eth; klippa &thorn;etta betur saman.&nbsp;<br /><br />Eftir g&oacute;&eth;a daga var sest ni&eth;ur &iacute; bj&oacute;r og g&oacute;&eth;um mat &iacute; b&aelig;num Aranjuez. &Eacute;g held a&eth; &thorn;a&eth; s&eacute; alveg v&iacute;st a&eth; &thorn;etta er eitthva&eth; sem mig langar til &thorn;ess a&eth; gera n&aelig;stu &aacute;rin.<br /><br />&Eacute;g setti inn nokkrar&nbsp;<a style="color: #cc6600; text-decoration: none;" href="../../?albums/AFFOcaASpain">myndir</a>&nbsp;&uacute;r fer&eth;inni.</span></p>
+</span></p>
+</span></p>
+
+
+---
+title: Breyting á slóðum og smá vesen
+author: Gísli Kristjánsson
+tags: icelandic
+id: 9
+timestamp: 18.03.2008 02:17:39
+filename: 2008-03-18-breyting-a-slodum-og-sma-vesen.html
+---
+
+<p><span style="line-height: normal;">&Eacute;g breytti sl&oacute;&eth;unum &aacute; &thorn;essari s&iacute;&eth;u &aacute; &thorn;ann veg a&eth; n&uacute; h&aelig;gt a&eth; nota&nbsp;<em>back</em>-hnappinn. &Eacute;g er b&uacute;inn a&eth; finna nokkrar spennandi&nbsp;<a style="color: #cc6600; text-decoration: none;" href="http://dbpatterson.com/blog">s&iacute;&eth;ur</a>&nbsp;um&nbsp;<em>HAppS</em>&nbsp;en af einhverri &aacute;st&aelig;&eth;u er&nbsp;<em>SearchPath</em>&nbsp;h&aelig;tt a&eth; virka hj&aacute; m&eacute;r svo &eacute;g er p&iacute;nu strand. &Eacute;g s&eacute; a&eth; einhver er a&eth; vinna &iacute; a&eth; f&aacute; &thorn;a&eth; &iacute; lag svo &eacute;g &aelig;tla a&eth; reyna a&eth; vera &thorn;olinm&oacute;&eth;ur.<br /><br />Marka&eth;ir &iacute; dag hrundu, kr&oacute;nan &iacute; frj&aacute;lsu falli og Bear Stearns f&oacute;r &aacute; hausinn. &THORN;etta eru svakalegir t&iacute;mar!</span></p>
+
+
+---
+title: H.F. Verðbréf
+author: Gísli Kristjánsson
+tags: icelandic
+id: 8
+timestamp: 18.02.2008 20:52:32
+filename: 2008-02-18-hf-verdbref.html
+---
+
+<p><span style="line-height: normal;">Stutt skilabo&eth;. &Aacute; mi&eth;vikudaginn s&iacute;&eth;asta r&eacute;&eth; &eacute;g mig &iacute; vinnu hj&aacute; H.F. Ver&eth;br&eacute;fum og starfa n&uacute; &thorn;ar sem mi&eth;lari. &THORN;ar sem &eacute;g &aelig;tla a&eth; reyna a&eth; halda &thorn;essu bloggi hnitmi&eth;u&eth;u &aacute; forritun og fj&aacute;rm&aacute;l &thorn;&aacute; &aelig;tla &eacute;g ekki a&eth; hafa &thorn;etta lengra &iacute; bili.</span></p>
+
+
+---
+title: Skúli.is
+author: Gísli Kristjánsson
+tags: icelandic
+id: 7
+timestamp: 05.02.2008 19:24:14
+filename: 2008-02-05-skuli-is.html
+---
+
+<p><span style="line-height: normal;"><a style="color: #cc6600; text-decoration: none;" href="http://skuli.is/">Vefur</a>&nbsp;vinah&oacute;psins hefur legi&eth; &iacute; dvala &iacute; um 2 &aacute;r eftir a&eth; gamli vefurinn var lag&eth;ur ni&eth;ur. Vi&eth; skrifu&eth;um annan fyrir &aacute;rsh&aacute;t&iacute;&eth; Sk&uacute;la &iacute; fyrir &iacute;&nbsp;<a style="color: #cc6600; text-decoration: none;" href="http://rubyonrails.org/"><em>Ruby on Rails</em></a>&nbsp;en &thorn;ar sem vi&eth; h&ouml;f&eth;um enga v&eacute;l til a&eth; keyra hann f&oacute;r hann aldrei &iacute; lofti&eth;. N&uacute;na &thorn;egar n&yacute;i &thorn;j&oacute;nninn er kominn &iacute; gagni&eth; kemur &iacute; lj&oacute;s a&eth;<em>Rails</em>&nbsp;hefur breyst &thorn;a&eth; miki&eth; s&iacute;&eth;an &iacute; fyrra a&eth; k&oacute;&eth;inn okkar keyrir ekki. Talsvert svekkelsi!<br /><br />&Eacute;g veit ekki hva&eth; &eacute;g er b&uacute;inn a&eth; skrifa m&ouml;rg vefkerfi og tilhugsunin um a&eth; skrifa enn eitt er m&eacute;r alls ekki k&aelig;r. M&eacute;r datt &thorn;v&iacute; &iacute; hug a&eth; keyra vefinn &aacute; einhverju&nbsp;<em>CMS</em>-kerfanna. &THORN;a&eth; kemur hins vegar alltaf a&eth; &thorn;v&iacute; a&eth; ma&eth;ur hefur &aacute;huga &aacute; &thorn;v&iacute; a&eth; fara &ouml;rl&iacute;ti&eth; &uacute;t fyrir mynstur kerfisins og &thorn;&aacute; ver&eth;ur l&iacute;f manns skelfilegt - fl&oacute;ki&eth; og lei&eth;inlegt. &Eacute;g einsetti m&eacute;r &thorn;v&iacute; a&eth; skrifa eins l&iacute;ti&eth; vefkerfi og &eacute;g m&ouml;gulega kemst upp me&eth;.<br /><br /><a style="color: #cc6600; text-decoration: none;" href="http://webpy.org"><em>web.py</em></a>&nbsp;er minimal&iacute;skt umhverfi fyrir&nbsp;<em>Python</em>&nbsp;og fellur &thorn;v&iacute; eins og fl&iacute;s vi&eth; rass a&eth; forsendunum. &Eacute;g er l&iacute;ka kominn me&eth; lei&eth;a &aacute; &thorn;v&iacute; a&eth; m&oacute;dela g&ouml;gn &iacute; gagnagrunni og &thorn;v&iacute; datt &eacute;g inn &aacute; n&yacute;ja tegund af gagnagrunni, svokalla&eth;an skjalagagnagrunn&nbsp;<em>(e. document-centric database)</em>&nbsp;sem heitir&nbsp;<a style="color: #cc6600; text-decoration: none;" href="http://couchdb.com/"><em>CouchDB</em></a>. Haft er samband vi&eth; grunninn yfir&nbsp;<em>HTTP</em>-sta&eth;alinn og skilar grunnurinn g&ouml;gnum &aacute;&nbsp;<em>JSON</em>-formi. Frekar spennandi!</span></p>
+
+
+---
+title: Síðan þokast áfram
+author: Gísli Kristjánsson
+tags: icelandic
+id: 6
+timestamp: 28.01.2008 05:30:24
+filename: 2008-01-28-sidan-thokast-afram.html
+---
+
+<p><span style="line-height: normal;">&Iacute; dag eyddi &eacute;g talsver&eth;um t&iacute;ma &iacute; s&iacute;&eth;una. H&eacute;r er h&aelig;gt a&eth; nefna a&eth;&nbsp;<a style="color: #cc6600; text-decoration: none;" href="http://www.google.com/notebook/public/01738234982158720746/BDShxQwoQoIbXy_oi">verkefnas&iacute;&eth;an</a>&nbsp;er komin vel af sta&eth;. Eing&ouml;ngu er &thorn;&oacute; um texta a&eth; r&aelig;&eth;a en &thorn;egar &eacute;g ver&eth; kominn me&eth; sm&aacute; textastubb um &ouml;ll verkin &aelig;tla &eacute;g a&eth; b&aelig;ta vi&eth; textann og hengja myndir me&eth; verkefnunum.&nbsp;<br /><br /><a style="color: #cc6600; text-decoration: none;" href="http://google.com/notebook/public/01738234982158720746/BDSdwQwoQzPC91Psi">Uppl&yacute;singas&iacute;&eth;an</a>&nbsp;var l&iacute;ka tekin &iacute; gegn og n&yacute;tt efni sett inn. &Eacute;g er or&eth;inn nokku&eth; &aacute;n&aelig;g&eth;ur me&eth; efni&eth;. Fyrir nyr&eth;ina &thorn;arna &uacute;ti bj&oacute; &eacute;g l&iacute;ka til n&yacute;ja s&iacute;&eth;u sem l&yacute;sir&nbsp;<a style="color: #cc6600; text-decoration: none;" href="http://www.google.com/notebook/public/01738234982158720746/BDSe5QgoQ0NzJ8vsi">&aacute;standi</a>&nbsp;vefsins &iacute; &thorn;a&eth; og &thorn;a&eth; skipti&eth;.<br /><br />Svo fyrir &thorn;&aacute; sem h&ouml;f&eth;u s&eacute;&eth; bloggi&eth; taka &thorn;eir v&aelig;ntanlega eftir a&eth; h&eacute;r hefur einnig &yacute;mislegt veri&eth; gert en mestu breytingarnar eru a&eth; bloggi&eth; er komi&eth; inn &iacute; a&eth;al&uacute;tliti&eth; &iacute; sta&eth; &thorn;ess a&eth; vera bara textaskjal.<br /><br />Heilt yfir er &thorn;essi &aelig;fing me&eth; a&eth; tengja&nbsp;<em>Google Notebook</em>&nbsp;og textaskj&ouml;l inn &aacute; vefs&iacute;&eth;una me&eth;<em>JavaScript</em>. St&oacute;r galli er &thorn;&oacute; a&eth;&nbsp;<em>Back</em>-hnappurinn virkar ekki. &THORN;etta lagast &thorn;&oacute; &aacute;llt sj&aacute;lfkrafa &thorn;egar<em>Haskell</em>&nbsp;fer a&eth; &thorn;j&oacute;na &thorn;essu efni.</span></p>
+
+
+---
+title: HAppS: Góðar og slæmar fréttir
+author: Gísli Kristjánsson
+tags: 
+id: 5
+timestamp: 22.01.2008 06:03:38
+filename: 2008-01-22-happs-godar-og-slaemar-frettir.html
+---
+
+<p><span style="line-height: normal; ">Eftir a&eth; hafa skrifa&eth; s&iacute;&eth;asta p&oacute;st hl&oacute;&eth; &eacute;g ni&eth;ur&nbsp;<em>Colloquy</em>, sem er&nbsp;<em>IRC</em>-bi&eth;lari fyrir&nbsp;<em>Mac OS X</em>. &THORN;ar skr&aacute;&eth;i &eacute;g mig &aacute; r&aacute;sina&nbsp;<em>#happs</em>&nbsp;og byrja&eth;i a&eth; spjalla. Til a&eth; byrja me&eth; svara&eth;i m&eacute;r enginn en &thorn;a&eth; var e.t.v. e&eth;lilegt &iacute; lj&oacute;si &thorn;ess a&eth; &thorn;a&eth; var mi&eth; n&oacute;tt. Daginn eftir lifna&eth;i &thorn;&oacute; a&eth;eins vi&eth; m&ouml;nnum &aacute; r&aacute;sinni. Menn voru almennt samm&aacute;la &thorn;v&iacute; a&eth; ekki v&aelig;ri heppilegt a&eth; byrja&nbsp;<em>Haskell</em>-upplifunina &aacute; &thorn;v&iacute; a&eth; st&uacute;dera&nbsp;<em>HAppS</em>. &THORN;etta voru a&eth; sj&aacute;lfs&ouml;g&eth;u gr&iacute;&eth;arleg vonbrig&eth;i fyrir mig enda haf&eth;i &eacute;g gert m&eacute;r vonir um a&eth; l&aelig;ra m&aacute;li&eth; og jafnframt koma undir mig f&oacute;tunum &aacute; vefheimili m&iacute;nu (gisli.hamstur.is). Hins vegar get &eacute;g vel skili&eth; &thorn;eirra r&ouml;k og hef &thorn;v&iacute; hugsa&eth; m&eacute;r a&eth; gera eftirfarandi:<br /> 
+<ul style="color: #333333; ">
+<br />
+<li><strong>Setja upp&nbsp;<em>HAppS</em>-&thorn;j&oacute;n sem &thorn;j&oacute;nar stat&iacute;sku efni</strong><br />&THORN;ess vegna er &thorn;etta blogg n&uacute;na eing&ouml;ngu texti.</li>
+<br />
+<li><strong>Finna m&eacute;r &uacute;tlit</strong><br />Koma s&iacute;&eth;unni &iacute; fallegri b&uacute;ning, &thorn;r&aacute;tt fyrir a&eth; allt ver&eth;i stat&iacute;skt.</li>
+<br />
+<li><strong>L&aelig;ra grunninn &iacute;&nbsp;<em>Haskell</em></strong><br />&Aacute;&eth;ur en &eacute;g fer a&eth; fikta miki&eth; &iacute;&nbsp;<em>HAppS</em>.</li>
+</ul>
+<br />Sm&aacute;m saman b&aelig;tist &iacute; &thorn;ekkinguna &thorn;annig a&eth; &eacute;g geti fegra&eth; og forrita&eth; kerfi &aacute; bak vi&eth; bloggi&eth;. &THORN;etta ver&eth;ur &thorn;v&iacute; a&eth;eins lengra ferli en &eacute;g var a&eth; vonast til.<br /><br />G&oacute;&eth;u fr&eacute;ttirnar eru hins vegar &thorn;&aelig;r a&eth; &eacute;g n&aacute;&eth;i a&eth; koma&nbsp;<em>HAppS</em>-&thorn;j&oacute;ni upp og t&oacute;kst a&eth; l&aacute;ta bei&eth;nir &aacute; r&oacute;tina &aacute;framsendast &aacute; bloggi&eth; mitt, &thorn;.e. &thorn;etta textaskjal. &THORN;etta gekk ekki vandr&aelig;&eth;alaust fyrir sig og ef til vill er &thorn;etta &oacute;&thorn;arflega fl&oacute;ki&eth; hj&aacute; m&eacute;r. H&aelig;gt er a&eth; sj&aacute; k&oacute;&eth;ann fyrir &thorn;j&oacute;ninn <a href="../../src">h&eacute;r</a>.</span></p>
+
+
+---
+title: HAppS
+author: Gísli Kristjánsson
+tags: 
+id: 4
+timestamp: 17.01.2008 06:31:24
+filename: 2008-01-17-happs.html
+---
+
+<p><span style="line-height: normal;">&THORN;a&eth; hefur runni&eth; upp fyrir m&eacute;r s&iacute;&eth;ustu daga a&eth; l&aelig;rd&oacute;msk&uacute;rvan fyrir vefforritun &iacute; Haskell er mj&ouml;g br&ouml;tt. &THORN;a&eth; er l&iacute;ti&eth; til af skrifu&eth;u efni. M&eacute;r s&yacute;nist &thorn;&oacute; eftir &thorn;essa ranns&oacute;knarvinnu a&eth; &thorn;rj&aacute;r lei&eth;ir s&eacute;u helst f&aelig;rar:<br /><ol style="color: #333333;"><br />
+<li><strong>Keyra k&oacute;&eth;ann sem CGI &iacute; vef&thorn;j&oacute;ni</strong><br />Kostur: Ekki &thorn;arf a&eth; &thorn;&yacute;&eth;a&nbsp;<em>Haskell</em>&nbsp;k&oacute;&eth;ann.<br />Galli: H&aelig;gvirkt</li>
+<br />
+<li><strong>Keyra k&oacute;&eth;ann sem&nbsp;<a style="color: #cc6600; text-decoration: none;" href="http://fastcgi.com/"><em>FastCGI</em></a>&nbsp;&iacute; vef&thorn;j&oacute;ni</strong><br />Kostur: Getur keyrt &aacute; &thorn;ekktum vef&thorn;j&oacute;num eins og&nbsp;<em>Apache</em>&nbsp;og&nbsp;<em>LigHTTP</em>.<br />Galli: &THORN;arf a&eth; endurr&aelig;sa vef&thorn;j&oacute;ninn til &thorn;ess a&eth; breytingar taki gildi.</li>
+<br />
+<li><strong>Keyra k&oacute;&eth;ann &iacute;&nbsp;<a style="color: #cc6600; text-decoration: none;" href="http://happs.org/"><em>HAppS</em></a>,&nbsp;<em>The Haskell Application Server</em></strong><br />Kostur: Margir, sj&aacute; umfj&ouml;llun h&eacute;r a&eth; ne&eth;an<br />Galli: N&aacute;nst engar uppl&yacute;singar um&nbsp;<em>HAppS</em></li>
+<br /></ol><br />&THORN;ar sem &eacute;g er &aacute; h&ouml;ttunum eftir algj&ouml;rlega n&yacute;rri hugsun (eins og fram kemur &iacute; fyrstu f&aelig;rslunni) &aacute;kva&eth; &eacute;g a&eth; velja s&iacute;&eth;ustu lei&eth;ina, &thorn;.e. nota&nbsp;<em>HAppS</em>. &Eacute;g eyddi um klukkut&iacute;ma &iacute; a&eth; horfa &aacute;&nbsp;<a style="color: #cc6600; text-decoration: none;" href="http://www.bayfp.org/blog/2007/10/16/alex-jacobson-on-happs-videos-slides/">fyrirlestur</a>um&nbsp;<em>HAppS</em>&nbsp;sem Alex Jacobson, h&ouml;fundur&nbsp;<em>HAppS</em>, h&eacute;lt &iacute; okt&oacute;ber &aacute; s&iacute;&eth;asta &aacute;ri. &THORN;ar sem &eacute;g hef lengi veri&eth; &iacute; vefforritun og sj&aacute;lfur me&eth; hugmyndir um &thorn;a&eth; hvernig m&eacute;r finnist hluturnir eiga vera ger&eth;ir kom m&eacute;r skemmtilega &aacute; &oacute;vart hva&eth; Alex haf&eth;i skemmtilega og &iacute; raun mj&ouml;g samb&aelig;rilega s&yacute;n.<br /><br />&Iacute; venjulegu vefumhverfi, oft nefnt N-laga umhverfi, skiptist umhverfi&eth; venjulega &iacute; &thorn;rj&uacute; l&ouml;g:<br /><ol style="color: #333333;"><br />
+<li><strong>Gagnam&oacute;delslag</strong><br />G&ouml;gn eru &iacute; flestum tilfellum geymd &iacute; gagnagrunnum en til &thorn;ess a&eth; g&ouml;gnin s&eacute;u noth&aelig;f &thorn;arf a&eth; m&oacute;dela g&ouml;gnin &iacute; forritunarm&aacute;linu sem nota&eth; er.</li>
+<br />
+<li><strong>A&eth;ger&eth;alag</strong><br />H&eacute;r er virkni vefjarins &aacute;kve&eth;in.</li>
+<br />
+<li><strong>Framsetningarlag</strong><br />&THORN;egar a&eth;ger&eth;arlagi&eth; er b&uacute;i&eth; a&eth; vinna me&eth; gagnam&oacute;delin eru &thorn;au &aacute;framsend &iacute; &thorn;etta lag. Venjulega er &thorn;a&eth; h&eacute;r sem blanda af forritunarm&aacute;li og HTMLi skilar ni&eth;urst&ouml;&eth;unum til vafrans.</li>
+<br /></ol><br />Gallinn vi&eth; &thorn;essa uppsetningu er oft &aacute; t&iacute;&eth;um s&aacute; a&eth; mikil vinna er f&oacute;lgin &iacute; &thorn;v&iacute; a&eth; koma g&ouml;gnunum &uacute;r gagnagrunninum og &iacute; str&uacute;kt&uacute;r sem n&yacute;tist &iacute; forritunarm&aacute;linu. Einnig getur veri&eth; erfitt a&eth; skala &thorn;etta umhverfi. &Eacute;g er &thorn;v&iacute; opinn fyrir &thorn;eim a&eth;fer&eth;um sem HAppS leggur til:<br /><br />G&ouml;gnin eru m&oacute;deleru&eth; fr&aacute; upphafi &iacute; Haskell og liti&eth; er &aacute; vefinn sem st&ouml;&eth;uv&eacute;l. Sta&eth;an hverju sinni er geymd &iacute; minni en skrifu&eth; &uacute;t &iacute; svokalla&eth;a logga. &THORN;annig getur &thorn;j&oacute;nninn sp&oacute;la&eth; &iacute; gegnum alla loggana til &thorn;ess a&eth; flytja kerfi&eth; &iacute; s&iacute;&eth;ustu st&ouml;&eth;u ef endurr&aelig;sa &thorn;arf &thorn;j&oacute;ninn. &THORN;etta hefur veri&eth; &thorn;ekkt sem&nbsp;<a style="color: #cc6600; text-decoration: none;" href="http://www.prevayler.org"><em>Prevayler</em></a>-mynstri&eth;. Til &thorn;ess a&eth; koma &iacute; veg fyrir a&eth; &thorn;j&oacute;nninn &thorn;urfi a&eth; lesa loggana fr&aacute; &ouml;r&oacute;fi alda skrifar hann &uacute;t millist&ouml;&eth;ur&nbsp;<em>(e. Check point)</em>&nbsp;me&eth; reglulegu millibili. Eing&ouml;ngu &thorn;arf &thorn;&aacute; a&eth; lesa loggana fr&aacute; &thorn;eirri st&ouml;&eth;u. &Iacute; fyrirlestrinum kemur Alex l&iacute;ka inn &aacute; n&yacute;jan f&iacute;dus sem hle&eth;ur vi&eth;eigandi hluta st&ouml;&eth;uv&eacute;larinnar &iacute; minni ef h&uacute;n kemst ekki &ouml;ll fyrir &iacute; minninu - &thorn;etta &thorn;arf a&eth; gera handvirkt &iacute; dag.<br /><br /><em>Prevayler</em>-mynstri&eth; gerir HAppS kleyft a&eth; gera &yacute;msa sni&eth;uga hluti, eins og keyra klasa af HAppS-&thorn;j&oacute;num og samr&aelig;ma st&ouml;&eth;u &aacute; milli &thorn;eirra. &THORN;annig er h&aelig;gt a&eth; dreifa vinnslu &aacute; marga &thorn;j&oacute;na til &thorn;ess a&eth; minnka &aacute;lag &aacute; v&eacute;lb&uacute;na&eth; og koma &iacute; veg fyrir a&eth; vefir fari ni&eth;ur ef v&eacute;lb&uacute;na&eth;ur deyr. &THORN;etta &thorn;&yacute;&eth;ir l&iacute;ka a&eth; &thorn;egar uppf&aelig;ra &thorn;arf hugb&uacute;na&eth;inn ver&eth;a notendur ekki varir vi&eth; neinn ni&eth;rit&iacute;ma. Anna&eth; sem m&eacute;r fannst &aacute;hugavert vi&eth; uppf&aelig;rslur hugb&uacute;na&eth;arins og a&eth; koma &thorn;eim &iacute; rekstur er a&eth; &thorn;egar hugb&uacute;na&eth;urinn er &thorn;&yacute;ddur ver&eth;ur til ein keyrsluskr&aacute; sem eing&ouml;ngu &thorn;arf a&eth; afrita yfir &aacute; &thorn;&aacute; &thorn;j&oacute;na sem eiga a&eth; taka &thorn;&aacute;tt &iacute; verkinu. &THORN;j&oacute;narnir sj&aacute; alveg um a&eth; hla&eth;a inn n&yacute;ju &uacute;tg&aacute;funni.<br /><br />Tegundakerfi&eth;&nbsp;<em>(e. Type system)</em>&nbsp;&iacute; Haskell er gr&iacute;&eth;arlega &ouml;flugt og mj&ouml;g au&eth;velt og er &thorn;a&eth; t.d. einsm&oacute;ta XML. HAppS s&eacute;r &thorn;v&iacute; um a&eth; flytja g&ouml;gnin yfir &iacute; XML sj&aacute;lfvirkt og &thorn;v&iacute; &thorn;arf eing&ouml;ngu a&eth; umbreyta XML-inu, me&eth; hj&aacute;lp&nbsp;<a style="color: #cc6600; text-decoration: none;" href="http://www.w3.org/Style/XSL/"><em>XSL</em></a>, yfir &iacute; anna&eth; birtingaform.<br /><br />M&eacute;r finnst HAppS spennandi og ekki s&iacute;&eth;ur &iacute; &thorn;v&iacute; lj&oacute;si a&eth; HAppS vir&eth;ist vera Haskell-lei&eth;in &iacute; vefforritun. Hins vegar er &eacute;g hr&aelig;ddur um a&eth; &thorn;etta geti or&eth;i&eth; erfi&eth; f&aelig;&eth;ing vegna l&iacute;tillar skj&ouml;lunar. M&eacute;r skilst a&eth; HAppS-li&eth;i&eth; hangi &aacute; IRC-inu svo &eacute;g &aelig;tla a&eth; reyna a&eth; f&aacute; v&iacute;sbendingar um hvernig er best a&eth; l&aelig;ra &aacute; gr&aelig;juna.</span></p>
+
+
+---
+title: Gleðilegt nýtt ár!
+author: Gísli Kristjánsson
+tags: 
+id: 3
+timestamp: 06.01.2008 01:07:32
+filename: 2008-01-06-gledilegt-nytt-ar.html
+---
+
+<p><span style="line-height: normal;">Fer&eth;in til S-Amer&iacute;ku var fr&aacute;b&aelig;r. Mikil upplifun &thorn;ar. &Eacute;g freistast til &thorn;ess a&eth; geyma bloggi&eth; um &thorn;&aacute; fer&eth; &iacute; enn a&eth;ra f&aelig;rslu &thorn;v&iacute; &thorn;a&eth; er talsver&eth; vinna sem fer &iacute; a&eth; skrifa um 2ja m&aacute;na&eth;a &aelig;vint&yacute;ri &thorn;ar sem vi&eth; fer&eth;u&eth;umst v&iacute;tt og breitt um heila heims&aacute;lfu.<br /><br />&Iacute; lok hvers &aacute;rs hef &eacute;g r&iacute;ka &thorn;&ouml;rf til &thorn;ess a&eth; gera &aacute;ri&eth; upp. &THORN;a&eth; &aelig;tla &eacute;g hins vegar a&eth; geyma fyrir enn a&eth;ra f&aelig;rslu. &Eacute;g stend n&uacute; &aacute; enn einum t&iacute;mam&oacute;tunum &iacute; m&iacute;nu l&iacute;fi, b&aelig;&eth;i &iacute; einkal&iacute;finu sem og atvinnul&iacute;finu. &Eacute;g hef eytt s&iacute;&eth;ustu d&ouml;gum &iacute; a&eth; hitta m&ouml;gulega atvinnuveitendur. Mig langar til &thorn;ess a&eth; f&aelig;ra mig um set. &Eacute;g hef vi&eth;a&eth; a&eth; m&eacute;r mikilli reynslu tengdum t&ouml;lvum og &eacute;g finn a&eth; &thorn;a&eth; n&yacute;tist m&eacute;r vel en mig vantar meiri reynslu &iacute; vi&eth;skiptum/fj&aacute;rm&aacute;lum. M&eacute;r finnst &thorn;v&iacute; l&iacute;klegt a&eth; n&aelig;sti vinnusta&eth;ur ver&eth;i &iacute; &ouml;&eth;rum geira en &eacute;g hef hinga&eth; til starfa&eth; &iacute;.</span></p>
+
+
+---
+title: Tegund (blog, wiki)
+author: Gísli Kristjánsson
+tags: 
+id: 2
+timestamp: 24.10.2007 00:09:44
+filename: 2007-10-24-tegund-blog-wiki.html
+---
+
+<p><span style="line-height: normal;">
+<li><strong>Nota XSLT til &thorn;ess a&eth; b&uacute;a til t&ouml;g eins og</strong></li>
+<br />
+<li><strong>Nota Media Wiki syntax sem grunn</strong></li>
+<br /></span></p>
+
+
+---
+title: Tímamót
+author: Gísli Kristjánsson
+tags: 
+id: 1
+timestamp: 22.10.2007 20:30:52
+filename: 2007-10-22-timamot.html
+---
+
+<p><span style="line-height: normal;">&Iacute; nokkrar vikur hef &eacute;g velt &thorn;v&iacute; fyrir m&eacute;r a&eth; byrja a&eth; blogga. &Aacute;st&aelig;&eth;an fyrir &thorn;essum vangaveltum er s&uacute; a&eth; &eacute;g hef &aacute;huga &aacute; &thorn;v&iacute; a&eth; taka virkari &thorn;&aacute;tt &iacute; vefsamf&eacute;laginu. Ennfremur vil &eacute;g l&iacute;ta &aacute; bloggi&eth; sem faglega &uacute;tr&aacute;s &aacute; &thorn;eim svi&eth;um sem &eacute;g hef &aacute;huga &aacute;, &thorn;.e. t&aelig;kni (&thorn;&aacute; a&eth;allega t&ouml;lvut&aelig;kni), fj&aacute;rm&aacute;lum, ...<br /><br />&THORN;a&eth; er h&aacute;lfger&eth; hr&aelig;sni a&eth; tala um a&eth; hafa &aacute;huga &aacute; t&ouml;lvut&aelig;kni &thorn;egar &thorn;etta blogg er skrifa&eth; &aacute; eins frumst&aelig;&eth;an h&aacute;tt og m&ouml;gulegt er. Plani&eth; er a&eth; nota &thorn;ennan vettvang til &thorn;ess a&eth; l&aelig;ra n&yacute;tt forritunarm&aacute;l og byggja upp bloggkerfi og &uacute;tv&iacute;kka &thorn;a&eth; (<em>wiki</em>, o.s.frv.) svo fyrir vefsetur mitt en &thorn;anga&eth; til &thorn;&aacute;; textaskjal (<em>blog.txt</em>) og textaritill (<em>Aquamacs</em>). Forritunarm&aacute;lin sem koma til greina eru eru flest fallam&aacute;l,&nbsp;<a style="color: #cc6600; text-decoration: none;" href="http://www.python.org/"><em>Python</em></a>&nbsp;(ekki fallam&aacute;l),&nbsp;<a style="color: #cc6600; text-decoration: none;" href="http://en.wikipedia.org/wiki/JavaScript"><em>JavaScript</em></a>&nbsp;(&iacute; &aelig;tt vi&eth; fallam&aacute;l),&nbsp;<a style="color: #cc6600; text-decoration: none;" href="http://www.erlang.org/"><em>Erlang</em></a>,&nbsp;<a style="color: #cc6600; text-decoration: none;" href="http://caml.inria.fr/"><em>Objective Caml</em></a>,&nbsp;<a style="color: #cc6600; text-decoration: none;" href="http://www.lisp.org/"><em>LISP</em></a>, og&nbsp;<a style="color: #cc6600; text-decoration: none;" href="http://www.haskell.org/"><em>Haskell</em></a>. Mig langar til &thorn;ess a&eth; fara alveg n&yacute;ja lei&eth;, stokka alveg upp hugsanaganginum svo &eacute;g held a&eth; lendingin ver&eth;i a&eth; &eacute;g skrifi &thorn;etta &iacute;&nbsp;<em>Haskell</em>. &THORN;essi p&oacute;stur markar upphaf &thorn;essa&nbsp;<a style="color: #cc6600; text-decoration: none;" href="http://en.wikibooks.org/wiki/Haskell">fer&eth;alags</a>.
