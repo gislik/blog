@@ -163,7 +163,7 @@ renderTagsFieldWith tags destination makeUrl =
 
     surround :: [Maybe H.Html] -> String
     surround ms = if (length links > 0)
-                  then "<div class=\"tags\">" ++ links ++ "</div>"
+                  then "<span class=\"tags\">" ++ links ++ "</span>"
                   else ""
                       where links = intercalate " " $ map renderHtml $ catMaybes ms
     
@@ -171,7 +171,7 @@ renderTagsFieldWith tags destination makeUrl =
     renderLink _   Nothing         = Nothing
     renderLink tag (Just filePath) = Just $
         H.span ! A.class_ "tag" $ 
-        H.a ! A.href (toValue $ toUrl filePath) $ H.toHtml tag
+        H.a ! A.href (toValue $ toUrl $ dropFileName filePath) $ H.toHtml tag
 
 
 -- | Obtain tags from a page
