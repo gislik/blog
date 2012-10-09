@@ -19,8 +19,8 @@
   <!-- <h2>"jack of all trades, master of none"</h2> -->
   
   <ul id="nav">
-    <!-- <li><a href="/about/">About</a></li> -->
-    <!-- <li><a href="/photos/">Photos</a></li> -->
+    <li><a href="/about/">About</a></li>
+    <li><a href="/photos/">Photos</a></li>
     <!-- <li><a href="/projects/">Projects</a></li> -->
   </ul>
   
@@ -43,9 +43,9 @@
   </p>
   <br>
   <p>  <a href="http://feeds.feedburner.com/gisli-hamstur-is?format=xml" rel="alternate" type="application/rss+xml"><img src="http://www.feedburner.com/fb/images/pub/feed-icon32x32.png" alt="" border="0" /></a>  <a href="http://www.facebook.com/gisli.kristjansson"><img src="/images/icons/facebook.png" height="32" align="bottom" border="0"/></a>  <a href="http://www.youtube.com/user/gislikristjans"><img src="/images/icons/youtube.png" height="32" border="0"/></a>  <a href="http://twitter.com/gislik"><img src="/images/icons/twitter.png" height="32" border="0"/></a> </p> 
-  <!-- <p> -->
+  <p>
   <!-- <a id="about" heading="Um vefinn" href="/tech/">The tech driving this blog</a> -->
-  <!-- </p> -->
+  </p>
 
 <div class="hr"></div>
 
@@ -117,13 +117,16 @@ jQuery(function() {
 });
 </script>
 <script type="text/javascript">
-var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
-document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
-</script>
 <script type="text/javascript">
-try {
-var pageTracker = _gat._getTracker("UA-5464683-1");
-pageTracker._trackPageview();
-} catch(err) {}</script>
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-5464683-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
 </body>
 </html>
