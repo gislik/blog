@@ -39,7 +39,8 @@ import qualified Text.Blaze.Html5.Attributes as A
 -- naming convention.
 import Hakyll hiding (chronological, renderDateField, renderDateFieldWith, 
                       renderTagsField, renderTagCloud, 
-                      relativizeUrlsCompiler, relativizeUrls, withUrls)
+                      relativizeUrlsCompiler, relativizeUrls, withUrls,
+                      renderTagsFieldWith, getTags)
 
 
 
