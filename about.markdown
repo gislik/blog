@@ -8,7 +8,7 @@ Long story short. I am ...
 
 * Gísli Kristjánsson
 * born March, 29^th^ 1981
-* father of one
+* father of [one](http://instagram.com/p/S05acWOln0/)
 * former gymnast
 * interested in skiing, sky diving, technology and finance
 * B.Sc. Mathematics
