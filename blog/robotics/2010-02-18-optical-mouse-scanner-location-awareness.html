@@ -1,0 +1,22 @@
+---
+title: Optical-mouse scanner & location awareness
+author: Gísli Kristjánsson
+tags: robotics
+id: 21
+timestamp: 18.02.2010 20:14:44
+filename: 2010-02-18-optical-mouse-scanner-location-awareness.html
+---
+
+<p>One of the problems in the world of moving robots is the task of figuring out where robot is. One way is to mount a GPS-module on the robot. Simpler solutions might include methods that measure how many rounds the wheels have spun and (with the help of the diameter of the wheels and our friend&nbsp;&pi;)&nbsp;calculate the distance travelled. What if the wheel spins or slides? Then the robot "thinks" it's further along than it actually is.</p>
+<p>Andri suggested an alternative; how about using a cheap&nbsp;little device everyone owns and is especially made to measure distances (even in 2 dimensions!). The device referred to is an (optical) mouse. All it does is to measure distances, translate them into coordinates and deliver them to the computer it is attached to. The question we asked ourselves was what if we can somehow circumvent all this logic and read the measurements directly.</p>
+<blockquote>
+<p><span style="line-height: normal; font-family: Helvetica, times, serif; font-size: 12px; "><span style="font-family: georgia, times, serif; font-size: 14px; line-height: 21px;"><span style="color: #cc6600; font-style: italic;">All this device does all day long is to measure distances but a heart surgery was needed.&nbsp;By doing that we ended up creating an optical-mouse scanner.</span></span></span></p>
+</blockquote>
+<p>The first thing was to perform a heart-surgery on our mouse and figure out what components it is made of. Upon opening the mouse up we found a microchip with some sort of a serial number which we googled and stumbled upon its <a href="http://dl.dropbox.com/u/387524/AV02-1184EN.pdf">datasheet</a>. The datasheet was a pleasent reading and we discovered that this $5 device was quite remarkable; it was equipped with a camera, a microchip and an pattern recognition microchip. The way an optical mouse works is to take a picture (18x18 px) of a 1x1mm surface and compare its pattern with the pattern from the privously taken picture. By calculating the movement of the pattern it's able to figure out how far it has been moved between the two frames. Pretty clever!</p>
+<p>By powering the mouse and reading the registers from the microchip through a serial communication line (using the protocol described in the datasheet) we were able to read the measurements. We had succeeded in our original endaevour.&nbsp;</p>
+<p>Now armed with the powers to communicate with the mouse what was there to stop us from trying to read the image the optical mouse camera was taking? Answer: Nothing. Reading the datasheet provided us with the necessary knowledge. It is actually quite simple: You just need know that the image is stored as a 18x18 pixels with each pixel being a 8bit grayscale value (0-255). Just read the data serially and compose on the other end. This seemed to work but each frame received was such a small fraction of the surface (1x1mm) we could hardly "see" anything on the picture taken. The solution to that is to combine all the pictures taken and draw them on a canvas related to the coordinates we were reading from the mouse. By doing that we ended up creating an optical-mouse scanner.</p>
+<p style="text-align: left;"><img src="http://dl.dropbox.com/u/387524/mousecamera.png" alt="optical-mouse scanner" width="500" height="94" /></p>
+<p>Reads: i&eth;na&eth;arverkfr&aelig;&eth;i (industrial engineering)</p>
+
+
+

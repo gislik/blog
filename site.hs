@@ -1,249 +1,383 @@
+--------------------------------------------------------------------------------
 {-# LANGUAGE OverloadedStrings #-}
-module Main where
+import              Data.Monoid         (mappend)
+import              Control.Monad       (msum, filterM, liftM, (<=<))
+import              Control.Applicative ((<$>))
+import              System.Locale       (TimeLocale, defaultTimeLocale)
+import              System.FilePath     (takeFileName, joinPath, dropFileName)
+import              Data.List           (intercalate)
+import              Data.Time.Format    (formatTime, parseTime)
+import              Data.Time.Clock     (UTCTime (..))
+import qualified    Data.Map            as M
+import              Data.Maybe          (maybeToList)
+import              Text.Hastache 
+import              Text.Hastache.Context 
+import qualified    Data.ByteString.Lazy.Char8 as LZ 
+import              Hakyll
 
-import Prelude hiding (id)
-import Control.Arrow ((>>>), (***), (&&&), arr)
-import Control.Category (id)
-import Control.Monad (forM_)
-import Data.Monoid (mempty, mappend, mconcat)
-import Data.Char (toUpper)
+--------------------------------------------------------------------------------
 
-import System.FilePath (takeDirectory, dropExtension, dropFileName, combine, splitDirectories, joinPath)
-import Data.List (isInfixOf, intercalate)
-
-import Text.Blaze.Html.Renderer.String (renderHtml)
-import Text.Blaze ((!), toValue)
-import Text.Blaze.Internal (preEscapedString)
-import qualified Text.Blaze.Html5 as H
-import qualified Text.Blaze.Html5.Attributes as A
-
-import Hakyll 
-import qualified Overrides as O
-
-import Control.Monad.IO.Class (liftIO)
-
--- TODO:
--- Comments
--- Translate About page
--- Translate Tech page
--- Move assets from Dropbox to Google Drive
-
-blogTitle :: String
-blogTitle =  "G&iacute;sli Kristj&aacute;nsson"
+{-
+TODO: 
+   1. Hastache support
+   2. Links for next, previous pages
+   3. New layout and adaptive design
+   4. Fork Hakyll and add supporting code?
+-}
 
 main :: IO ()
 main = hakyll $ do
 
-	-- Static content
-	forM_ ["favicon.ico", "lib/*", "images/**", "video/*", "CNAME"] $ \p ->
-		match p $ do
-			route idRoute
-			compile copyFileCompiler
+   match "images/*" $ do
+      route   idRoute
+      compile copyFileCompiler
 
-    -- Compress CSS
-	match "css/*" $ do
-		route idRoute
-		compile compressCssCompiler
+   match "css/*" $ do
+      route   idRoute
+      compile compressCssCompiler
 
-	-- Photos must not be run through Pandoc
-	match "photos.html" $ do
-		route           $ pageRoute
-		compile         $ pageCompiler'
-			>>> commonCompiler
+   match "*.markdown" $ do
+      route prettyRoute
+      compile $ pandocCompiler
+         >>= loadAndApplyTemplate "templates/default.html" defaultContext
+         >>= relativizeUrls
 
-	-- Render static pages
-	match "*.markdown" $ do
-		route          $ pageRoute
-		compile		   $ pageCompiler
-			>>> commonCompiler
+   match blogPattern $ do
+      route blogRoute
+      compile $ pandocCompiler
+         >>= saveSnapshot "blog-content"
+         >>= loadAndApplyTemplate "templates/post.html"    postDetailCtx
+         >>= loadAndApplyTemplate "templates/default.html" defaultContext
+         >>= relativizeUrls
 
-	-- Read blog posts in a different group to avoid dependency
-	-- cycles while producing tagclouds in a blog post
-	group "tagcloud" $
-		match "blog/*" $ 
-			compile $ readPageCompiler
+   create ["archive.html"] $ do
+      route prettyRoute
+      compile $ makeItem ""
+               >>= loadAndApplyTemplate "templates/archive.html" archiveCtx
+               >>= loadAndApplyTemplate "templates/default.html" defaultContext
+               >>= relativizeUrls
 
-	create "tagcloud" $ 
-		requireAll ("blog/*" `mappend` inGroup (Just "tagcloud")) (\_ ps -> readTags ps :: Tags String)
+   match "index.html" $ do
+      route idRoute
+      compile $ getResourceBody
+               >>= applyAsTemplate indexCtx
+               >>= loadAndApplyTemplate "templates/default.html" defaultContext 
+               >>= relativizeUrls
 
-	-- Render blog
-	match ("blog/*" `mappend` inGroup Nothing) $ do
-		route      $ blogRoute
-		compile    $ pageCompiler
-			>>> arr (renderDateField "date" "%B %e, %Y" "Date unknown")
-			>>> renderTagsField "prettytags" (fromCapture "tags/*")
-			>>> arr (copyBodyToField "content")
-			>>> arr (clearField "bodyTitle")
-			>>> dropFileNameFromUrl 
-			>>> addTeaser
-			>>> applyTemplateCompiler "templates/blog_show.html"
-			>>> requireA "tagcloud" (setFieldA "tagcloud" (O.renderTagCloud)) 
-			>>> commonCompiler 
+   tags <- buildTags'
+   tagsRules tags $ \tag pattern -> do
+      route idRoute
+      compile $ makeItem tag
+               >>= loadAndApplyTemplate "templates/archive.html" (tagCtx pattern)
+               >>= loadAndApplyTemplate "templates/default.html" defaultContext
+               >>= relativizeUrls
 
-	-- Blog index (which is incidentally our root)
-	match "index.html"  $ route idRoute
-	create "index.html" $ constA mempty
-		>>> arr (setField "pageTitle" blogTitle)
-		>>> arr (clearField "bodyTitle")
-		>>> setFieldPageList (recentFirst . excludeTag "icelandic") 
-				"templates/blog_list_item.html" "posts" ("blog/*" `mappend` inGroup Nothing)
-		>>> applyTemplateCompiler "templates/blog_list.html"
-		>>> commonCompiler
+   categories <- buildCategories'
+   tagsRules categories $ \category pattern -> do
+      route idRoute
+      compile $ makeItem category
+            >>= loadAndApplyTemplate "templates/archive.html" (categoryCtx pattern)
+            >>= loadAndApplyTemplate "templates/default.html" defaultContext
+            >>= relativizeUrls
 
-	-- Tags
-	create "tags" $ 
-		requireAll ("blog/*" `mappend` inGroup Nothing) (\_ ps -> readTags ps :: Tags String)
+   pages <- buildPages'
+   tagsRules pages $ \page pattern -> do
+      route idRoute
+      compile $ makeItem page
+            >>= loadAndApplyTemplate "templates/archive.html" (pageCtx pattern)
+            >>= loadAndApplyTemplate "templates/default.html" defaultContext
+            >>= relativizeUrls
 
-	-- Add a tag list compiler for every tag
-	match "tags/*" $ route pageRoute
-	metaCompile    $ require_ "tags"
-		>>> arr tagsMap
-		>>> arr (map (\(t, p) -> (tagIdentifier t, makeTagList t p)))
-
-	-- Render RSS feed
-	match "rss.xml"  $ route idRoute
-	create "rss.xml" $
-		requireAll_ ("blog/*" `mappend` inGroup Nothing)
-			>>> mapCompiler (arr $ copyBodyToField "description")
-			>>> arr (excludeTag "icelandic")
-			>>> renderRss feedConfiguration
-
-	-- Read templates
-	match "templates/*" $ compile templateCompiler
-
--- | Auxilary compiler: like pageCompiler without running the result through Pandoc
-pageCompiler' =
-   readPageCompiler >>>
-   addDefaultFields >>>  -- Sets some things like tutorials/faq.markdown
-   arr applySelf          -- Used to fill in $var$s in the page
-
--- | Auxilary compiler: most of the common functionality
-commonCompiler = 
-	arr (getField "title" &&& id)
-		>>> arr (\(t, p) -> (trySetField "bodyTitle" t . trySetField "pageTitle" t) p)
-		>>> requireA "tagcloud" (setFieldA "tagcloud" (O.renderTagCloud))
-		>>> applyTemplateCompiler "templates/layout.html" 
-
---  changeFieldIfNull :: String -> String -> Page a -> Page a
---  changeFieldIfNull field value = changeField field (\value' -> value)
-
---  setFieldIfNull :: String -> String -> Page a -> Page a
---  setFieldIfNull field value p = if null (getField field p)
-									--  then (setField field value) p
-									--  else p
+   -- Initial support for Hastache
+   match "index.html" $ version "test" $ do
+      let context "name"   = MuVariable ("Haskell" :: String)
+          context "unread" = MuVariable (100 :: Int)
+      route $ constRoute "test/index.html"
+      compile $ getResourceBody 
+            >>= loadAndApplyHastache "templates/design.htm" context 
+            >>= relativizeUrls
 
 
-renderTagCloud' :: Compiler (Tags String) String
---  renderTagCloud' = renderTagCloud tagIdentifier 100 120
-renderTagCloud' = renderTagCloud tagIdentifier 100 120
+   match "templates/*.html" $ compile templateCompiler
 
--- | Auxiliary compiler: generate a post list from a list of given posts, and
--- add it to the current page under @$posts@
---
-addPostList :: Compiler (Page String, [Page String]) (Page String)
-addPostList = setFieldA "posts" $
-    arr (reverse . chronological)
-        >>> require "templates/blog_list_item.html" (\ps t -> map (applyTemplate t) ps)
-        >>> arr mconcat
-        >>> arr pageBody
+   match "templates/*.htm" $ compile hastacheCompiler
 
-addTeaser :: Compiler (Page String) (Page String) 
-addTeaser = arr (copyBodyToField "teaser")
-    >>> arr (changeField "teaser" extractTeaser)
-    >>> (arr $ getField "url" &&& id) 
-    >>> fixTeaserResourceUrls
-    >>> (id &&& arr pageBody)
-    >>> arr (\(p, b) -> setField "readmore" 
-                        (if (isInfixOf "<!--MORE-->" (pageBody p)) 
-                         then (readMoreLink p) else "") p)
-      where
-        extractTeaser = unlines . (noTeaser . extractTeaser') . lines
-        extractTeaser' = takeWhile (/= "<!--MORE-->")
-        
-        noTeaser [] = []
-        noTeaser ("<!--NOTEASERBEGIN-->" : xs) = 
-          drop 1 $ dropWhile (/= "<!--NOTEASEREND-->") xs
-        noTeaser (x : xs) = x : (noTeaser xs)
-        
-        readMoreLink :: Page String -> String
-        readMoreLink p = renderHtml $ H.div ! A.class_ "readmore" $ 
-                         H.a ! A.href (toValue $ getField "url" p) $ 
-                         preEscapedString "Read more &raquo;"
-                         
-        fixTeaserResourceUrls :: Compiler (String, (Page String)) (Page String)
-        fixTeaserResourceUrls = arr $ (\(url, p) -> fixResourceUrls' url p)
-          where fixResourceUrls' url p = 
-                  changeField "teaser" (fixResourceUrls'' (takeDirectory url)) p
+--------------------------------------------------------------------------------
+blogPattern :: Pattern
+blogPattern = "blog/**"
 
-dropFileNameFromUrl :: Compiler (Page a) (Page a) 
-dropFileNameFromUrl = arr (changeField "url" $ dropFileName)
+--------------------------------------------------------------------------------
+blogOrder :: (MonadMetadata m, Functor m) => [Item a] -> m [Item a]
+blogOrder = recentFirst
 
-tagIdentifier :: String -> Identifier (Page String)
-tagIdentifier = fromCapture "tags/*"
+--------------------------------------------------------------------------------
+indexCtx :: Context String
+indexCtx = 
+      field "posts" posts      `mappend`
+      field "tags" tags        `mappend`
+      field "categories" cats  `mappend`
+      field "pages" pages      `mappend`
+      functionField "sum" sumFunction
+   where
+      posts = const $ postList blogPattern $ fmap (take 10) . blogOrder <=< excludeTag "icelandic"
+      tags  = const $ renderTagList =<< buildTags'
+      cats  = const $ renderTagList =<< buildCategories'
+      pages = const $ renderTagList =<< buildPages'
+      sumFunction :: [String] -> Item a -> Compiler String
+      sumFunction ss _ = show <$> sum <$> mapM (return . read) ss
 
-makeTagList :: String
-            -> [Page String]
-            -> Compiler () (Page String)
-makeTagList tag posts =
-	constA (mempty, posts)
-		>>> addPostList
-		>>> arr (setField "pageTitle" (capitalize tag))
-		>>> applyTemplateCompiler "templates/blog_list.html"
-		>>> commonCompiler
-	where capitalize (x:xs) = toUpper x : xs
+--------------------------------------------------------------------------------
+postListCtx :: Pattern -> Context String
+postListCtx pattern = field "posts" (const (postList pattern blogOrder))
 
-excludeTag :: String -> [Page a] -> [Page a]
-excludeTag tag = filter (\p -> tag `notElem` O.getTags p)
+--------------------------------------------------------------------------------
+postDetailCtx :: Context String
+postDetailCtx = 
+      dateField "date" "%B %e, %Y"         `mappend`
+      mapTakeDirectory (urlField "url")    `mappend`
+      defaultContext
+   where
+      mapTakeDirectory = mapContext dropFileName
+   
+--------------------------------------------------------------------------------
+archiveCtx :: Context String
+archiveCtx = 
+      postListCtx blogPattern        `mappend`
+      constField "title" "Archives"  `mappend`
+      defaultContext
 
-fixResourceUrls'' :: String -> String -> String
-fixResourceUrls'' path = O.withUrls ["src", "href", "data"] 
-                         (\x -> if '/' `elem` x then x 
-                                else path ++ "/" ++ x)
+--------------------------------------------------------------------------------
+tagCtx :: Pattern -> Context String
+tagCtx pattern = 
+      postListCtx pattern        `mappend`
+      constField "title" "Tags"  `mappend`
+      defaultContext
 
--- | Take a page like @\"/about/notebooks.md\"@ and route it to
--- @\"/about/notebooks\"@, i.e. turn a filename into a drectory.
-pageRoute :: Routes
-pageRoute = customRoute fileToDirectory
+--------------------------------------------------------------------------------
+categoryCtx :: Pattern -> Context String
+categoryCtx pattern = 
+      postListCtx pattern               `mappend`
+      constField "title" "Categories"   `mappend`
+      defaultContext
 
+--------------------------------------------------------------------------------
+pageCtx :: Pattern -> Context String
+pageCtx pattern = 
+      postListCtx pattern               `mappend`
+      constField "title" "Pagination"   `mappend`
+      defaultContext
+
+--------------------------------------------------------------------------------
+buildTags' :: MonadMetadata m => m Tags
+buildTags' = buildTags blogPattern (fromCapture "tag/*/index.html")
+
+--------------------------------------------------------------------------------
+buildCategories' :: MonadMetadata m => m Tags
+buildCategories' = buildCategories blogPattern (fromCapture "category/*/index.html")
+
+--------------------------------------------------------------------------------
+buildPages' :: (MonadMetadata m, Functor m) => m Tags
+buildPages' = buildTagsWith getPages' blogPattern (fromCapture "page/*/index.html")
+
+--------------------------------------------------------------------------------
+getPages' :: (MonadMetadata m, Functor m) => Identifier -> m [String]
+getPages' = getPages blogPattern sorter 8 
+   where 
+      sorter :: (MonadMetadata m, Functor m) => [Identifier] -> m [Identifier]
+      sorter = mapM (return.itemIdentifier) <=< blogOrder <=< mapM (\id' -> return $ Item id' "") 
+
+--------------------------------------------------------------------------------
+prettyRoute :: Routes
+prettyRoute = removeExtension `composeRoutes` addIndex
+   where 
+      removeExtension  = setExtension ""
+      addIndex         = postfixRoute "/index.html"
+
+--------------------------------------------------------------------------------
 blogRoute :: Routes
-blogRoute = customRoute blogToDirectory
+blogRoute = 
+      customRoute (takeFileName . toFilePath)     `composeRoutes`
+      metadataRoute dateRoute                     `composeRoutes` 
+      dropDateRoute                               `composeRoutes` 
+      prettyRoute
+   where 
+      dateFolder :: Identifier -> Metadata -> FilePath
+      dateFolder id' = maybe "" (formatTime defaultTimeLocale "%Y/%m") . tryParseDate id'
+      
+      dateRoute :: Metadata -> Routes
+      dateRoute metadata = customRoute $ \id' -> joinPath [dateFolder id' metadata, toFilePath id']
 
--- | Turn a filename reference into a directory with an index file.
-fileToDirectory :: Identifier a -> FilePath
-fileToDirectory = flip combine "index.html" . dropExtension . toFilePath
+      dropDateRoute :: Routes
+      dropDateRoute = gsubRoute "[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}-" (const "")
 
-blogToDirectory :: Identifier a -> FilePath
-blogToDirectory = formatDate . dropFirstDirectory . fileToDirectory
-	where
-		dropFirstDirectory = joinPath . drop 1 . splitDirectories
-		formatDate = formatDate' . split '-'
-		formatDate' (year:month:_:rest) = joinPath [year, month, intercalate "-" rest]
-		formatDate' xs = intercalate "-" xs
-		dashToDirectory = map dashToSlash
-		dashToSlash '-' = '/'
-		dashToSlash c = c
-		split :: (Eq a) => a -> [a] -> [[a]]
-		split x xs = split' x xs []
-		split' _ [] yys = reverse yys
-		split' x xs yys = let (as, bs) = span (/= x) xs in
-								case bs of 
-									[] -> split' x [] (as:yys)
-									_  -> split' x (tail bs) (as:yys)
-		join :: a -> [[a]] -> [a]
-		join x xxs = join' x xxs []
-		join' x [] ys  = ys
-		join' x (xs:xxs) ys = join' x xxs $ ys++(x:xs)
+-------------------------------------------------------------------------------
+postList :: Pattern -> ([Item String] -> Compiler [Item String]) -> Compiler String
+postList pattern sortFilter = do
+   blog    <- sortFilter =<< loadAllSnapshots pattern "blog-content"
+   itemTpl <- loadBody "templates/post-item.html"
+   applyTemplateList itemTpl postDetailCtx blog
 
 
-clearField :: String -> Page a -> Page a
-clearField field = setField field ""
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+
+--  --------------------------------------------------------------------------------
+--  prefixRoute :: String -> Routes
+--  prefixRoute prefix = customRoute $ (prefix ++) . toFilePath
+
+--------------------------------------------------------------------------------
+postfixRoute :: String -> Routes
+postfixRoute postfix = customRoute $ (++ postfix) . toFilePath
+
+--  --------------------------------------------------------------------------------
+--  infixRoute :: Int -> String -> Routes
+--  infixRoute n s = customRoute $ 
+   --  where (pre, post) = splitAt n . toFilePath
+
+--------------------------------------------------------------------------------
+--  folderRoute :: String -> Routes
+--  folderRoute folder = customRoute $ addFolder folder . toFilePath
+   --  where 
+      --  addFolder fld fp = let (fld', fl') = splitFileName fp in joinPath [fld', fld, fl']
+
+--------------------------------------------------------------------------------
+filterTags :: MonadMetadata m => ([String] -> m Bool) -> [Item String] -> m [Item String]
+filterTags p = filterM $ p <=< getTags . itemIdentifier 
+
+--------------------------------------------------------------------------------
+excludeTag :: MonadMetadata m => String -> [Item String] -> m [Item String]
+excludeTag tag = filterTags (return . notElem tag)
+
+{- -------------------------------------------------------------------------------- -}
+{- includeTag :: MonadMetadata m => String -> [Item String] -> m [Item String] -}
+{- includeTag tag = filterTags (return . elem tag) -}
+
+{- -------------------------------------------------------------------------------- -}
+{- -- | Obtain categories from a page. -}
+{- getCategory :: MonadMetadata m => Identifier -> m [String] -}
+{- getCategory = return . return . takeBaseName . takeDirectory . toFilePath -}
+
+{- -------------------------------------------------------------------------------- -}
+{- filterCategories :: MonadMetadata m => (Maybe String -> m Bool) -> [Item String] -> m [Item String] -}
+{- filterCategories p = filterM $ p <=< listToMaybeM <=< getCategory . itemIdentifier -}
+   {- where  -}
+      {- listToMaybeM = return . listToMaybe -}
+
+{- -------------------------------------------------------------------------------- -}
+{- includeCategory :: MonadMetadata m => String -> [Item String] -> m [Item String] -}
+{- includeCategory cat = filterCategories maybeEquals -}
+   {- where  -}
+      {- maybeEquals Nothing   = return False -}
+      {- maybeEquals (Just x)  = return (x == cat) -}
+
+--------------------------------------------------------------------------------
+getPages :: MonadMetadata m => Pattern 
+                            -> ([Identifier] -> m [Identifier]) 
+                            -> Int 
+                            -> Identifier 
+                            -> m [String]
+getPages pattern sorter k id' = do
+   ids <- sorter =<< getMatches pattern
+   let m = M.fromList $ concat $ zipWith idx [1..] (partitionAll k ids)
+   return . maybeToList $ show <$> M.lookup id' m
+
+   where
+      idx :: Int -> [a] -> [(a, Int)]
+      idx i = map (\x -> (x, i))
+
+{- -------------------------------------------------------------------------------- -}
+{- filterPages :: MonadMetadata m => Tags -> (Int -> m Bool) -> [Item String] -> m [Item String] -}
+{- filterPages pages p = filterM $ \item ->  -}
+   {- liftM (elem (itemIdentifier item)) (p' (tagsMap pages)) -}
+
+   {- where -}
+      {- p' = liftM concat . mapM (return . snd) <=< filterM (p . read . fst)  -}
+      
+{- --------------------------------------------------------------------------------    -}
+{- includePage :: MonadMetadata m => Tags -> Int -> [Item String] -> m [Item String] -}
+{- includePage tags pageId = filterPages tags (return . (==pageId)) -}
+
+--------------------------------------------------------------------------------
+partitionAll :: Int -> [a] -> [[a]]
+partitionAll n xs = splitter (splitAt n xs)
+   where 
+      splitter :: ([a], [a]) -> [[a]]
+      splitter (as,[]) = [as]
+      splitter (as,bs) = as : partitionAll n bs
+
+--------------------------------------------------------------------------------
+tryParseDate :: Identifier -> Metadata -> Maybe UTCTime
+tryParseDate = tryParseDateWithLocale defaultTimeLocale
+
+--------------------------------------------------------------------------------
+tryParseDateWithLocale :: TimeLocale -> Identifier -> Metadata -> Maybe UTCTime
+tryParseDateWithLocale locale id' metadata = do
+   let tryField k fmt = M.lookup k metadata >>= parseTime' fmt
+       fn             = takeFileName $ toFilePath id'
+
+   maybe empty' return $ msum $
+      [tryField "published" fmt | fmt <- formats] ++
+      [tryField "date"      fmt | fmt <- formats] ++
+      [parseTime' "%Y-%m-%d" $ intercalate "-" $ take 3 $ splitAll "-" fn]
+   where
+      empty'     = fail $ "Hakyll.Web.Template.Context.getItemUTC: " 
+                        ++ "could not parse time for " ++ show id'
+      parseTime' = parseTime locale 
+      formats    =
+         [ "%a, %d %b %Y %H:%M:%S %Z"
+         , "%Y-%m-%dT%H:%M:%S%Z"
+         , "%Y-%m-%d %H:%M:%S%Z"
+         , "%Y-%m-%d"
+         , "%B %e, %Y %l:%M %p"
+         , "%B %e, %Y"
+         ]
+
+--------------------------------------------------------------------------------
+--  tagLinks :: String -> Identifier
+--  tagLinks = fromCapture "tags/*/"
+
+--  withTagIdentifiers :: (String -> Identifier) -> Tags -> Tags
+--  withTagIdentifiers f t = t { tagsMakeId = f }
 
 
-feedConfiguration :: FeedConfiguration
-feedConfiguration = FeedConfiguration
-	{ feedTitle       = "Gisli's RSS feed."
-	, feedDescription = "Jack of all trades, master of none"
-	, feedAuthorName  = "Gisli Kristjansson"
-	, feedAuthorEmail = "gislik@hamstur.is"
-	, feedRoot        = "http://gisli.hamstur.is"
-	}
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+
+type MuTemplate = String
+
+hastacheCompiler :: Compiler (Item MuTemplate)
+hastacheCompiler = cached "Hakyll.Web.Mu.hastacheCompiler" getResourceString
+
+--------------------------------------------------------------------------------
+applyHastacheWithConfig :: MuVar a
+                        => MuConfig IO 
+                        -> MuTemplate 
+                        -> (String -> MuType IO)
+                        -> Item a 
+                        -> Compiler (Item String)
+applyHastacheWithConfig cfg tpl ctx itm = do
+   let ctx' "body" = MuVariable (itemBody itm)
+       ctx' x      = ctx x
+   content <- liftM LZ.unpack $ unsafeCompiler (hastacheStr cfg (encodeStr tpl) (mkStrContext ctx'))
+   return $ itemSetBody content itm
+
+--------------------------------------------------------------------------------
+applyHastache :: MuVar a
+              => MuTemplate
+              -> (String -> MuType IO)
+              -> Item a
+              -> Compiler (Item String)
+applyHastache = applyHastacheWithConfig defaultConfig
+
+--------------------------------------------------------------------------------
+loadAndApplyHastache :: MuVar a
+                     => Identifier
+                     -> (String -> MuType IO)
+                     -> Item a
+                     -> Compiler (Item String)
+loadAndApplyHastache id' ctx itm = do
+   tpl <- loadBody id'
+   applyHastache tpl ctx itm
+   
+
