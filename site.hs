@@ -28,13 +28,21 @@ TODO:
 main :: IO ()
 main = hakyll $ do
 
-   match "images/*" $ do
+   -- match "images/*" $ do
+      -- route   idRoute
+      -- compile copyFileCompiler
+
+   -- match "css/*" $ do
+      -- route   idRoute
+      -- compile compressCssCompiler
+
+   -- match "js/*" $ do
+      -- route   idRoute
+      -- compile copyFileCompiler
+
+   match "assets/**" $ do
       route   idRoute
       compile copyFileCompiler
-
-   match "css/*" $ do
-      route   idRoute
-      compile compressCssCompiler
 
    match "*.markdown" $ do
       route prettyRoute
@@ -89,13 +97,13 @@ main = hakyll $ do
             >>= relativizeUrls
 
    -- Initial support for Hastache
-   match "index.html" $ version "test" $ do
-      let context "name"   = MuVariable ("Haskell" :: String)
-          context "unread" = MuVariable (100 :: Int)
-      route $ constRoute "test/index.html"
-      compile $ getResourceBody 
-            >>= loadAndApplyHastache "templates/design.htm" context 
-            >>= relativizeUrls
+   {- match "index.html" $ version "test" $ do -}
+      {- let context "name"   = MuVariable ("Haskell" :: String) -}
+          {- context "unread" = MuVariable (100 :: Int) -}
+      {- route $ constRoute "test/index.html" -}
+      {- compile $ getResourceBody  -}
+            {- >>= loadAndApplyHastache "templates/design.htm" context  -}
+            {- >>= relativizeUrls -}
 
 
    match "templates/*.html" $ compile templateCompiler
