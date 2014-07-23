@@ -1,33 +1,36 @@
 --------------------------------------------------------------------------------
 {-# LANGUAGE OverloadedStrings, TupleSections #-}
-import            Data.Typeable              (Typeable)
-import            Data.Binary                (Binary)
-import            Data.Maybe                 (fromMaybe)
-import            Data.Monoid                ((<>), mconcat)
-import            Data.List                  (intercalate, unfoldr, sortBy)
-import            Data.Time.Clock            (UTCTime (..))
-import            Data.Time.Format           (formatTime, parseTime)
-import            Control.Monad              (msum, filterM, (<=<), liftM, forM, filterM)
-import            System.Locale              (TimeLocale, defaultTimeLocale)
-import            System.FilePath            (takeFileName, joinPath, dropFileName)
-import            Text.Printf                (printf)
-import qualified  Data.Set                   as S
-import qualified  Data.Map                   as M
+import            Data.Typeable                    (Typeable)
+import            Data.Binary                      (Binary)
+import            Data.Maybe                       (fromMaybe)
+import            Data.Monoid                      ((<>), mconcat)
+import            Data.List                        (intercalate, intersperse, unfoldr, sortBy)
+import            Data.Time.Clock                  (UTCTime (..))
+import            Data.Time.Format                 (formatTime, parseTime)
+import            Control.Monad                    (msum, filterM, (<=<), liftM, forM, filterM)
+import            System.Locale                    (TimeLocale, defaultTimeLocale)
+import            Text.Printf                      (printf)
+import            Text.Blaze.Html                  (toHtml, toValue, (!))
+import            Text.Blaze.Html.Renderer.String  (renderHtml)
+import qualified  Data.Set                         as S
+import qualified  Data.Map                         as M
+import qualified  Text.Blaze.Html5                 as H
+import qualified  Text.Blaze.Html5.Attributes      as A
 {- import            Text.Hastache  -}
 {- import            Text.Hastache.Context  -}
+import            System.FilePath                  
 import            Hakyll
 
 --------------------------------------------------------------------------------
 
 {-
 TODO: 
-   1. Links for numbered pagination
-   2. Selected category highlighted
-   3. Selected page highlighted
-   4. Remove index.html from categories
-   5. Remove comma from category selector
-   6. Tags
-   7. Fork Hakyll and add supporting code?
+   1. *Logo
+   2. *About
+   3. Teaser
+   4. Favicon
+   5. Tags
+   6. Fork Hakyll and add supporting code?
 -}
 
 main :: IO ()
@@ -42,11 +45,12 @@ main = hakyll $ do
       compile $ pandocCompiler
          >>= loadAndApplyTemplate "templates/default.html" defaultContext
 
+   categories <- buildCategories'
    match blogPattern $ do
       route blogRoute
       compile $ pandocCompiler
-         >>= saveSnapshot "blog-content"
-         >>= loadAndApplyTemplate "templates/blog.html"    blogDetailCtx
+         >>= saveSnapshot blogSnapshot
+         >>= loadAndApplyTemplate "templates/blog.html"    (blogDetailCtx categories)
          >>= loadAndApplyTemplate "templates/default.html" defaultContext
 
    -- pages
@@ -56,31 +60,30 @@ main = hakyll $ do
       compile $ do
                ident <- getUnderlying
                getResourceBody
-                  >>= applyAsTemplate (indexCtx ident pages)
+                  >>= applyAsTemplate (indexCtx ident pages categories)
                   >>= loadAndApplyTemplate "templates/default.html" defaultContext 
 
    paginateRules pages $ \i pattern -> do
       route idRoute
       compile $ makeItem (show i)
-            >>= loadAndApplyTemplate "templates/blog-list.html" (pageCtx i pages pattern)
+            >>= loadAndApplyTemplate "templates/blog-list.html" (pageCtx i pages pattern categories)
             >>= loadAndApplyTemplate "templates/default.html" defaultContext
 
    -- categories
-   categories <- buildCategories'
    tagsRules categories $ \category pattern -> do
       catPages <- buildCategoryPages' category pattern
       route idRoute
       compile $ do
          ident <- getUnderlying
          makeItem category
-            >>= loadAndApplyTemplate "templates/blog-list.html" (indexCtx ident catPages)
+            >>= loadAndApplyTemplate "templates/blog-list.html" (indexCtx ident catPages categories)
             >>= loadAndApplyTemplate "templates/default.html" defaultContext
 
       paginateRules catPages $ \i catPattern -> do
          route idRoute
          compile $ do
             makeItem category
-               >>= loadAndApplyTemplate "templates/blog-list.html" (pageCtx i catPages catPattern)
+               >>= loadAndApplyTemplate "templates/blog-list.html" (pageCtx i catPages catPattern categories)
                >>= loadAndApplyTemplate "templates/default.html" defaultContext
    
    -- tags
@@ -90,6 +93,12 @@ main = hakyll $ do
       {- compile $ makeItem tag -}
                {- >>= loadAndApplyTemplate "templates/blog-list.html" (tagCtx pattern) -}
                {- >>= loadAndApplyTemplate "templates/default.html" defaultContext -}
+
+   create ["rss/index.html"] $ do
+      route idRoute
+      compile $ 
+         renderBlogRss categories <=< fmap (take 20) . blogOrder <=< excludeTag "icelandic" <=< loadBlogs $    
+            blogPattern
 
    match "templates/*.html" $ compile templateCompiler
 
@@ -121,43 +130,65 @@ blogOrder :: (MonadMetadata m, Functor m) => [Item a] -> m [Item a]
 blogOrder = recentFirst
 
 --------------------------------------------------------------------------------
-blogListField :: String -> Compiler [Item String] -> Context String
-blogListField name = listField name blogDetailCtx 
+blogFeedConfiguration :: FeedConfiguration
+blogFeedConfiguration = FeedConfiguration 
+                      { feedTitle = "G&iacute;sli Kristj&aacute;ns"
+                      , feedDescription = "Jack of all trades, master of none"
+                      , feedAuthorName = "G&iacute;sli Kristj&aacute;nsson"
+                      , feedAuthorEmail = "gislik@hamstur.is"
+                      , feedRoot = "http://gisli.hamstur.is"
+                      }
+
+renderBlogRss :: Tags -> [Item String] -> Compiler (Item String)
+renderBlogRss = renderRss blogFeedConfiguration . rssCtx
 
 --------------------------------------------------------------------------------
-indexCtx :: Identifier -> Paginate -> Context String
-indexCtx ident pages = 
-      blogListField "blogs" (blogOrder =<< loadPage 1 pages)    <>
-      field "tags" tags                                         <>
-      field "categories" cats                                   <>
-      paginateContext pages'                                    <>
+blogListField :: String -> Tags -> Compiler [Item String] -> Context String
+{- blogListField name categories = listField name (blogDetailCtx  categories) -}
+blogListField name categories loader = listField name (blogDetailCtx categories) loader
+
+--------------------------------------------------------------------------------
+indexCtx :: Identifier -> Paginate -> Tags -> Context String
+indexCtx ident pages categories = 
+      blogListField "blogs" categories (blogOrder =<< loadPage 1 pages) <>
+      field "tags" tags                                                 <>
+      field "categories" cats                                           <>
+      paginateContext' pages'                                           <>
       paginatorContext pages' 1
    where
       loadPage i = loadBlogs . fromList . fromMaybe [] .  M.lookup i . paginatePages
       pages' = pages { paginatePlaces = M.insert ident 1 (paginatePlaces pages) }
       tags  = const $ renderTagList =<< buildTags'
-      cats  = const $ renderTagList =<< buildCategories'
+      cats  = const $ renderTagList' =<< buildCategories'
 
 --------------------------------------------------------------------------------
-blogDetailCtx :: Context String
-blogDetailCtx = 
+blogDetailCtx :: Tags -> Context String
+blogDetailCtx categories  = 
       dateField "date" "%B %e, %Y"         <>
       mapTakeDirectory (urlField "url")    <>
+      categoryField' "category" categories <>
       defaultContext
    where
       mapTakeDirectory = mapContext dropFileName
    
 --------------------------------------------------------------------------------
-pageCtx :: PageNumber -> Paginate -> Pattern -> Context String
-pageCtx i pages pattern = 
-      blogListField "blogs" (blogOrder =<< loadBlogs pattern)   <>
-      field "categories" categories                             <>
-      constField "title" "Pagination"                           <>
-      paginateContext pages                                     <>
-      paginatorContext pages i                                  <>
+rssCtx :: Tags -> Context String
+rssCtx _ = 
+   titleField "title"                       <>
+   {- teaserField "description" blogSnapshot   <> -}
+   bodyField "description" <>
+   urlField "url"                           <>
+   defaultContext
+--------------------------------------------------------------------------------
+pageCtx :: PageNumber -> Paginate -> Pattern -> Tags -> Context String
+pageCtx i pages pattern categories = 
+      blogListField "blogs" categories (blogOrder =<< loadBlogs pattern)    <>
+      {- field "categories" categories                             <> -}
+      field "categories" (const . renderTagList' $ categories)              <>
+      constField "title" "Pagination"                                       <>
+      paginateContext' pages                                                <>
+      paginatorContext pages i                                              <>
       defaultContext
-   where
-      categories = const $ renderTagList =<< buildCategories'
 
 --------------------------------------------------------------------------------
 buildTags' :: MonadMetadata m => m Tags
@@ -202,6 +233,27 @@ buildCategoryPages' name pattern =
    buildPaginateWith' blogPerPage (categoryMakeId name) pattern (identRecentFirst <=< excludeTag' "icelandic")
    where
       categoryMakeId category = fromCapture (fromGlob (category <> "/*/index.html")) . show
+
+renderTagList' :: Tags -> Compiler String
+renderTagList' = renderTags makeLink (intercalate " ")
+  where
+    makeLink tag url count _ _ = renderHtml $
+        H.a ! A.href (toValue . dropFileName $ url) $ toHtml (tag ++ " (" ++ show count ++ ")")
+
+--------------------------------------------------------------------------------
+-- | Render the category in a link
+categoryField' :: String     -- ^ Destination key
+              -> Tags       -- ^ Tags
+              -> Context a  -- ^ Context
+categoryField' =
+  tagsFieldWith getCategory simpleRenderLink (mconcat . intersperse ", ")
+
+--------------------------------------------------------------------------------
+-- | Render one tag link
+simpleRenderLink :: String -> (Maybe FilePath) -> Maybe H.Html
+simpleRenderLink _   Nothing         = Nothing
+simpleRenderLink tag (Just filePath) =
+  Just $ H.a ! A.href (toValue $ toUrl . dropFileName $ filePath) $ toHtml tag
 
 
 --------------------------------------------------------------------------------
@@ -277,14 +329,14 @@ postfixRoute postfix = customRoute $ (++ postfix) . toFilePath
       --  addFolder fld fp = let (fld', fl') = splitFileName fp in joinPath [fld', fld, fl']
 
 --------------------------------------------------------------------------------
-{- filterTags :: MonadMetadata m => ([String] -> m Bool) -> [Item String] -> m [Item String] -}
-{- filterTags p = filterM $ p <=< getTags . itemIdentifier  -}
+filterTags :: MonadMetadata m => ([String] -> m Bool) -> [Item String] -> m [Item String]
+filterTags p = filterM $ p <=< getTags . itemIdentifier 
 
 filterTags' :: MonadMetadata m => ([String] -> m Bool) -> [Identifier] -> m [Identifier]
 filterTags' p = filterM $ p <=< getTags 
 --------------------------------------------------------------------------------
-{- excludeTag :: MonadMetadata m => String -> [Item String] -> m [Item String] -}
-{- excludeTag tag = filterTags (return . notElem tag) -}
+excludeTag :: MonadMetadata m => String -> [Item String] -> m [Item String]
+excludeTag tag = filterTags (return . notElem tag)
 
 excludeTag' :: MonadMetadata m => String -> [Identifier] -> m [Identifier]
 excludeTag' tag = filterTags' (return . notElem tag)
@@ -292,10 +344,10 @@ excludeTag' tag = filterTags' (return . notElem tag)
 {- includeTag :: MonadMetadata m => String -> [Item String] -> m [Item String] -}
 {- includeTag tag = filterTags (return . elem tag) -}
 
-{- -------------------------------------------------------------------------------- -}
-{- -- | Obtain categories from a page. -}
-{- getCategory :: MonadMetadata m => Identifier -> m [String] -}
-{- getCategory = return . return . takeBaseName . takeDirectory . toFilePath -}
+--------------------------------------------------------------------------------
+-- | Obtain categories from a page.
+getCategory :: MonadMetadata m => Identifier -> m [String]
+getCategory = return . return . takeBaseName . takeDirectory . toFilePath
 
 {- -------------------------------------------------------------------------------- -}
 {- filterCategories :: MonadMetadata m => (Maybe String -> m Bool) -> [Item String] -> m [Item String] -}
@@ -367,9 +419,21 @@ paginateField pag fieldName relPage = field fieldName $ \item ->
                     Nothing -> fail $ printf
                         "Hakyll.Web.Paginate: unable to get route for %s."
                         (show nextId)
-                    Just rt -> return $ toUrl rt
+                    Just rt -> return $ toUrl . dropFileName $ rt
   where
     nPages = M.size (paginatePages pag)
+
+paginateContext' :: Paginate -> Context a
+paginateContext' pag = mconcat
+    [ paginateField pag "firstPage"
+        (\f c _ -> if c <= f then Nothing else Just f)
+    , paginateField pag "previousPage"
+        (\f c _ -> if c <= f then Nothing else Just (c - 1))
+    , paginateField pag "nextPage"
+        (\_ c l -> if c >= l then Nothing else Just (c + 1))
+    , paginateField pag "lastPage"
+        (\_ c l -> if c >= l then Nothing else Just l)
+    ]
 
 paginatorContext :: Paginate -> PageNumber -> Context a
 paginatorContext pages i = 
