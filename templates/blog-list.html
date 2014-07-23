@@ -184,14 +184,45 @@ $body$
 $if(previousPage)$
                             <li><a href="$previousPage$">Prev</a></li>
 $endif$
-                            <li class="active"><span>1</span></li>
-                            <li><a href="#">2</a></li>
-                            <li><a href="#">3</a></li>
-                            <li><a href="#">4</a></li>
-                            <li><a href="#">5</a></li>
+$if(page1)$
+    $if(page1a)$
+                            <li class="active"><span>$page1n$</span></li>
+    $else$
+                            <li><a href="$page1$">$page1n$</a></li>
+    $endif$
+$endif$
+$if(page2)$
+    $if(page2a)$
+                            <li class="active"><span>$page2n$</span></li>
+    $else$
+                            <li><a href="$page2$">$page2n$</a></li>
+    $endif$
+$endif$
+$if(page3)$
+    $if(page3a)$
+                            <li class="active"><span>$page3n$</span></li>
+    $else$
+                            <li><a href="$page3$">$page3n$</a></li>
+    $endif$
+$endif$
+$if(page4)$
+    $if(page4a)$
+                            <li class="active"><span>$page4n$</span></li>
+    $else$
+                            <li><a href="$page4$">$page4n$</a></li>
+    $endif$
+$endif$
+$if(page5)$
+    $if(page5a)$
+                            <li class="active"><span>$page5n$</span></li>
+    $else$
+                            <li><a href="$page5$">$page5n$</a></li>
+    $endif$
+$endif$
 $if(nextPage)$
                             <li><a href="$nextPage$">Next</a></li>
 $endif$
+
                         </ul>
                     </div>
                 </div>
