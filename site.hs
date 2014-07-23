@@ -26,8 +26,7 @@ import            Hakyll
 {-
 TODO: 
    1. *Logo
-   2. *About
-   3. Teaser
+   3. Github
    4. Favicon
    5. Tags
    6. Fork Hakyll and add supporting code?
@@ -97,8 +96,7 @@ main = hakyll $ do
    create ["rss/index.html"] $ do
       route idRoute
       compile $ 
-         renderBlogRss categories <=< fmap (take 20) . blogOrder <=< excludeTag "icelandic" <=< loadBlogs $    
-            blogPattern
+         renderBlogRss <=< fmap (take 20) . blogOrder <=< excludeTag "icelandic" <=< loadBlogs $ blogPattern
 
    match "templates/*.html" $ compile templateCompiler
 
@@ -123,7 +121,7 @@ blogSnapshot = "blog-content"
 
 --------------------------------------------------------------------------------
 blogPerPage :: Int
-blogPerPage = 2
+blogPerPage = 4
 
 --------------------------------------------------------------------------------
 blogOrder :: (MonadMetadata m, Functor m) => [Item a] -> m [Item a]
@@ -132,19 +130,18 @@ blogOrder = recentFirst
 --------------------------------------------------------------------------------
 blogFeedConfiguration :: FeedConfiguration
 blogFeedConfiguration = FeedConfiguration 
-                      { feedTitle = "G&iacute;sli Kristj&aacute;ns"
+                      { feedTitle = "Gísli Kristjáns"
                       , feedDescription = "Jack of all trades, master of none"
                       , feedAuthorName = "G&iacute;sli Kristj&aacute;nsson"
                       , feedAuthorEmail = "gislik@hamstur.is"
                       , feedRoot = "http://gisli.hamstur.is"
                       }
 
-renderBlogRss :: Tags -> [Item String] -> Compiler (Item String)
-renderBlogRss = renderRss blogFeedConfiguration . rssCtx
+renderBlogRss :: [Item String] -> Compiler (Item String)
+renderBlogRss = renderRss blogFeedConfiguration rssCtx
 
 --------------------------------------------------------------------------------
 blogListField :: String -> Tags -> Compiler [Item String] -> Context String
-{- blogListField name categories = listField name (blogDetailCtx  categories) -}
 blogListField name categories loader = listField name (blogDetailCtx categories) loader
 
 --------------------------------------------------------------------------------
@@ -167,13 +164,14 @@ blogDetailCtx categories  =
       dateField "date" "%B %e, %Y"         <>
       mapTakeDirectory (urlField "url")    <>
       categoryField' "category" categories <>
+      teaserField "teaser" blogSnapshot    <>
       defaultContext
    where
       mapTakeDirectory = mapContext dropFileName
    
 --------------------------------------------------------------------------------
-rssCtx :: Tags -> Context String
-rssCtx _ = 
+rssCtx :: Context String
+rssCtx = 
    titleField "title"                       <>
    {- teaserField "description" blogSnapshot   <> -}
    bodyField "description" <>

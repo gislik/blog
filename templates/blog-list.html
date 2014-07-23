@@ -162,7 +162,11 @@
                         </h5>
                         
                         <!-- Blog post description -->
+$if(teaser)$
+$teaser$
+$else$
 $body$
+$endif$
                         
                         <!-- Blog read more -->
                         <div class="read-more">
@@ -170,9 +174,11 @@ $body$
                         </div>
                         
                         <!-- Blog comments -->
+                        <!--
                         <div class="comments">
                             <a href="#">4 comments</a>
                         </div>
+                        -->
                     </article>
                     <!-- End Article -->
 
