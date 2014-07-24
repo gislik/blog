@@ -26,6 +26,7 @@ import            Hakyll
 {-
 TODO: 
    1. *Logo
+   2. Teasers in blogs
    3. Github
    4. Favicon
    5. Tags
@@ -61,10 +62,10 @@ main = hakyll $ do
    match "index.html" $ do
       route idRoute
       compile $ do
-               ident <- getUnderlying
-               getResourceBody
-                  >>= applyAsTemplate (indexCtx ident pages categories)
-                  >>= loadAndApplyTemplate "templates/default.html" defaultContext 
+         ident <- getUnderlying
+         getResourceBody
+               >>= applyAsTemplate (indexCtx ident pages categories)
+               >>= loadAndApplyTemplate "templates/default.html" defaultContext 
 
    paginateRules pages $ \i pattern -> do
       route idRoute
@@ -99,21 +100,10 @@ main = hakyll $ do
 
    create ["rss/index.html"] $ do
       route idRoute
-      compile $ 
-         renderBlogRss <=< fmap (take 20) . blogOrder <=< excludeTag "icelandic" <=< loadBlogs $ blogPattern
+      compile $ renderBlogRss <=< fmap (take 20) . loadFilteredBlogs $ blogPattern
 
    match "templates/*.html" $ compile templateCompiler
 
-   -- Initial support for Hastache
-   {- match "index.html" $ version "test" $ do -}
-      {- let context "name"   = MuVariable ("Haskell" :: String) -}
-          {- context "unread" = MuVariable (100 :: Int) -}
-      {- route $ constRoute "test/index.html" -}
-      {- compile $ getResourceBody  -}
-            {- >>= loadAndApplyHastache "templates/design.htm" context  -}
-            {- >>= relativizeUrls -}
-
-   {- match "templates/*.htm" $ compile hastacheCompiler -}
 
 --------------------------------------------------------------------------------
 blogPattern :: Pattern
@@ -130,6 +120,9 @@ blogPerPage = 4
 --------------------------------------------------------------------------------
 blogOrder :: (MonadMetadata m, Functor m) => [Item a] -> m [Item a]
 blogOrder = recentFirst
+
+identBlogFilter :: (MonadMetadata m, Functor m) => [Identifier] -> m [Identifier]
+identBlogFilter = identRecentFirst <=< excludeTag' "icelandic" 
 
 --------------------------------------------------------------------------------
 blogFeedConfiguration :: FeedConfiguration
@@ -151,13 +144,15 @@ blogListField name categories loader = listField name (blogDetailCtx categories)
 --------------------------------------------------------------------------------
 indexCtx :: Identifier -> Paginate -> Tags -> Context String
 indexCtx ident pages categories = 
-      blogListField "blogs" categories (blogOrder =<< loadPage 1 pages) <>
-      field "tags" tags                                                 <>
-      field "categories" cats                                           <>
-      paginateContext' pages'                                           <>
+      blogListField "blogs" categories (loadPage 1 pages)   <>
+      field "tags" tags                                     <>
+      field "categories" cats                               <>
+      paginateContext' pages'                               <>
       paginatorContext pages' 1
    where
-      loadPage i = loadBlogs . fromList . fromMaybe [] .  M.lookup i . paginatePages
+      lookupPage i = M.lookup i . paginatePages
+      maybePattern = fromList . fromMaybe []
+      loadPage i = loadFilteredBlogs . maybePattern . lookupPage i
       pages' = pages { paginatePlaces = M.insert ident 1 (paginatePlaces pages) }
       tags  = const $ renderTagList =<< buildTags'
       cats  = const $ renderTagList' =<< buildCategories'
@@ -177,24 +172,21 @@ blogDetailCtx categories  =
 rssCtx :: Context String
 rssCtx = 
       cdataContext metadataField    <>
-      {- titleField "title"        <> -}
-      {- teaserField "description" blogSnapshot   <> -}
       bodyField "description"       <>
       urlField "url"                <>
       defaultContext
    where
-      {- htmlEncode = mapContext (replaceAll "&" $ const "&nbsp;") -}
       cdataContext = mapContext (\s -> "<![CDATA[" <> s <> "]]>")
 
 --------------------------------------------------------------------------------
 pageCtx :: PageNumber -> Paginate -> Pattern -> Tags -> Context String
 pageCtx i pages pattern categories = 
-      blogListField "blogs" categories (blogOrder =<< loadBlogs pattern)    <>
-      {- field "categories" categories                             <> -}
-      field "categories" (const . renderTagList' $ categories)              <>
-      constField "title" "Pagination"                                       <>
-      paginateContext' pages                                                <>
-      paginatorContext pages i                                              <>
+      blogListField "blogs" categories (loadFilteredBlogs pattern)  <>
+      {- field "categories" categories                              <> -}
+      field "categories" (const . renderTagList' $ categories)      <>
+      constField "title" "Pagination"                               <>
+      paginateContext' pages                                        <>
+      paginatorContext pages i                                      <>
       defaultContext
 
 --------------------------------------------------------------------------------
@@ -202,11 +194,11 @@ buildTags' :: MonadMetadata m => m Tags
 buildTags' = buildTags blogPattern (fromCapture "tag/*/index.html")
 
 --------------------------------------------------------------------------------
-buildCategories' :: MonadMetadata m => m Tags
+buildCategories' :: (MonadMetadata m, Functor m) => m Tags
 buildCategories' = do
    categories <- buildCategories blogPattern (fromCapture "*/index.html") 
    catMap <- forM (tagsMap categories) $ \(category, identifiers) -> do
-      filteredIdentifiers <- excludeTag' "icelandic" identifiers
+      filteredIdentifiers <- identBlogFilter identifiers
       return (category, filteredIdentifiers)
    return $ categories { tagsMap = filter (not . null . snd) catMap }
    
@@ -231,13 +223,11 @@ buildPaginateWith' n makeId pattern cmp = do
         (PatternDependency pattern (S.fromList idents))
 
 buildPages' :: (MonadMetadata m, Functor m) => m Paginate
-buildPages' = buildPaginateWith' blogPerPage (fromCapture "*/index.html" . show) blogPattern matchAndOrder
-   where
-      matchAndOrder = identRecentFirst <=< excludeTag' "icelandic" 
+buildPages' = buildPaginateWith' blogPerPage (fromCapture "*/index.html" . show) blogPattern identBlogFilter
 
 buildCategoryPages' :: (MonadMetadata m, Functor m) => String -> Pattern -> m Paginate
 buildCategoryPages' name pattern = 
-   buildPaginateWith' blogPerPage (categoryMakeId name) pattern (identRecentFirst <=< excludeTag' "icelandic")
+      buildPaginateWith' blogPerPage (categoryMakeId name) pattern identBlogFilter
    where
       categoryMakeId category = fromCapture (fromGlob (category <> "/*/index.html")) . show
 
@@ -264,24 +254,14 @@ simpleRenderLink tag (Just filePath) =
 
 
 --------------------------------------------------------------------------------
-{- sorter = mapM (return.itemIdentifier) <=< blogOrder <=< mapM (\id' -> return $ Item id' (""::String))  -}
-{- sortByM :: (Monad m, Ord a) => (a -> a -> Ordering) -> [a] -> m [a] -}
-{- sortByM cmp = undefined -}
-
-{- comparingM :: Ord a => (b -> m a) -> b -> b -> m Ordering -}
-{- comparingM = undefined -}
-
-{- compare' :: Ord a => a -> a -> Ordering -}
-{- compare' = flip compare -}
-
 comparingBy :: Ord a => (b -> a) -> (a -> a -> Ordering) -> b -> b -> Ordering
 comparingBy f cmp x y = cmp (f x) (f y)
 
-sortIdentifierBy :: (MonadMetadata m, Ord a) => (a -> a -> Ordering) -> (Identifier -> m a) -> [Identifier] -> m [Identifier]
-sortIdentifierBy cmp f ids = liftM (map fst . sortBy (comparingBy snd cmp)) $ mapM (\x -> liftM (x,) (f x)) ids
+identSortBy :: (MonadMetadata m, Ord a) => (a -> a -> Ordering) -> (Identifier -> m a) -> [Identifier] -> m [Identifier]
+identSortBy cmp f ids = liftM (map fst . sortBy (comparingBy snd cmp)) $ mapM (\x -> liftM (x,) (f x)) ids
 
 identChronolgical :: (MonadMetadata m) => [Identifier] -> m [Identifier]
-identChronolgical = sortIdentifierBy compare (getItemUTC defaultTimeLocale)
+identChronolgical = identSortBy compare (getItemUTC defaultTimeLocale)
 
 identRecentFirst :: (MonadMetadata m, Functor m) => [Identifier] -> m [Identifier]
 identRecentFirst = fmap reverse . identChronolgical
@@ -310,7 +290,10 @@ blogRoute =
       dropDateRoute = gsubRoute "[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}-" (const "")
 
 loadBlogs :: (Typeable a, Binary a) => Pattern -> Compiler [Item a]
-loadBlogs = flip loadAllSnapshots blogSnapshot
+loadBlogs = blogOrder <=< flip loadAllSnapshots blogSnapshot
+
+loadFilteredBlogs :: (Typeable a, Binary a) => Pattern -> Compiler [Item a]
+loadFilteredBlogs = excludeTag "icelandic" <=< loadBlogs
 
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
@@ -336,13 +319,13 @@ postfixRoute postfix = customRoute $ (++ postfix) . toFilePath
       --  addFolder fld fp = let (fld', fl') = splitFileName fp in joinPath [fld', fld, fl']
 
 --------------------------------------------------------------------------------
-filterTags :: MonadMetadata m => ([String] -> m Bool) -> [Item String] -> m [Item String]
+filterTags :: MonadMetadata m => ([String] -> m Bool) -> [Item a] -> m [Item a]
 filterTags p = filterM $ p <=< getTags . itemIdentifier 
 
 filterTags' :: MonadMetadata m => ([String] -> m Bool) -> [Identifier] -> m [Identifier]
 filterTags' p = filterM $ p <=< getTags 
 --------------------------------------------------------------------------------
-excludeTag :: MonadMetadata m => String -> [Item String] -> m [Item String]
+excludeTag :: MonadMetadata m => String -> [Item a] -> m [Item a]
 excludeTag tag = filterTags (return . notElem tag)
 
 excludeTag' :: MonadMetadata m => String -> [Identifier] -> m [Identifier]
@@ -478,46 +461,4 @@ betweenPages l h x = if between l h x then Just x else Nothing
 -- | Obtain categories from a page.
 {- getCategory :: MonadMetadata m => Identifier -> m [String] -}
 {- getCategory = return . return . takeBaseName . takeDirectory . toFilePath -}
-
-
-
---------------------------------------------------------------------------------
---------------------------------------------------------------------------------
-
-{- type MuTemplate = String -}
-
-{- hastacheCompiler :: Compiler (Item MuTemplate) -}
-{- hastacheCompiler = cached "Hakyll.Web.Mu.hastacheCompiler" getResourceString -}
-
---------------------------------------------------------------------------------
-{- applyHastacheWithConfig :: MuVar a -}
-                        {- => MuConfig IO  -}
-                        {- -> MuTemplate  -}
-                        {- -> (String -> MuType IO) -}
-                        {- -> Item a  -}
-                        {- -> Compiler (Item String) -}
-{- applyHastacheWithConfig cfg tpl ctx itm = do -}
-   {- let ctx' "body" = MuVariable (itemBody itm) -}
-       {- ctx' x      = ctx x -}
-   {- content <- liftM LZ.unpack $ unsafeCompiler (hastacheStr cfg (encodeStr tpl) (mkStrContext ctx')) -}
-   {- return $ itemSetBody content itm -}
-
---------------------------------------------------------------------------------
-{- applyHastache :: MuVar a -}
-              {- => MuTemplate -}
-              {- -> (String -> MuType IO) -}
-              {- -> Item a -}
-              {- -> Compiler (Item String) -}
-{- applyHastache = applyHastacheWithConfig defaultConfig -}
-
---------------------------------------------------------------------------------
-{- loadAndApplyHastache :: MuVar a -}
-                     {- => Identifier -}
-                     {- -> (String -> MuType IO) -}
-                     {- -> Item a -}
-                     {- -> Compiler (Item String) -}
-{- loadAndApplyHastache id' ctx itm = do -}
-   {- tpl <- loadBody id' -}
-   {- applyHastache tpl ctx itm -}
-   
 
