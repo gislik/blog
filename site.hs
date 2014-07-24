@@ -35,6 +35,10 @@ TODO:
 main :: IO ()
 main = hakyll $ do
 
+   match "favicon.png" $ do
+      route   idRoute
+      compile copyFileCompiler
+
    match "assets/**" $ do
       route   idRoute
       compile copyFileCompiler
@@ -172,10 +176,11 @@ blogDetailCtx categories  =
 --------------------------------------------------------------------------------
 rssCtx :: Context String
 rssCtx = 
-   titleField "title"                       <>
+   metadataField           <>
+   titleField "title"      <>
    {- teaserField "description" blogSnapshot   <> -}
    bodyField "description" <>
-   urlField "url"                           <>
+   urlField "url"          <>
    defaultContext
 --------------------------------------------------------------------------------
 pageCtx :: PageNumber -> Paginate -> Pattern -> Tags -> Context String
