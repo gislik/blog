@@ -9,3 +9,5 @@ site
 _cache
 _site
 gislik.github.com
+.DS_Store
+drafts
