@@ -176,12 +176,16 @@ blogDetailCtx categories  =
 --------------------------------------------------------------------------------
 rssCtx :: Context String
 rssCtx = 
-   metadataField           <>
-   titleField "title"      <>
-   {- teaserField "description" blogSnapshot   <> -}
-   bodyField "description" <>
-   urlField "url"          <>
-   defaultContext
+      cdataContext metadataField    <>
+      {- titleField "title"        <> -}
+      {- teaserField "description" blogSnapshot   <> -}
+      bodyField "description"       <>
+      urlField "url"                <>
+      defaultContext
+   where
+      {- htmlEncode = mapContext (replaceAll "&" $ const "&nbsp;") -}
+      cdataContext = mapContext (\s -> "<![CDATA[" <> s <> "]]>")
+
 --------------------------------------------------------------------------------
 pageCtx :: PageNumber -> Paginate -> Pattern -> Tags -> Context String
 pageCtx i pages pattern categories = 
