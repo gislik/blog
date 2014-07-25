@@ -2,12 +2,14 @@
 {-# LANGUAGE OverloadedStrings, TupleSections #-}
 import            Data.Typeable                    (Typeable)
 import            Data.Binary                      (Binary)
-import            Data.Maybe                       (fromMaybe)
+import            Data.Maybe                       (fromMaybe, listToMaybe)
 import            Data.Monoid                      ((<>), mconcat)
+import            Data.Functor                     ((<$>))
 import            Data.List                        (intercalate, intersperse, unfoldr, sortBy)
 import            Data.Time.Clock                  (UTCTime (..))
 import            Data.Time.Format                 (formatTime, parseTime)
 import            Control.Monad                    (msum, filterM, (<=<), liftM, forM, filterM)
+import            System.Environment               (getArgs)
 import            System.Locale                    (TimeLocale, defaultTimeLocale)
 import            Text.Printf                      (printf)
 import            Text.Blaze.Html                  (toHtml, toValue, (!))
@@ -35,7 +37,12 @@ TODO:
 -}
 
 main :: IO ()
-main = hakyll $ do
+main = do
+   isWatching <- fmap (== "watch") <$> listToMaybe <$> getArgs
+   let pattern' = case isWatching of
+                     Just True -> (blogPattern .||. draftPattern) 
+                     _         -> blogPattern
+   hakyll $ do
 
    match "favicon.png" $ do
       route   idRoute
@@ -51,7 +58,7 @@ main = hakyll $ do
          >>= loadAndApplyTemplate "templates/default.html" defaultContext
 
    categories <- buildCategories'
-   match blogPattern $ do
+   match pattern' $ do
       route blogRoute
       compile $ pandocCompiler
          >>= saveSnapshot blogSnapshot
@@ -59,20 +66,20 @@ main = hakyll $ do
          >>= loadAndApplyTemplate "templates/default.html" defaultContext
 
    -- pages
-   pages <- buildPages'
+   pages <- buildPages' pattern'
    match "index.html" $ do
       route idRoute
       compile $ do
          ident <- getUnderlying
          getResourceBody
-               >>= applyAsTemplate (indexCtx ident pages categories)
-               >>= loadAndApplyTemplate "templates/default.html" defaultContext 
+            >>= applyAsTemplate (indexCtx ident pages categories)
+            >>= loadAndApplyTemplate "templates/default.html" defaultContext 
 
    paginateRules pages $ \i pattern -> do
       route idRoute
       compile $ makeItem (show i)
-            >>= loadAndApplyTemplate "templates/blog-list.html" (pageCtx i pages pattern categories)
-            >>= loadAndApplyTemplate "templates/default.html" defaultContext
+         >>= loadAndApplyTemplate "templates/blog-list.html" (pageCtx i pages pattern categories)
+         >>= loadAndApplyTemplate "templates/default.html" defaultContext
 
    -- categories
    tagsRules categories $ \category pattern -> do
@@ -110,6 +117,9 @@ main = hakyll $ do
 blogPattern :: Pattern
 blogPattern = "blog/**"
 
+draftPattern :: Pattern
+draftPattern = "drafts/**"
+
 --------------------------------------------------------------------------------
 blogSnapshot :: Snapshot
 blogSnapshot = "blog-content"
@@ -146,7 +156,7 @@ blogListField name categories loader = listField name (blogDetailCtx categories)
 indexCtx :: Identifier -> Paginate -> Tags -> Context String
 indexCtx ident pages categories = 
       blogListField "blogs" categories (loadPage 1 pages)   <>
-      field "tags" tags                                     <>
+      {- field "tags" tags                                     <> -}
       field "categories" cats                               <>
       paginateContext' pages'                               <>
       paginatorContext pages' 1
@@ -155,7 +165,7 @@ indexCtx ident pages categories =
       maybePattern = fromList . fromMaybe []
       loadPage i = loadFilteredBlogs . maybePattern . lookupPage i
       pages' = pages { paginatePlaces = M.insert ident 1 (paginatePlaces pages) }
-      tags  = const $ renderTagList =<< buildTags'
+      {- tags  = const $ renderTagList =<< buildTags' -}
       cats  = const $ renderTagList' =<< buildCategories'
 
 --------------------------------------------------------------------------------
@@ -191,8 +201,8 @@ pageCtx i pages pattern categories =
       defaultContext
 
 --------------------------------------------------------------------------------
-buildTags' :: MonadMetadata m => m Tags
-buildTags' = buildTags blogPattern (fromCapture "tag/*/index.html")
+{- buildTags' :: MonadMetadata m => m Tags -}
+{- buildTags' = buildTags blogPattern (fromCapture "tag/*/index.html") -}
 
 --------------------------------------------------------------------------------
 buildCategories' :: (MonadMetadata m, Functor m) => m Tags
@@ -223,8 +233,8 @@ buildPaginateWith' n makeId pattern cmp = do
     return $ Paginate (M.fromList paginatePages') (M.fromList pagPlaces') makeId
         (PatternDependency pattern (S.fromList idents))
 
-buildPages' :: (MonadMetadata m, Functor m) => m Paginate
-buildPages' = buildPaginateWith' blogPerPage (fromCapture "*/index.html" . show) blogPattern identBlogFilter
+buildPages' :: (MonadMetadata m, Functor m) => Pattern -> m Paginate
+buildPages' p = buildPaginateWith' blogPerPage (fromCapture "*/index.html" . show) p identBlogFilter
 
 buildCategoryPages' :: (MonadMetadata m, Functor m) => String -> Pattern -> m Paginate
 buildCategoryPages' name pattern = 
