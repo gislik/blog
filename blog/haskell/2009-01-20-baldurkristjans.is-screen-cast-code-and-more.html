@@ -7,7 +7,7 @@ timestamp: 20.01.2009 19:14:32
 filename: 2009-01-20-baldurkristjans.is-screen-cast-code-and-more.html
 ---
 
-<p>As mentioned in my <a href="http://twitter.com/gislik/statuses/1121717423">tweed</a>&nbsp;my brother's online <a href="http://baldurkristjans.is">photo album</a> went live last Thursday. Since then I've been trying to think not so much about it because this project had started to consume my brain leaving little space for anything else (including <a href="http://conqueringsleepapnea.com/images/insomnia_2.jpg">sleeping</a>). I'm happy with the responses he's been getting over the last couple of days - and the most important thing; he's happy.</p>
+<p>As mentioned in my <a href="http://twitter.com/gislik/statuses/1121717423">tweet</a>&nbsp;my brother's online <a href="http://baldurkristjans.is">photo album</a> went live last Thursday. Since then I've been trying to think not so much about it because this project had started to consume my brain leaving little space for anything else (including <a href="http://conqueringsleepapnea.com/images/insomnia_2.jpg">sleeping</a>). I'm happy with the responses he's been getting over the last couple of days - and the most important thing; he's happy.</p>
 <p>Readers of this blog know by now that this website was entirely written in <span style="font-style: italic;">Haskell/HAppS</span> and I loved writing it. In this post I'll attempt to discuss some of the more interesting parts of the site and show you a <a href="http://www.screencast-o-matic.com/">screen cast</a> of the administrative panel.</p>
 <p>
 <object width="600" height="450" data="../../video/player.swf" type="application/x-shockwave-flash">
@@ -16,29 +16,30 @@ filename: 2009-01-20-baldurkristjans.is-screen-cast-code-and-more.html
 <param name="src" value="../../video/player.swf" />
 </object>
 </p>
-<p>Because I'm using HAppS there is no need for a database. <a href="http://hackage.haskell.org/cgi-bin/hackage-scripts/package/HAppS-State">HAppS-State</a> simply persist my native data structure. The photos are represented as maps of photos, like this:</p>
-<pre>type Photos = Map PhotoID Photo
+<p>Because I'm using HAppS there is no need for a database. <a href="http://hackage.haskell.org/cgi-bin/hackage-scripts/package/HAppS-State">HAppS-State</a> simply persist my native data structure. The photos are represented as maps of photos.</p>
+<pre>
+type Photos = Map PhotoID Photo
 
 type PhotoID = String
 
-data Photo = Photo {
-                     photoName          :: String
-                    ,photoText          :: String
-                    ,photoDate          :: AppDate
-                    ,photoCategory      :: Maybe CategoryID
-                    ,photoCategoryCover :: Bool -- Calculated
-                    ,photoCover         :: Bool -- Calculated
-                    ,photoSeriesCover   :: Bool -- Calculated
-                    ,photoOrder         :: Int
-                    ,photoCategoryOrder :: Int
-                    ,photoSeriesOrder   :: Int -- Calculated
-                    ,photoCreated       :: AppDate
-                    ,photoModified      :: Maybe AppDate
-                    } deriving (Show, Read, Eq, Data, Typeable)
+data Photo = Photo { photoName          :: String
+                   , photoText          :: String
+                   , photoDate          :: AppDate
+                   , photoCategory      :: Maybe CategoryID
+                   , photoCategoryCover :: Bool -- Calculated
+                   , photoCover         :: Bool -- Calculated
+                   , photoSeriesCover   :: Bool -- Calculated
+                   , photoOrder         :: Int
+                   , photoCategoryOrder :: Int
+                   , photoSeriesOrder   :: Int -- Calculated
+                   , photoCreated       :: AppDate
+                   , photoModified      :: Maybe AppDate
+                   } deriving (Show, Read, Eq, Data, Typeable)
 </pre>
 <p>Some of the fields are have a <span style="font-style: italic;">Calculated&nbsp;</span>comment. These fields do not depend on being persisted (this is of course not enforced by HAppS in any way) but they are rather calculated when needed and handed over to the templates where they control how the photo is rendered.</p>
 <p>To warm up let's take a look at one of the simplest controller action (Controller.Photo.list):</p>
-<pre>list :: WebT IO LayoutResponse
+<pre>
+list :: WebT IO LayoutResponse
 list = liftIO $ do
      env           &lt;- appEnv :: IO (AppEnv String String)
      photos        &lt;- query ListPhotos
@@ -97,7 +98,7 @@ serveFile' orgsDir _ dir = let resize size f f' im = do
                            serveFile''
                       else noHandle
 </pre>
-<p>As you can see I spawn&nbsp;<span style="font-style: italic;">convert </span>from <span style="font-style: italic;"><a href="http://www.imagemagick.org">ImageMagick </a></span>in a different process<span style="font-style: italic;">&nbsp;</span>to resize my photos. There are&nbsp;<a href="http://hackage.haskell.org/cgi-bin/hackage-scripts/package/hsmagick">bindings</a> to <span style="font-style: italic;">ImageMagick</span>&nbsp;&nbsp;available for <span style="font-style: italic;">Haskell </span>but was unable to install them. Initially I wanted to go for a much simpler option and use the&nbsp;<a href="http://libgd.org"><span style="font-style: italic;">GD library</span></a> which is a much simpler library and its <a href="http://hackage.haskell.org/cgi-bin/hackage-scripts/package/gd">bindings </a>seemed much simpler. The problem was however that the <span style="font-style: italic;">GD library </span>decreased the quality of the photo.</p>
+<p>As you can see I spawn&nbsp;<span style="font-style: italic;">convert </span>from <span style="font-style: italic;"><a href="http://www.imagemagick.org">ImageMagick</a></span> in a different process<span style="font-style: italic;">&nbsp;</span>to resize my photos. There are&nbsp;<a href="http://hackage.haskell.org/cgi-bin/hackage-scripts/package/hsmagick">bindings</a> to <span style="font-style: italic;">ImageMagick</span>&nbsp;&nbsp;available for <span style="font-style: italic;">Haskell </span>but was unable to install them. Initially I wanted to go for a much simpler option and use the&nbsp;<a href="http://libgd.org"><span style="font-style: italic;">GD library</span></a> which is a much simpler library and its <a href="http://hackage.haskell.org/cgi-bin/hackage-scripts/package/gd">bindings </a>seemed much simpler. The problem was however that the <span style="font-style: italic;">GD library </span>decreased the quality of the photo.</p>
 <pre>GHCi, version 6.10.1: http://www.haskell.org/ghc/  :? for help
 Loading package ghc-prim ... linking ... done.
 Loading package integer ... linking ... done.

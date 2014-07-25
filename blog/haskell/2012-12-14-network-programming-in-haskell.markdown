@@ -63,6 +63,8 @@ The following is the complete code and below I will step through some of the mor
         acceptConnection socket handler
 
 
+<!--more-->
+
 If you care about your code being able to run on Windows care must be taken to initialize the Windows network stack.
 
         main = withSocketsDo $ do
