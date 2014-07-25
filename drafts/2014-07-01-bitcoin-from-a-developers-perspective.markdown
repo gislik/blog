@@ -1,7 +1,6 @@
 ---
 title: Bitcoin from a developer's perspective
 author: Gísli Kristjánsson
-published: false
 ---
 
 Bitcoin is an exciting new technology invented by the mysterious Satoshi in 2009 which has been gaining some serious traction in the last few months. Although there are many introductory blog posts about Bitcoin there aren't necessarily many which tackle the subject from a developers perspective.
