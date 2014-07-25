@@ -25,12 +25,13 @@ import            Hakyll
 
 {-
 TODO: 
-   1. *Logo
-   2. Teasers in blogs
-   3. Github
-   4. Favicon
-   5. Tags
-   6. Fork Hakyll and add supporting code?
+   1. Logo
+   2. Published
+   3. Teasers in blogs
+   4. Github
+   5. Favicon
+   6. Tags
+   7. Fork Hakyll and add supporting code?
 -}
 
 main :: IO ()
