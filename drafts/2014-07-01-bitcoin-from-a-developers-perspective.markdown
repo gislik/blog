@@ -26,3 +26,7 @@ Soon after people started using the wallets a number of issues were identified w
 - If a mobile wallet containing the only copy of a private key got lost or damaged all the bitcoins associated with that wallet would also be lost.
 
 - Access to your bitcoins is limited to what you have in your mobile wallet since you don't want to keep all your bitcoins in the same wallet (see previous reason). This can however be seen as an advantage in case of a robbery. It also directly translates to real world usage of bills and coins. I will however argue that we should be aiming for an better solution.
+
+To combat this .... web wallets...
+
+The Bitcoin Protocol is evolving and the process is controlled by the Bitcoin Improvment Proposals (BIPS). One of the more interesting features to be accepted is the [M-of-N Standard Transactions](https://github.com/bitcoin/bips/blob/master/bip-0011.mediawiki) which sparked the creation of wallets secured by "wallet protection services". These new wallets are essentially hybrids between
