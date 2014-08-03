@@ -29,9 +29,12 @@ import            Hakyll
 TODO: 
    1. Logo
    2. Github
-   3. Favicon
-   4. Tags
-   5. Fork Hakyll and add supporting code?
+   3. Google Analytics
+   4. Comments
+   5. RSS -> Twitter
+   6. Favicon
+   7. Tags
+   8. Fork Hakyll and add supporting code?
 -}
 
 main :: IO ()
