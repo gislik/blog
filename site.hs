@@ -30,11 +30,10 @@ TODO:
    1. Logo
    2. Github
    3. Google Analytics
-   4. Comments
-   5. RSS -> Twitter
-   6. Favicon
-   7. Tags
-   8. Fork Hakyll and add supporting code?
+   4. RSS -> Twitter?
+   5. Favicon
+   6. Tags
+   7. Fork Hakyll and add supporting code?
 -}
 
 main :: IO ()
@@ -45,7 +44,7 @@ main = do
                      _         -> blogPattern
    hakyll $ do
 
-   match "favicon.png" $ do
+   match ("*.png" .||. "*.txt") $ do
       route   idRoute
       compile copyFileCompiler
 
