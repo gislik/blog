@@ -1,4 +1,6 @@
 #!/bin/bash
 
-#cp -Rp _site/* gislik.github.com
-rsync -a --delete _site/* gislik.github.com
+echo "Comitting changes"
+git -C gislik.github.com commit -a -m "$$"
+echo "Pushing repository to GitHub"
+git -C gislik.github.com push origin master
