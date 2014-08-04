@@ -13,4 +13,3 @@ Soon after people started using the wallets a number of issues were identified w
 To combat this .... web wallets...
 
 The Bitcoin Protocol is evolving and the process is controlled by the Bitcoin Improvement Proposals (BIPS). One of the more interesting features to be accepted is the [M-of-N Standard Transactions](https://github.com/bitcoin/bips/blob/master/bip-0011.mediawiki) which sparked the creation of wallets secured by "wallet protection services". These new wallets are essentially hybrids between
-
