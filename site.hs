@@ -29,10 +29,10 @@ import            Hakyll
 TODO: 
    1. Logo
    2. Github
-   3. Google Analytics
-   4. RSS -> Twitter?
-   5. Favicon
-   6. Tags
+   3. Favicon
+   4. Tags
+   5. RSS -> Twitter?
+   6. RSS respecting <!--more-->
    7. Fork Hakyll and add supporting code?
 -}
 
