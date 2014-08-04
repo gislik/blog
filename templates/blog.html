@@ -1,18 +1,20 @@
     <!-- PAGE | BLOG -->
     <div class="pages page-blog" id="page-blog-list">
         <div class="container">
+            $if(showdeadcode)$
             <!-- Header -->
             <header>
             </header>
             <!-- End Header -->
-
+            $endif$
             <div class="row-fluid">
                 <div class="blog-details">
                     <!-- Article -->
                     <article>
+                        $if(showdeadcode)$
                         <!-- Blog image -->
-                        <!-- <img src="http://placehold.it/900x450"> -->
-                        
+                        <img src="http://placehold.it/900x450"> 
+                        $endif$
                         <!-- Blog title -->
                         <h5>
                             $title$<br/>
