@@ -27,13 +27,10 @@ import            Hakyll
 
 {-
 TODO: 
-   1. Logo
-   2. Github
-   3. Favicon
-   4. Tags
-   5. RSS -> Twitter?
-   6. RSS respecting <!--more-->
-   7. Fork Hakyll and add supporting code?
+   1. Tags
+   2. RSS -> Twitter?
+   3. RSS respecting <!--more-->
+   4. Fork Hakyll and add supporting code?
 -}
 
 main :: IO ()
