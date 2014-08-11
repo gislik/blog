@@ -18,8 +18,6 @@ import qualified  Data.Set                         as S
 import qualified  Data.Map                         as M
 import qualified  Text.Blaze.Html5                 as H
 import qualified  Text.Blaze.Html5.Attributes      as A
-{- import            Text.Hastache  -}
-{- import            Text.Hastache.Context  -}
 import            System.FilePath                  
 import            Hakyll
 
@@ -27,10 +25,11 @@ import            Hakyll
 
 {-
 TODO: 
-   1. Tags
-   2. RSS -> Twitter?
-   3. RSS respecting <!--more-->
-   4. Fork Hakyll and add supporting code?
+   1. Series
+   2. Tags
+   3. RSS -> Twitter?
+   4. RSS respecting <!--more-->
+   5. Fork Hakyll and add supporting code?
 -}
 
 main :: IO ()
