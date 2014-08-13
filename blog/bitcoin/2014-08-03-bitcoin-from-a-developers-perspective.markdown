@@ -16,4 +16,4 @@ Since the database is distributed where miners and nodes keep a full copy of the
 
 Nodes receive blocks and transactions from peers. Once proven cryptographically valid the node stores and relays the block or the transaction to its peers. The purpose is to improve the time taken to distribute data within the network, which usually happens within seconds. 
 
-In part 2 I will be taking a closer look at wallets, their purpose and different implementations.
+In [part 2](/2014/08/bitcoin-wallets/) I will be taking a closer look at wallets, their purpose and different implementations.
