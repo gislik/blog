@@ -26,10 +26,11 @@ import            Hakyll
 {-
 TODO: 
    1. Series
-   2. Tags
-   3. RSS -> Twitter?
-   4. RSS respecting <!--more-->
-   5. Fork Hakyll and add supporting code?
+   2. Count words (5 min read)
+   3. Tags
+   4. RSS -> Twitter?
+   5. RSS respecting <!--more-->
+   6. Fork Hakyll and add supporting code?
 -}
 
 main :: IO ()
