@@ -8,7 +8,7 @@ In this blog post I'm going to concentrate on [Bitcoin wallets](https://bitcoin.
 
 The reference wallet implementation, [`bitcoind`](https://github.com/bitcoin/bitcoin), is as [previously discussed](http://gisli.hamstur.is/2014/08/bitcoin-from-a-developers-perspective/) at the same time a full node which means it can take several days to sync with the rest of the network and the copy of every transaction from the inception of Bitcoin till present time consumes between 20 and 30 GB of hard disks. 
 
-The blockchain management is both impractical and/or impossible - for example in the case of mobile wallets. Without mobile wallets Bitcoin's adoption is severely diminished. This has lead to two different proposals which are quite different:
+In some cases the blockchain management is either impractical or impossible - for example in the case of mobile wallets. Without mobile wallets Bitcoin's adoption is severely diminished. This has lead to two different proposals which are quite different:
 
 <div style="clear: both"></div>
 
