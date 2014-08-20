@@ -38,7 +38,7 @@ Add Haskoin as a dependency to the _.cabal_ file.
 
     build-depends:       base >=4.6 && <4.7, haskoin ==0.1.0.*
 
-Uncomment the line by removing the two dashes.
+Uncomment the following line by removing the two dashes.
 
     -- main-is:         Main.hs
 
