@@ -8,8 +8,6 @@ Never the less the [authors](https://github.com/haskoin/haskoin/graphs/contribut
 
 Now I will show you how to create a sandboxed environment for your Bitcoin projects. This will reduce the risk of dependency conflicts (a.k.a. dependency hell) by installing a _sandboxed_ version of all the dependencies independent of other projects. Later we will see how we can share a sandbox between different Bitcoin projects. We will also likely require the bleeding edge development version of Haskoin pulled from [GitHub](https://github.com/haskoin/haskoin) and in due time I'll show you how to link the development version to your sandboxed project.
 
-<!--more-->
-
 In Haskell packages and dependencies are published to [Hackage](http://hackage.haskell.org/) and managed by [Cabal](http://www.haskell.org/cabal/) and since version 1.18 it has included support for sandboxed environments.
 
     $ mkdir test-haskoin    
