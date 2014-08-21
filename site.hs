@@ -6,6 +6,7 @@ import            Data.Maybe                       (fromMaybe, listToMaybe)
 import            Data.Monoid                      ((<>), mconcat)
 import            Data.Functor                     ((<$>))
 import            Data.List                        (intercalate, intersperse, unfoldr, sortBy)
+import            Data.Char                        (toLower, toUpper)
 import            Data.Time.Clock                  (UTCTime (..))
 import            Data.Time.Format                 (formatTime, parseTime)
 import            Control.Monad                    (msum, filterM, (<=<), liftM, forM, filterM)
@@ -73,8 +74,8 @@ main = do
       compile $ do
          ident <- getUnderlying
          getResourceBody
-            >>= applyAsTemplate (indexCtx ident pages categories)
-            >>= loadAndApplyTemplate "templates/default.html" defaultContext 
+            >>= applyAsTemplate (listCtx ident pages categories)
+            >>= loadAndApplyTemplate "templates/default.html" indexCtx 
 
    paginateRules pages $ \i pattern -> do
       route idRoute
@@ -89,8 +90,8 @@ main = do
       compile $ do
          ident <- getUnderlying
          makeItem category
-            >>= loadAndApplyTemplate "templates/blog-list.html" (indexCtx ident catPages categories)
-            >>= loadAndApplyTemplate "templates/default.html" defaultContext
+            >>= loadAndApplyTemplate "templates/blog-list.html" (listCtx ident catPages categories)
+            >>= loadAndApplyTemplate "templates/default.html" indexCtx
 
       paginateRules catPages $ \i catPattern -> do
          route idRoute
@@ -154,8 +155,18 @@ blogListField :: String -> Tags -> Compiler [Item String] -> Context String
 blogListField name categories loader = listField name (blogDetailCtx categories) loader
 
 --------------------------------------------------------------------------------
-indexCtx :: Identifier -> Paginate -> Tags -> Context String
-indexCtx ident pages categories = 
+indexCtx :: Context String
+indexCtx = 
+   prettyTitleField "title" <> 
+   bodyField        "body"  <>
+   metadataField            <>
+   urlField         "url"   <>
+   pathField        "path"  <>
+   missingField
+
+
+listCtx :: Identifier -> Paginate -> Tags -> Context String
+listCtx ident pages categories = 
       blogListField "blogs" categories (loadPage 1 pages)   <>
       {- field "tags" tags                                     <> -}
       field "categories" cats                               <>
@@ -200,6 +211,18 @@ pageCtx i pages pattern categories =
       paginateContext' pages                                        <>
       paginatorContext pages i                                      <>
       defaultContext
+
+--------------------------------------------------------------------------------
+prettyTitleField :: String -> Context a
+prettyTitleField = mapContext (g . f) . pathField
+   where
+      f = intercalate " &#x276f;&#x276f;= " . splitDirectories . capitalize . dropFileName
+      g "." = "Blog"
+      g x = x
+
+capitalize :: String -> String
+capitalize [] = []
+capitalize (x:xs) = toUpper x : map toLower xs
 
 --------------------------------------------------------------------------------
 {- buildTags' :: MonadMetadata m => m Tags -}
