@@ -20,13 +20,26 @@ In Haskell packages and dependencies are published to [Hackage](http://hackage.h
 <small>_[1] Initializes the sandbox and stores files in .cabal-sandbox_</small> \
 <small>_[2] Download the package index from Hackage_</small>
 
+
+---
+
+_**Edit (2014-08-24):** [xenog](https://github.com/xenog) one of the developers behind Haskoin reached out to notify me about the removal of `icu` as a dependency for the library. I have greyed out the following and now irrelevant section of the post._
+
+
+<small style="color: grey">
 Under normal circumstances we would be able to add Haskoin as a dependency in our _.cabal_ file but since Haskoin depends on the `C` `icu` library which is sometimes installed outside the default `C` library locations (like `/usr/local/opt`) we either need to include the library location in the _.cabal_ file or install the library manually with the extra command line parameters `--extra-include-dirs` and `--extra-lib-dirs`. 
 
 On an *OS X* it is easiest to install the library using `brew` but please refer to the [*icu download page*](http://site.icu-project.org/download/) for installation instructions for your operating system of choice.
 
-    $ brew install icu4c
-    $ cabal install --extra-include-dirs=/usr/local/opt/icu4c/include \
-                    --extra-lib-dirs=/usr/local/opt/icu4c/lib text-icu
+<pre style="color: grey">
+$ brew install icu4c
+$ cabal install --extra-include-dirs=/usr/local/opt/icu4c/include \
+                --extra-lib-dirs=/usr/local/opt/icu4c/lib text-icu
+</pre>
+
+</small>
+
+---
 
 Next we _cabalize_ our `test-haskell` project. 
 
