@@ -18,4 +18,4 @@ In some cases the blockchain management is either impractical or impossible - fo
 
 There are other types to consider like web wallets which usually are full node wallets implemented as a service. This implies a complete trust between the wallet owner and the service provider. Another interesting type of wallets are "wallet protection services" that are springing to life after the [M-of-N Standard Transactions](https://github.com/bitcoin/bips/blob/master/bip-0011.mediawiki) proposal was accepted.
 
-In my future blog posts I'll be exploring different implementations but first things first; next up bootstrapping our development environment.
+In my future blog posts I'll be exploring different implementations but first things first; next up [bootstrapping our development environment](/2014/08/bootstrapping-haskell-for-bitcoin-development/).
