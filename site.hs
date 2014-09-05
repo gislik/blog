@@ -26,6 +26,7 @@ import            Hakyll
 
 {-
 TODO: 
+   0. Manual dependencies for index pages
    1. Series
    2. Count words (5 min read)
    3. Tags
