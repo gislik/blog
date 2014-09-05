@@ -57,18 +57,71 @@ WIF private key <&mdash;> (base 58 check) <&mdash;> 256 bit private key &mdash;>
 
 For the rest of the post our aim is to use Haskell to receive satoshis in as simple manner as possible. All we need to do is to generate a private key and derive from it an address. Using the address we can receive the coins and as long as we keep the key safe we can spend it later using any wallet which supports importing WIF keys.
 
-    randomKey :: IO PrvKey
-    randomKey = withSource devRandom genPrvKey
+<pre>
+<code class="haskell">
+randomKey :: IO PrvKey
+randomKey = withSource devRandom genPrvKey
 
-    bitcoinAddress :: PrvKey -> String
-    bitcoinAddress = addrToBase58 . pubKeyAddr . derivePubKey
+bitcoinAddress :: PrvKey -> String
+bitcoinAddress = addrToBase58 . pubKeyAddr . derivePubKey
 
-    main :: IO ()
-    main = do
-       arg <- listToMaybe <$> getArgs
-       k   <- maybe randomKey return (fromWIF =<< arg)
-       putStrLn $ "Key: " <> toWIF k
-       putStrLn $ "Address: " <> bitcoinAddress k
+main :: IO ()
+main = do
+   arg <- listToMaybe <$> getArgs
+   k   <- maybe randomKey return (fromWIF =<< arg)
+   putStrLn $ "Key: " <> toWIF k
+   putStrLn $ "Address: " <> bitcoinAddress k
+</code>
+</pre>
+
+<pre>
+<code>
+{-# LANGUAGE TypeSynonymInstances #-}
+module Network.UDP
+( DataPacket(..)
+, openBoundUDPPort
+, openListeningUDPPort
+, pingUDPPort
+, sendUDPPacketTo
+, recvUDPPacket
+, recvUDPPacketFrom
+) where
+
+{- this is a {- nested -} comment -}
+
+import qualified Data.ByteString as Strict (ByteString, concat, singleton)
+import qualified Data.ByteString.Lazy as Lazy (ByteString, toChunks, fromChunks)
+import Data.ByteString.Char8 (pack, unpack)
+import Network.Socket hiding (sendTo, recv, recvFrom)
+import Network.Socket.ByteString (sendTo, recv, recvFrom)
+
+infix 3 `foo`
+infixl 6 `bar`
+infixr 9 `baz`
+
+-- Type class for converting StringLike types to and from strict ByteStrings
+class DataPacket a where
+  toStrictBS :: a -> Strict.ByteString
+  fromStrictBS :: Strict.ByteString -> a
+
+instance DataPacket Strict.ByteString where
+  toStrictBS = id
+  {-# INLINE toStrictBS #-}
+  fromStrictBS = id
+  {-# INLINE fromStrictBS #-}
+
+openBoundUDPPort :: String -> Int -> IO Socket
+openBoundUDPPort uri port = do
+  s <- getUDPSocket
+  bindAddr <- inet_addr uri
+  let a = SockAddrInet (toEnum port) bindAddr
+  bindSocket s a
+  return s
+
+pingUDPPort :: Socket -> SockAddr -> IO ()
+pingUDPPort s a = sendTo s (Strict.singleton 0) a >> return ()
+</code>
+</pre>
 
 TODO: Code markup
 
