@@ -71,4 +71,4 @@ The last step is to install the dependencies, compile the project and hopefully 
 
 Actually, running `cabal run` will usually be enough as it will trigger the install and build events automatically.
 
-In my next post in this series we will experiment with our sandboxed, cabalized Haskoin environment.
+In my [next](/2014/10/receiving-bitcoins/) post in this series we will experiment with our sandboxed, cabalized Haskoin environment.
