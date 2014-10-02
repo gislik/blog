@@ -13,81 +13,90 @@ The resulting code is as close to a networking skeleton written in Haskell which
 
 The following is the complete code and below I will step through some of the more interesting parts:
 
-    module Main where
+~~~ {.haskell}
+module Main where
 
-    {- A simple HTTP rebounder which sends a HTTP 301 response regardless of the request:
-    
-    HTTP/1.1 301 Moved Permanently
-    Location: <url>
-    Content-Length: 0
-     
-    -} 
+{- A simple HTTP rebounder which sends a HTTP 301 response regardless of the request:
 
-    import Network              (PortID(PortNumber), withSocketsDo, listenOn, accept)
-    import Network.Socket       (Socket, close)
-    import Control.Concurrent   (forkIO)
-    import Control.Applicative  ((<$>))
-    import Control.Exception    (bracket)
-    import System.Posix         (Handler(Ignore), installHandler, sigPIPE)
-    import System.Environment   (getArgs)
-    import Data.Maybe           (maybe, listToMaybe)
-    import System.IO            (Handle, hPutStrLn, hFlush, hClose)
+HTTP/1.1 301 Moved Permanently
+Location: <url>
+Content-Length: 0
+ 
+-} 
 
-    -- configuration
-    defaultPort = 8080
-    defaultUrl  = "http://example.com/"
+import Network              (PortID(PortNumber), withSocketsDo, listenOn, accept)
+import Network.Socket       (Socket, close)
+import Control.Concurrent   (forkIO)
+import Control.Applicative  ((<$>))
+import Control.Exception    (bracket)
+import System.Posix         (Handler(Ignore), installHandler, sigPIPE)
+import System.Environment   (getArgs)
+import Data.Maybe           (maybe, listToMaybe)
+import System.IO            (Handle, hPutStrLn, hFlush, hClose)
 
-    -- main
-    main :: IO ()
-    main = withSocketsDo $ do
-    installHandler sigPIPE Ignore Nothing
-    url <- maybe defaultUrl id <$> listToMaybe <$> getArgs
-    bracket 
-        (listenOn $ PortNumber defaultPort)
-        (close)
-        (flip acceptConnection $ redirectConnection url)
+-- configuration
+defaultPort = 8080
+defaultUrl  = "http://example.com/"
 
-    redirectConnection :: String -> Handle -> IO ()
-    redirectConnection url h = hPutStrLn h (constructResponse url) >> hFlush h >> hClose h
+-- main
+main :: IO ()
+main = withSocketsDo $ do
+installHandler sigPIPE Ignore Nothing
+url <- maybe defaultUrl id <$> listToMaybe <$> getArgs
+bracket 
+    (listenOn $ PortNumber defaultPort)
+    (close)
+    (flip acceptConnection $ redirectConnection url)
 
-    -- helpers
-    constructResponse :: String -> String
-    constructResponse url = unlines ["HTTP/1.1 301 Moved Permanently"
-                                    ,"Location: " ++ url
-                                    ,"Content-Length: 0"]
+redirectConnection :: String -> Handle -> IO ()
+redirectConnection url h = hPutStrLn h (constructResponse url) >> hFlush h >> hClose h
 
-    acceptConnection :: Socket -> (Handle -> IO ()) -> IO ()
-    acceptConnection socket handler = do
-    (h,_,_) <- accept socket
-        forkIO (handler h)
-        acceptConnection socket handler
+-- helpers
+constructResponse :: String -> String
+constructResponse url = unlines ["HTTP/1.1 301 Moved Permanently"
+                                ,"Location: " ++ url
+                                ,"Content-Length: 0"]
 
+acceptConnection :: Socket -> (Handle -> IO ()) -> IO ()
+acceptConnection socket handler = do
+(h,_,_) <- accept socket
+    forkIO (handler h)
+    acceptConnection socket handler
+~~~
 
 <!--more-->
 
 If you care about your code being able to run on Windows care must be taken to initialize the Windows network stack.
 
-        main = withSocketsDo $ do
+~~~ {.haskell}
+    main = withSocketsDo $ do
+~~~
 
 And POSIX based systems will send the [SIGPIPE](http://en.wikipedia.org/wiki/SIGPIPE#SIGPIPE) signal when trying to write to a closed socket. The default behaviour when a SIGPIPE is received is to terminate the program silently, which can be somewhat confusing if you haven't encountered this before. Although it is highly unlikely to happen in such a simple network server I am including it for future reference.
 
-        installHandler sigPIPE Ignore Nothing
+~~~ {.haskell}
+    installHandler sigPIPE Ignore Nothing
+~~~
 
 The [bracket](http://hackage.haskell.org/packages/archive/base/latest/doc/html/Control-Exception-Base.html#v:bracket) function is suitable when a computation needs to acquire a resource and release it after the computation.
 
-        bracket 
-            (listenOn $ PortNumber defaultPort)	-- acquire
-            (close)					-- release
-            (flip acceptConnection $ redirectConnection url)
+~~~ {.haskell}
+    bracket 
+        (listenOn $ PortNumber defaultPort)	-- acquire
+        (close)					-- release
+        (flip acceptConnection $ redirectConnection url)
+~~~
 
 
 
 The `acceptConnection` function begins by performing an IO action by calling [accept](http://hackage.haskell.org/packages/archive/network/latest/doc/html/Network.html#v:accept) which blocks the execution until a client connects to the socket at which time the action will return a 3-tuple containing a ([Handle](http://hackage.haskell.org/packages/archive/base/4.6.0.0/doc/html/GHC-IO-Handle.html#t:Handle), [HostName](http://hackage.haskell.org/packages/archive/network/latest/doc/html/Network.html#t:HostName), [PortNumber](http://hackage.haskell.org/packages/archive/network/latest/doc/html/Network.html#t:PortNumber)). In this simple case we neither need the host name nor the port number of the client so we will prevent them from being captured by using the underscore (\_).
 
-        acceptConnection socket handler = do
-        (h,_,_) <- accept socket
-            forkIO (handler h)
-            acceptConnection socket handler
+~~~ {.haskell}
+    acceptConnection socket handler = do
+    (h,_,_) <- accept socket
+        forkIO (handler h)
+        acceptConnection socket handler
+~~~
 
 One thing to note about the handle `h` returned from `accept` is block-buffered by default. For an interactive application you may want to set the buffering mode on the `Handle` to [LineBuffering](http://hackage.haskell.org/packages/archive/base/4.6.0.0/doc/html/GHC-IO-Handle.html#v:LineBuffering) or [NoBuffering](http://hackage.haskell.org/packages/archive/base/4.6.0.0/doc/html/GHC-IO-Handle.html#v:NoBuffering), like so:
 
