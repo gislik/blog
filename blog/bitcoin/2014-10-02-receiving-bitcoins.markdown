@@ -15,6 +15,8 @@ To receive testnet coins we can either mine them or withdraw some from a faucet.
 
 Maybe not so surprisingly [Xenog](https://github.com/xenog), one of the developers of Haskoin, is such a volunteer and using his [faucet](http://faucet.xeno-genesis.com/) we can acquire some coins. I requested 0.3 coins which I [received](http://tbtc.blockr.io/tx/info/3c14a1c339d83c949c9d0c17e47aca03f99f9b48147ec246b7232a2924a2a427) moments later to my wallet.
 
+<div style="clear: both"></div>
+
 <!--more-->
 
 > Currently mainnet addresses begin with either 1 or 3 (although this might change in the future) and testnet addresses usually begin with m or n.
