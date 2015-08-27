@@ -5,13 +5,12 @@ import            Data.Binary                      (Binary)
 import            Data.Maybe                       (fromMaybe, listToMaybe)
 import            Data.Monoid                      ((<>), mconcat)
 import            Data.Functor                     ((<$>))
-import            Data.List                        (intercalate, intersperse, unfoldr, sortBy)
+import            Data.List                        (intercalate, intersperse, unfoldr, sortBy, isSuffixOf)
 import            Data.Char                        (toLower, toUpper)
 import            Data.Time.Clock                  (UTCTime (..))
-import            Data.Time.Format                 (formatTime, parseTime)
 import            Control.Monad                    (msum, filterM, (<=<), liftM, forM, filterM)
 import            System.Environment               (getArgs)
-import            System.Locale                    (TimeLocale, defaultTimeLocale)
+import            Data.Time.Format                 (TimeLocale, defaultTimeLocale, parseTimeM, formatTime)
 import            Text.Printf                      (printf)
 import            Text.Blaze.Html                  (toHtml, toValue, (!))
 import            Text.Blaze.Html.Renderer.String  (renderHtml)
@@ -38,10 +37,13 @@ TODO:
 main :: IO ()
 main = do
    isWatching <- fmap (== "watch") <$> listToMaybe <$> getArgs
-   let pattern' = case isWatching of
+   let allPattern = case isWatching of
                      Just True -> (blogPattern .||. draftPattern) 
                      _         -> blogPattern
    hakyll $ do
+
+   excludePattern <- liftM fromList $ includeTag "icelandic" <=< getMatches $ blogPattern
+   let visiblePattern = allPattern .&&. complement excludePattern
 
    match ("*.png" .||. "*.txt") $ do
       route   idRoute
@@ -60,45 +62,47 @@ main = do
       compile $ pandocCompiler
          >>= loadAndApplyTemplate "templates/default.html" defaultContext
 
-   categories <- buildCategories'
-   match pattern' $ do
+   categories <- buildCategories visiblePattern (fromCapture "*/index.html")
+   pages <- buildPages Nothing visiblePattern
+
+   -- posts
+   match allPattern $ do
       route blogRoute
       compile $ pandocCompiler
          >>= saveSnapshot blogSnapshot
          >>= loadAndApplyTemplate "templates/blog.html"    (blogDetailCtx categories)
          >>= loadAndApplyTemplate "templates/default.html" defaultContext
 
-   -- pages
-   pages <- buildPages' pattern'
+   -- index
    match "index.html" $ do
       route idRoute
       compile $ do
-         ident <- getUnderlying
          getResourceBody
-            >>= applyAsTemplate (listCtx ident pages categories)
+            >>= applyAsTemplate (pageCtx 1 pages categories)
             >>= loadAndApplyTemplate "templates/default.html" indexCtx 
 
-   paginateRules pages $ \i pattern -> do
+   -- pages
+   paginateRules pages $ \i _ -> do
       route idRoute
       compile $ makeItem (show i)
-         >>= loadAndApplyTemplate "templates/blog-list.html" (pageCtx i pages pattern categories)
+         >>= loadAndApplyTemplate "templates/blog-list.html" (pageCtx i pages categories)
          >>= loadAndApplyTemplate "templates/default.html" defaultContext
 
-   -- categories
+   -- category index
    tagsRules categories $ \category pattern -> do
-      catPages <- buildCategoryPages' category pattern
+      catPages <- buildPages (Just category) pattern
       route idRoute
       compile $ do
-         ident <- getUnderlying
          makeItem category
-            >>= loadAndApplyTemplate "templates/blog-list.html" (listCtx ident catPages categories)
+            >>= loadAndApplyTemplate "templates/blog-list.html" (pageCtx 1 catPages categories)
             >>= loadAndApplyTemplate "templates/default.html" indexCtx
 
-      paginateRules catPages $ \i catPattern -> do
+      -- category pages
+      paginateRules catPages $ \i _ -> do
          route idRoute
          compile $ do
             makeItem category
-               >>= loadAndApplyTemplate "templates/blog-list.html" (pageCtx i catPages catPattern categories)
+               >>= loadAndApplyTemplate "templates/blog-list.html" (pageCtx i catPages categories)
                >>= loadAndApplyTemplate "templates/default.html" defaultContext
    
    -- tags
@@ -111,7 +115,7 @@ main = do
 
    create ["rss/index.html"] $ do
       route idRoute
-      compile $ renderBlogRss <=< fmap (take 20) . loadFilteredBlogs $ blogPattern
+      compile $ renderBlogRss <=< fmap (take 20) . loadBlogs $ visiblePattern
 
    match "templates/*.html" $ compile templateCompiler
 
@@ -134,9 +138,6 @@ blogPerPage = 4
 --------------------------------------------------------------------------------
 blogOrder :: (MonadMetadata m, Functor m) => [Item a] -> m [Item a]
 blogOrder = recentFirst
-
-identBlogFilter :: (MonadMetadata m, Functor m) => [Identifier] -> m [Identifier]
-identBlogFilter = identRecentFirst <=< excludeTag' "icelandic" 
 
 --------------------------------------------------------------------------------
 blogFeedConfiguration :: FeedConfiguration
@@ -165,21 +166,14 @@ indexCtx =
    pathField        "path"  <>
    missingField
 
+mapContextP :: (String -> Bool) -> (String -> String) -> Context a -> Context a
+mapContextP p f c'@(Context c) = Context $ \k a i -> 
+                      if p k 
+                        then unContext (mapContext f c') k a i 
+                        else c k a i
 
-listCtx :: Identifier -> Paginate -> Tags -> Context String
-listCtx ident pages categories = 
-      blogListField "blogs" categories (loadPage 1 pages)   <>
-      {- field "tags" tags                                     <> -}
-      field "categories" cats                               <>
-      paginateContext' pages'                               <>
-      paginatorContext pages' 1
-   where
-      lookupPage i = M.lookup i . paginatePages
-      maybePattern = fromList . fromMaybe []
-      loadPage i = loadFilteredBlogs . maybePattern . lookupPage i
-      pages' = pages { paginatePlaces = M.insert ident 1 (paginatePlaces pages) }
-      {- tags  = const $ renderTagList =<< buildTags' -}
-      cats  = const $ renderTagList' =<< buildCategories'
+paginateContext' :: Paginate -> PageNumber -> Context String
+paginateContext' pages i = mapContextP (isSuffixOf "Url") dropFileName (paginateContext pages i)
 
 --------------------------------------------------------------------------------
 blogDetailCtx :: Tags -> Context String
@@ -203,15 +197,15 @@ rssCtx =
       cdataContext = mapContext (\s -> "<![CDATA[" <> s <> "]]>")
 
 --------------------------------------------------------------------------------
-pageCtx :: PageNumber -> Paginate -> Pattern -> Tags -> Context String
-pageCtx i pages pattern categories = 
-      blogListField "blogs" categories (loadFilteredBlogs pattern)  <>
-      {- field "categories" categories                              <> -}
+pageCtx :: PageNumber -> Paginate -> Tags -> Context String
+pageCtx i pages categories = 
+      blogListField "blogs" categories (loadBlogs pattern)          <>
       field "categories" (const . renderTagList' $ categories)      <>
       constField "title" "Pagination"                               <>
-      paginateContext' pages                                        <>
-      paginatorContext pages i                                      <>
+      paginateContext' pages i                                      <>
       defaultContext
+  where
+      pattern = fromList . fromMaybe [] . M.lookup i . paginateMap $ pages
 
 --------------------------------------------------------------------------------
 prettyTitleField :: String -> Context a
@@ -226,46 +220,15 @@ capitalize [] = []
 capitalize (x:xs) = toUpper x : map toLower xs
 
 --------------------------------------------------------------------------------
-{- buildTags' :: MonadMetadata m => m Tags -}
-{- buildTags' = buildTags blogPattern (fromCapture "tag/*/index.html") -}
-
---------------------------------------------------------------------------------
-buildCategories' :: (MonadMetadata m, Functor m) => m Tags
-buildCategories' = do
-   categories <- buildCategories blogPattern (fromCapture "*/index.html") 
-   catMap <- forM (tagsMap categories) $ \(category, identifiers) -> do
-      filteredIdentifiers <- identBlogFilter identifiers
-      return (category, filteredIdentifiers)
-   return $ categories { tagsMap = filter (not . null . snd) catMap }
-   
---------------------------------------------------------------------------------
-buildPaginateWith' :: MonadMetadata m
-                  => Int
-                  -> (PageNumber -> Identifier)
-                  -> Pattern
-                  -> ([Identifier] -> m [Identifier])
-                  -> m Paginate
-buildPaginateWith' n makeId pattern cmp = do
-    idents <- cmp =<< getMatches pattern
-    let pages          = flip unfoldr idents $ \xs ->
-            if null xs then Nothing else Just (splitAt n xs)
-        nPages         = length pages
-        paginatePages' = zip [1..] pages
-        pagPlaces'     =
-            [(ident, idx) | (idx,ids) <- paginatePages', ident <- ids] ++
-            [(makeId i, i) | i <- [1 .. nPages]]
-
-    return $ Paginate (M.fromList paginatePages') (M.fromList pagPlaces') makeId
-        (PatternDependency pattern (S.fromList idents))
-
-buildPages' :: (MonadMetadata m, Functor m) => Pattern -> m Paginate
-buildPages' p = buildPaginateWith' blogPerPage (fromCapture "*/index.html" . show) p identBlogFilter
-
-buildCategoryPages' :: (MonadMetadata m, Functor m) => String -> Pattern -> m Paginate
-buildCategoryPages' name pattern = 
-      buildPaginateWith' blogPerPage (categoryMakeId name) pattern identBlogFilter
-   where
-      categoryMakeId category = fromCapture (fromGlob (category <> "/*/index.html")) . show
+buildPages :: (MonadMetadata m, Functor m) => Maybe String -> Pattern -> m Paginate
+buildPages mprefix pattern = 
+  buildPaginateWith 
+    (return . paginateEvery blogPerPage)
+    pattern
+    (asIdentifier mprefix . show)
+  where
+    asIdentifier Nothing    = fromCapture "*/index.html" 
+    asIdentifier (Just pre) = fromCapture . fromGlob $ pre <> "/*/index.html" 
 
 renderTagList' :: Tags -> Compiler String
 renderTagList' = renderTags makeLink (intercalate " ")
@@ -289,19 +252,6 @@ simpleRenderLink tag (Just filePath) =
   Just $ H.a ! A.href (toValue $ toUrl . dropFileName $ filePath) $ toHtml tag
 
 
---------------------------------------------------------------------------------
-comparingBy :: Ord a => (b -> a) -> (a -> a -> Ordering) -> b -> b -> Ordering
-comparingBy f cmp x y = cmp (f x) (f y)
-
-identSortBy :: (MonadMetadata m, Ord a) => (a -> a -> Ordering) -> (Identifier -> m a) -> [Identifier] -> m [Identifier]
-identSortBy cmp f ids = liftM (map fst . sortBy (comparingBy snd cmp)) $ mapM (\x -> liftM (x,) (f x)) ids
-
-identChronolgical :: (MonadMetadata m) => [Identifier] -> m [Identifier]
-identChronolgical = identSortBy compare (getItemUTC defaultTimeLocale)
-
-identRecentFirst :: (MonadMetadata m, Functor m) => [Identifier] -> m [Identifier]
-identRecentFirst = fmap reverse . identChronolgical
---------------------------------------------------------------------------------
 prettyRoute :: Routes
 prettyRoute = removeExtension `composeRoutes` addIndex
    where 
@@ -328,74 +278,21 @@ blogRoute =
 loadBlogs :: (Typeable a, Binary a) => Pattern -> Compiler [Item a]
 loadBlogs = blogOrder <=< flip loadAllSnapshots blogSnapshot
 
-loadFilteredBlogs :: (Typeable a, Binary a) => Pattern -> Compiler [Item a]
-loadFilteredBlogs = excludeTag "icelandic" <=< loadBlogs
-
---------------------------------------------------------------------------------
---------------------------------------------------------------------------------
---------------------------------------------------------------------------------
-
---  --------------------------------------------------------------------------------
---  prefixRoute :: String -> Routes
---  prefixRoute prefix = customRoute $ (prefix ++) . toFilePath
-
 --------------------------------------------------------------------------------
 postfixRoute :: String -> Routes
 postfixRoute postfix = customRoute $ (++ postfix) . toFilePath
 
---  --------------------------------------------------------------------------------
---  infixRoute :: Int -> String -> Routes
---  infixRoute n s = customRoute $ 
-   --  where (pre, post) = splitAt n . toFilePath
-
 --------------------------------------------------------------------------------
---  folderRoute :: String -> Routes
---  folderRoute folder = customRoute $ addFolder folder . toFilePath
-   --  where 
-      --  addFolder fld fp = let (fld', fl') = splitFileName fp in joinPath [fld', fld, fl']
 
+filterTags :: MonadMetadata m => ([String] -> m Bool) -> [Identifier] -> m [Identifier]
+filterTags p = filterM $ p <=< getTags 
 --------------------------------------------------------------------------------
-filterTags :: MonadMetadata m => ([String] -> m Bool) -> [Item a] -> m [Item a]
-filterTags p = filterM $ p <=< getTags . itemIdentifier 
-
-filterTags' :: MonadMetadata m => ([String] -> m Bool) -> [Identifier] -> m [Identifier]
-filterTags' p = filterM $ p <=< getTags 
---------------------------------------------------------------------------------
-excludeTag :: MonadMetadata m => String -> [Item a] -> m [Item a]
-excludeTag tag = filterTags (return . notElem tag)
-
-excludeTag' :: MonadMetadata m => String -> [Identifier] -> m [Identifier]
-excludeTag' tag = filterTags' (return . notElem tag)
-{- -------------------------------------------------------------------------------- -}
-{- includeTag :: MonadMetadata m => String -> [Item String] -> m [Item String] -}
-{- includeTag tag = filterTags (return . elem tag) -}
-
+includeTag :: MonadMetadata m => String -> [Identifier] -> m [Identifier]
+includeTag tag = filterTags (return . elem tag)
 --------------------------------------------------------------------------------
 -- | Obtain categories from a page.
 getCategory :: MonadMetadata m => Identifier -> m [String]
 getCategory = return . return . takeBaseName . takeDirectory . toFilePath
-
-{- -------------------------------------------------------------------------------- -}
-{- filterCategories :: MonadMetadata m => (Maybe String -> m Bool) -> [Item String] -> m [Item String] -}
-{- filterCategories p = filterM $ p <=< listToMaybeM <=< getCategory . itemIdentifier -}
-   {- where  -}
-      {- listToMaybeM = return . listToMaybe -}
-
-{- -------------------------------------------------------------------------------- -}
-{- includeCategory :: MonadMetadata m => String -> [Item String] -> m [Item String] -}
-{- includeCategory cat = filterCategories maybeEquals -}
-   {- where  -}
-      {- maybeEquals Nothing   = return False -}
-      {- maybeEquals (Just x)  = return (x == cat) -}
-
-
---------------------------------------------------------------------------------
-{- partitionAll :: Int -> [a] -> [[a]] -}
-{- partitionAll n xs = splitter (splitAt n xs) -}
-   {- where  -}
-      {- splitter :: ([a], [a]) -> [[a]] -}
-      {- splitter (as,[]) = [as] -}
-      {- splitter (as,bs) = as : partitionAll n bs -}
 
 --------------------------------------------------------------------------------
 tryParseDate :: Identifier -> Metadata -> Maybe UTCTime
@@ -414,7 +311,7 @@ tryParseDateWithLocale locale id' metadata = do
    where
       empty'     = fail $ "Hakyll.Web.Template.Context.getItemUTC: " 
                         ++ "could not parse time for " ++ show id'
-      parseTime' = parseTime locale 
+      parseTime' = parseTimeM True locale 
       formats    =
          [ "%a, %d %b %Y %H:%M:%S %Z"
          , "%Y-%m-%dT%H:%M:%S%Z"
@@ -424,77 +321,10 @@ tryParseDateWithLocale locale id' metadata = do
          , "%B %e, %Y"
          ]
 
---------------------------------------------------------------------------------
--- | Takes first, current, last page and produces index of next page
-type RelPage = PageNumber -> PageNumber -> PageNumber -> Maybe PageNumber
-
---------------------------------------------------------------------------------
-paginateField :: Paginate -> String -> RelPage -> Context a
-paginateField pag fieldName relPage = field fieldName $ \item ->
-    let identifier = itemIdentifier item
-    in case M.lookup identifier (paginatePlaces pag) of
-        Nothing -> fail $ printf
-            "Hakyll.Web.Paginate: there is no page %s in paginator map."
-            (show identifier)
-        Just pos -> case relPage 1 pos nPages of
-            Nothing   -> fail "Hakyll.Web.Paginate: No page here."
-            Just pos' -> do
-                let nextId = paginateMakeId pag pos'
-                mroute <- getRoute nextId
-                case mroute of
-                    Nothing -> fail $ printf
-                        "Hakyll.Web.Paginate: unable to get route for %s."
-                        (show nextId)
-                    Just rt -> return $ toUrl . dropFileName $ rt
-  where
-    nPages = M.size (paginatePages pag)
-
-paginateContext' :: Paginate -> Context a
-paginateContext' pag = mconcat
-    [ paginateField pag "firstPage"
-        (\f c _ -> if c <= f then Nothing else Just f)
-    , paginateField pag "previousPage"
-        (\f c _ -> if c <= f then Nothing else Just (c - 1))
-    , paginateField pag "nextPage"
-        (\_ c l -> if c >= l then Nothing else Just (c + 1))
-    , paginateField pag "lastPage"
-        (\_ c l -> if c >= l then Nothing else Just l)
-    ]
-
-paginatorContext :: Paginate -> PageNumber -> Context a
-paginatorContext pages i = 
-   mconcat  [ paginateField pages "page1" (\f _ l -> betweenPages f l j1) 
-            , paginateField pages "page2" (\f _ l -> betweenPages f l j2)
-            , paginateField pages "page3" (\f _ l -> betweenPages f l j3) 
-            , paginateField pages "page4" (\f _ l -> betweenPages f l j4) 
-            , paginateField pages "page5" (\f _ l -> betweenPages f l j5) 
-            , constField "page1n" (show j1)
-            , constField "page2n" (show j2)
-            , constField "page3n" (show j3)
-            , constField "page4n" (show j4)
-            , constField "page5n" (show j5)
-            , constField  ("page" <> show i <> "a") "active"
-            ]
-   where
-      (j1:j2:j3:j4:j5:_) = iterate (+1) ((i - 1) `div` 5 * 5 + 1)
-   
-
 between :: Ord a => a -> a -> a -> Bool
 between l h x | x < l || x > h = False
 between _ _ _                  = True
 
 betweenPages :: PageNumber -> PageNumber -> PageNumber -> Maybe PageNumber
 betweenPages l h x = if between l h x then Just x else Nothing
---------------------------------------------------------------------------------
---  tagLinks :: String -> Identifier
---  tagLinks = fromCapture "tags/*/"
-
---  withTagIdentifiers :: (String -> Identifier) -> Tags -> Tags
---  withTagIdentifiers f t = t { tagsMakeId = f }
-
-
---------------------------------------------------------------------------------
--- | Obtain categories from a page.
-{- getCategory :: MonadMetadata m => Identifier -> m [String] -}
-{- getCategory = return . return . takeBaseName . takeDirectory . toFilePath -}
 
