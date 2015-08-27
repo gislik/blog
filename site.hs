@@ -192,13 +192,8 @@ blogRoute =
       dropDateRoute                               `composeRoutes` 
       prettyRoute
    where 
-      dateFolder :: Identifier -> Metadata -> FilePath
-      dateFolder id' = maybe "" (formatTime defaultTimeLocale "%Y/%m") . tryParseDate id'
-      
-      dateRoute :: Metadata -> Routes
       dateRoute metadata = customRoute $ \id' -> joinPath [dateFolder id' metadata, toFilePath id']
-
-      dropDateRoute :: Routes
+      dateFolder id' = maybe "" (formatTime defaultTimeLocale "%Y/%m") . tryParseDate id'
       dropDateRoute = gsubRoute "[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}-" (const "")
 
 --------------------------------------------------------------------------------
@@ -212,17 +207,23 @@ mapContextP p f c'@(Context c) = Context $ \k a i ->
                         else c k a i
 
 prettyTitleField :: String -> Context a
-prettyTitleField = mapContext (g . f) . pathField
+prettyTitleField = mapContext (defaultTitle . pageTitle) . pathField
    where
-      f = intercalate " &#x276f;&#x276f;= " . splitDirectories . capitalize . dropFileName
-      g "." = "Blog"
-      g x = x
+      pageTitle :: String -> String
+      pageTitle = intercalate " &#x276f;&#x276f;= " . splitDirectories . capitalize . dropFileName
+
+      defaultTitle :: String -> String
+      defaultTitle "." = "Blog"
+      defaultTitle x = x
+
+      capitalize :: String -> String
       capitalize [] = []
       capitalize (x:xs) = toUpper x : map toLower xs
 
 categoryField' :: String -> Tags -> Context a -- drops the filename from the link
 categoryField' = tagsFieldWith getCategory simpleRenderLink (mconcat . intersperse ", ")
    where
+      getCategory :: Identifier -> Compiler [String]
       getCategory = return . return . takeBaseName . takeDirectory . toFilePath
 
 -- compilers
@@ -236,6 +237,7 @@ buildPages mprefix pattern =
     pattern
     (asIdentifier mprefix . show)
   where
+    asIdentifier :: Maybe String -> String -> Identifier
     asIdentifier Nothing    = fromCapture "*/index.html" 
     asIdentifier (Just pre) = fromCapture . fromGlob $ pre <> "/*/index.html" 
 
