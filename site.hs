@@ -220,7 +220,7 @@ prettyTitleField = mapContext (g . f) . pathField
       capitalize [] = []
       capitalize (x:xs) = toUpper x : map toLower xs
 
-categoryField' :: String -> Tags -> Context a 
+categoryField' :: String -> Tags -> Context a -- drops the filename from the link
 categoryField' = tagsFieldWith getCategory simpleRenderLink (mconcat . intersperse ", ")
    where
       getCategory = return . return . takeBaseName . takeDirectory . toFilePath
@@ -239,7 +239,7 @@ buildPages mprefix pattern =
     asIdentifier Nothing    = fromCapture "*/index.html" 
     asIdentifier (Just pre) = fromCapture . fromGlob $ pre <> "/*/index.html" 
 
-renderTagList' :: Tags -> Compiler String
+renderTagList' :: Tags -> Compiler String -- drops the filename from the link
 renderTagList' = renderTags makeLink (intercalate " ")
   where
     makeLink tag url count _ _ = renderHtml $
@@ -249,11 +249,11 @@ renderBlogRss :: [Item String] -> Compiler (Item String)
 renderBlogRss = renderRss blogFeedConfiguration rssCtx
 
 -- metadata
-filterTagsM :: MonadMetadata m => ([String] -> m Bool) -> [Identifier] -> m [Identifier]
-filterTagsM p = filterM $ p <=< getTags 
-
 includeTagM :: MonadMetadata m => String -> [Identifier] -> m [Identifier]
 includeTagM tag = filterTagsM (return . elem tag)
+
+filterTagsM :: MonadMetadata m => ([String] -> m Bool) -> [Identifier] -> m [Identifier]
+filterTagsM p = filterM $ p <=< getTags 
 
 -- html
 simpleRenderLink :: String -> (Maybe FilePath) -> Maybe H.Html
