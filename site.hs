@@ -36,17 +36,17 @@ import            Hakyll
 --------------------------------------------------------------------------------
 main :: IO ()
 main = do
-   isWatching <- fmap (== "watch") <$> listToMaybe <$> getArgs
+j   isWatching <- fmap (== "watch") <$> listToMaybe <$> getArgs
    let allPattern = case isWatching of
-                     Just True -> (blogPattern .||. draftPattern) 
-                     _         -> blogPattern
+                        Just True -> (blogPattern .||. draftPattern) 
+                        _         -> blogPattern
    hakyll $ do
 
       excludePattern <- liftM fromList $ includeTagM "icelandic" <=< getMatches $ blogPattern
       let visiblePattern = allPattern .&&. complement excludePattern
 
       categories <- buildCategories visiblePattern (fromCapture "*/index.html")
-      pages <- buildPages Nothing visiblePattern
+      pages      <- buildPages Nothing visiblePattern
 
       -- static content
       match ("*.png" .||. "*.txt" .||. "assets/**" .||. "img/**") $ do
@@ -259,20 +259,20 @@ loadBlogs = blogOrder <=< flip loadAllSnapshots blogSnapshot
 
 buildPages :: (MonadMetadata m, Functor m) => Maybe String -> Pattern -> m Paginate
 buildPages mprefix pattern = 
-  buildPaginateWith 
-    (return . paginateEvery blogPerPage)
-    pattern
-    (asIdentifier mprefix . show)
-  where
-    asIdentifier :: Maybe String -> String -> Identifier
-    asIdentifier Nothing    = fromCapture "*/index.html" 
-    asIdentifier (Just pre) = fromCapture . fromGlob $ pre <> "/*/index.html" 
+   buildPaginateWith 
+      (return . paginateEvery blogPerPage)
+      pattern
+      (asIdentifier mprefix . show)
+   where
+      asIdentifier :: Maybe String -> String -> Identifier
+      asIdentifier Nothing    = fromCapture "*/index.html" 
+      asIdentifier (Just pre) = fromCapture . fromGlob $ pre <> "/*/index.html" 
 
 renderTagList' :: Tags -> Compiler String -- drops the filename from the link
 renderTagList' = renderTags makeLink (intercalate " ")
-  where
-    makeLink tag url count _ _ = renderHtml $
-        H.a ! A.href (toValue . dropFileName $ url) $ toHtml (tag ++ " (" ++ show count ++ ")")
+   where
+      makeLink tag url count _ _ = renderHtml $
+         H.a ! A.href (toValue . dropFileName $ url) $ toHtml (tag ++ " (" ++ show count ++ ")")
 
 renderBlogRss :: [Item String] -> Compiler (Item String)
 renderBlogRss = renderRss blogFeedConfiguration rssCtx
