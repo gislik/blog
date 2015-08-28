@@ -36,7 +36,7 @@ import            Hakyll
 --------------------------------------------------------------------------------
 main :: IO ()
 main = do
-j   isWatching <- fmap (== "watch") <$> listToMaybe <$> getArgs
+   isWatching <- fmap (== "watch") <$> listToMaybe <$> getArgs
    let allPattern = case isWatching of
                         Just True -> (blogPattern .||. draftPattern) 
                         _         -> blogPattern
@@ -57,11 +57,18 @@ j   isWatching <- fmap (== "watch") <$> listToMaybe <$> getArgs
       match "slides/*.markdown" $ do
          route slidesRoute
          compile $ pandocCompiler
-            >>= loadAndApplyTemplate "templates/slides.html" defaultContext
+            >>= saveSnapshot slidesSnapshot
+            >>= loadAndApplyTemplate "templates/slides.html" slidesDetailCtx
 
       match "slides/**" $ do
         route   slidesAssetsRoute
         compile copyFileCompiler
+
+      create ["slides/index.html"] $ do
+         route  idRoute
+         compile $ makeItem "Slides"
+            >>= loadAndApplyTemplate "templates/slides-list.html" slidesCtx
+            >>= loadAndApplyTemplate "templates/default.html" slidesCtx
 
       -- static pages
       match "*.markdown" $ do
@@ -144,9 +151,29 @@ blogFeedConfiguration = FeedConfiguration
                       , feedRoot = "http://gisli.hamstur.is"
                       }
 
+slidesSnapshot :: Snapshot
+slidesSnapshot = "slides-content"
+
 --------------------------------------------------------------------------------
 -- CONTEXTS
 --------------------------------------------------------------------------------
+slidesCtx :: Context String
+slidesCtx = 
+    slidesTitleField "title"                                            <> 
+    listField "slides" slidesDetailCtx (loadSlides "slides/*.markdown") <> 
+    defaultContext
+
+slidesDetailCtx :: Context String
+slidesDetailCtx = 
+    slidesTitleField "title" <> 
+    dateField "date" "%B %e, %Y" <> 
+    mapContext dropFileName (urlField "url") <>
+    functionField "featureimage" (\_ -> liftM (fromMaybe "") . getRoute . fromFilePath . featuredFileName)  <>
+    indexCtx
+  where
+    featuredFileName = flip replaceExtension "png" . toFilePath . itemIdentifier
+
+
 indexCtx :: Context String
 indexCtx = 
    prettyTitleField "title" <> 
@@ -234,7 +261,7 @@ mapContextP p f c'@(Context c) = Context $ \k a i ->
                         else c k a i
 
 prettyTitleField :: String -> Context a
-prettyTitleField = mapContext (defaultTitle . pageTitle) . pathField
+prettyTitleField = mapContext (defaultTitle . pageTitle) . pathField 
    where
       pageTitle :: String -> String
       pageTitle = intercalate " &#x276f;&#x276f;= " . splitDirectories . capitalize . dropFileName
@@ -247,6 +274,21 @@ prettyTitleField = mapContext (defaultTitle . pageTitle) . pathField
       capitalize [] = []
       capitalize (x:xs) = toUpper x : map toLower xs
 
+slidesTitleField :: String -> Context a
+slidesTitleField = mapContext (defaultTitle . slideTitle) . pathField
+   where
+      slideTitle :: String -> String
+      slideTitle = capitalize . drop 11 . takeBaseName
+
+      defaultTitle :: String -> String
+      defaultTitle [] = "Slides"
+      defaultTitle x = x
+
+      capitalize :: String -> String
+      capitalize [] = []
+      capitalize (x:xs) = toUpper x : map toLower xs
+      
+
 categoryField' :: String -> Tags -> Context a -- drops the filename from the link
 categoryField' = tagsFieldWith getCategory simpleRenderLink (mconcat . intersperse ", ")
    where
@@ -256,6 +298,8 @@ categoryField' = tagsFieldWith getCategory simpleRenderLink (mconcat . intersper
 -- compilers
 loadBlogs :: (Typeable a, Binary a) => Pattern -> Compiler [Item a]
 loadBlogs = blogOrder <=< flip loadAllSnapshots blogSnapshot
+
+loadSlides = blogOrder <=< flip loadAllSnapshots slidesSnapshot
 
 buildPages :: (MonadMetadata m, Functor m) => Maybe String -> Pattern -> m Paginate
 buildPages mprefix pattern = 
