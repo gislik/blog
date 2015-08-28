@@ -1,1 +1,0 @@
-/Users/gislik/Code/reveal.js

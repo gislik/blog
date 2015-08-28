@@ -53,9 +53,19 @@ main = do
          route   idRoute
          compile copyFileCompiler
 
+      -- slides
+      match "slides/*.markdown" $ do
+         route slidesRoute
+         compile $ pandocCompiler
+            >>= loadAndApplyTemplate "templates/slides.html" defaultContext
+
+      match "slides/**" $ do
+        route   slidesAssetsRoute
+        compile copyFileCompiler
+
       -- static pages
       match "*.markdown" $ do
-         route prettyRoute
+         route pageRoute
          compile $ pandocCompiler
             >>= loadAndApplyTemplate "templates/default.html" defaultContext
 
@@ -178,23 +188,40 @@ rssCtx =
 --------------------------------------------------------------------------------
 -- ROUTES
 --------------------------------------------------------------------------------
-prettyRoute :: Routes
-prettyRoute = removeExtension `composeRoutes` addIndex
+slidesRoute :: Routes
+slidesRoute = 
+      blogRoute `composeRoutes` prefixRoute "slides"
    where 
-      removeExtension       = setExtension ""
-      addIndex              = postfixRoute "/index.html"
-      postfixRoute postfix  = customRoute $ (++ postfix) . toFilePath
+      prefixRoute prefix = customRoute $ (prefix </>) . toFilePath
+
+slidesAssetsRoute :: Routes
+slidesAssetsRoute = 
+      yearRoute     `composeRoutes`
+      monthRoute    `composeRoutes`
+      dropDayRoute  
+   where 
+      yearRoute = gsubRoute "[[:digit:]]{4}-" (\xs -> take 4 xs <> "/")
+      monthRoute = gsubRoute "/[[:digit:]]{2}-" (\xs -> "/" <> (take 2 . drop 1) xs <> "/")
+      dropDayRoute = gsubRoute "/[[:digit:]]{2}-" (const "/")
+
 
 blogRoute :: Routes
 blogRoute = 
       customRoute (takeFileName . toFilePath)     `composeRoutes`
       metadataRoute dateRoute                     `composeRoutes` 
       dropDateRoute                               `composeRoutes` 
-      prettyRoute
+      pageRoute
    where 
       dateRoute metadata = customRoute $ \id' -> joinPath [dateFolder id' metadata, toFilePath id']
-      dateFolder id' = maybe "" (formatTime defaultTimeLocale "%Y/%m") . tryParseDate id'
-      dropDateRoute = gsubRoute "[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}-" (const "")
+      dateFolder id' = maybe mempty (formatTime defaultTimeLocale "%Y/%m") . tryParseDate id'
+      dropDateRoute = gsubRoute "[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}-" (const mempty)
+
+pageRoute :: Routes
+pageRoute = removeExtension `composeRoutes` addIndex
+   where 
+      removeExtension       = setExtension mempty
+      addIndex              = postfixRoute "index.html"
+      postfixRoute postfix  = customRoute $ (</> postfix) . toFilePath
 
 --------------------------------------------------------------------------------
 -- HELPERS
