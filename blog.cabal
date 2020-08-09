@@ -2,7 +2,7 @@
 -- see http://haskell.org/cabal/users-guide/
 
 name:                blog
-version:             0.3.0.0
+version:             0.4.0.0
 -- synopsis:            
 -- description:         
 -- license:             
@@ -17,4 +17,4 @@ cabal-version:       >=1.8
 executable blog
   main-is:             site.hs
   -- other-modules:       
-  build-depends:       base ==4.8.*, old-locale ==1.0.*, binary ==0.7.*, time ==1.5.*, containers ==0.5.*, filepath ==1.4.*, hakyll ==4.7.*, blaze-html ==0.8.*
+  build-depends:       base ==4.12.*, binary ==0.8.*, time ==1.8.*, containers ==0.6.*, filepath ==1.4.*, hakyll ==4.13.*, blaze-html ==0.9.*

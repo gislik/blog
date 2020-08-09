@@ -11,4 +11,4 @@ _site
 gislik.github.com
 .DS_Store
 .stack-work
-stack.yaml
+stack.yaml.lock

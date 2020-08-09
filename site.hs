@@ -8,6 +8,7 @@ import            Data.List                        (intercalate, intersperse, un
 import            Data.Char                        (toLower, toUpper)
 import            Data.Time.Clock                  (UTCTime (..))
 import            Control.Monad                    (msum, filterM, (<=<), liftM, forM, filterM)
+import            Control.Monad.Fail               (MonadFail)
 import            System.Environment               (getArgs)
 import            Data.Time.Format                 (TimeLocale, defaultTimeLocale, parseTimeM, formatTime)
 import            Text.Printf                      (printf)
@@ -139,7 +140,7 @@ blogSnapshot = "blog-content"
 blogPerPage :: Int
 blogPerPage = 4
 
-blogOrder :: (MonadMetadata m, Functor m) => [Item a] -> m [Item a]
+blogOrder :: (MonadMetadata m, MonadFail m) => [Item a] -> m [Item a]
 blogOrder = recentFirst
 
 blogFeedConfiguration :: FeedConfiguration
@@ -340,7 +341,7 @@ tryParseDate = tryParseDateWithLocale defaultTimeLocale
 
 tryParseDateWithLocale :: TimeLocale -> Identifier -> Metadata -> Maybe UTCTime
 tryParseDateWithLocale locale id' metadata = do
-   let tryField k fmt = M.lookup k metadata >>= parseTime' fmt
+   let tryField k fmt = lookupString k metadata >>= parseTime' fmt
        fn             = takeFileName $ toFilePath id'
 
    maybe empty' return $ msum $
