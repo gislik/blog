@@ -15,6 +15,6 @@ build-type:          Simple
 cabal-version:       >=1.8
 
 executable blog
-  main-is:             site.hs
+  main-is:             blog.hs
   -- other-modules:       
   build-depends:       base ==4.12.*, binary ==0.8.*, time ==1.8.*, containers ==0.6.*, filepath ==1.4.*, hakyll ==4.13.*, blaze-html ==0.9.*

@@ -1,0 +1,14 @@
+    <header>
+        <h2 class="c-title c-article__title"><a href="$url$">$title$</a></h2>
+        <p class="c-article__meta">
+            <time datetime="$date$">
+                $date$
+            </time>
+            $if(showdeadcode)$
+            {% if page.extra.author -%}
+              by {{ page.extra.author}}
+            {%- endif %}
+            $endif$
+            in $category$ - ({{ page.reading_time }} min read)
+        </p>
+    </header>

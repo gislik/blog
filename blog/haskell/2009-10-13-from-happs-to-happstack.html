@@ -8,7 +8,8 @@ filename: 2009-10-13-from-happs-to-happstack.html
 ---
 
 <p>I have been dreading porting my Blog application from <em>HAppS</em> to <a href="happstack.com"><em>Happstack</em></a> for a long time now. It is however apparent that <em>HAppS</em> is dying and <em>Happstack</em> (a fork of <em>HAppS</em> designed to take things further) was the only way to roll.</p>
-<blockquote><em>... a refreshingly innovative web application server written in Haskell. Leveraging the MACID state system, Happstack offers robust and scalable data access without the headache of managing a traditional RDBMS such as MySQL.</em></blockquote>
+<blockquote>
+  <p><em>... a refreshingly innovative web application server written in Haskell. Leveraging the MACID state system, Happstack offers robust and scalable data access without the headache of managing a traditional RDBMS such as MySQL.</em></p></blockquote>
 <p>The <a href="http://www.darcsweb.com:5003/r/mae/happstack-stable/snapshot/current/content/pretty/happstack/RELEASE_NOTES">RELEASE_NOTES</a> file had some guidelines for porting existing applications to <em>Happstack</em>. In my case it turned out to be really easy:</p>
 <ol>
 <li>Install <em>Happstack </em> 
@@ -37,7 +38,7 @@ find . -type f -name '*.hs' -exec sed -i.bak 's/unServerPartT/runServerPartT/g' 
 <li>Change all instances of [ServerPartT m a] to ServerPartT with <em>msum</em></li>
 <li>Compile my code again</li>
 </ol>
-<div>Well this sounds almost too easy. And it is. I alway got the error <em>Unsupported socket</em> - both on my Mac (development machine) and on my Linux box (the production machine). On <a href="http://groups.google.com/group/HAppS/msg/0c9a0d0fd7c6aff0"><em>Google Groups</em></a> I found someone saying that it's a problem with how <em>Haskell's Templating System</em> handles &nbsp;<em>IPv6. </em>The solution was to change <em>Happstack.Server.HTTP.Socket.acceptLite</em> to:</div>
+<p>Well this sounds almost too easy. And it is. I alway got the error <em>Unsupported socket</em> - both on my Mac (development machine) and on my Linux box (the production machine). On <a href="http://groups.google.com/group/HAppS/msg/0c9a0d0fd7c6aff0"><em>Google Groups</em></a> I found someone saying that it's a problem with how <em>Haskell's Templating System</em> handles &nbsp;<em>IPv6. </em>The solution was to change <em>Happstack.Server.HTTP.Socket.acceptLite</em> to:</p>
 <div>
 <pre>-- | alternative implementation of accept to work around EAI_AGAIN errors 
 acceptLite :: S.Socket -&gt; IO (Handle, S.HostName, S.PortNumber) 
@@ -52,7 +53,7 @@ acceptLite sock = do
                _                          -error "Unsupported socket"</p>
 <p>  return (h, peer, p) </p>
 </pre>
-<div>Actually I used the time to cabalize my code. Outlining the dependencies means that <em><a href="http://www.haskell.org/cabal">Cabal</a></em> takes care of downloading all the necessary packages. To date my cabal file looks like this:</div>
+<p>Actually I used the time to cabalize my code. Outlining the dependencies means that <em><a href="http://www.haskell.org/cabal">Cabal</a></em> takes care of downloading all the necessary packages. To date my cabal file looks like this:</p>
 
 <pre>
 name:                gisliblog<br/>
@@ -72,18 +73,18 @@ main-is:             src/Main.hs
 ghc-options:         -isrc        
 </pre>
 
-<div>Also having everything in a <em><a href="http://git-scm.com/">git</a></em>&nbsp;repository meant that I could port the code in a special branch and merge the branches when the code compiled successfully. The next steps are to port my brothers photo site to <em>Happstack</em> and then look into taking the advantage of the new API which has been simplified in many ways. For example</div>
-<div>This:</div>
+<p>Also having everything in a <em><a href="http://git-scm.com/">git</a></em>&nbsp;repository meant that I could port the code in a special branch and merge the branches when the code compiled successfully. The next steps are to port my brothers photo site to <em>Happstack</em> and then look into taking the advantage of the new API which has been simplified in many ways. For example</p>
+<p>This:</p>
 <pre>
     uriRest :: Monad m =&gt; (String -&gt; ServerPartT m a) -&gt; ServerPartT m a
     uriRest handle = withRequest $ \rq -&gt; unServerPartT (handle (rqURL rq)) rq
 </pre>
-<div>Becomes this:</div>
+<p>Becomes this:</p>
 <pre>
     uriRest :: (ServerMonad m, Monad m) =&gt; (String -&gt; m a) -&gt; m a
     uriRest handle = askRq &gt;&gt;= handle . rqURL</pre>
-<div>That's it for now.</div>
-<div>P.S. On a different note I just placed an order for the <em>Arduino Duemilanove</em> microcontroller board. It should be arriving this week. I'm all excited so the next blog could be about that.</div>
+<p>That's it for now.</p>
+<p>P.S. On a different note I just placed an order for the <em>Arduino Duemilanove</em> microcontroller board. It should be arriving this week. I'm all excited so the next blog could be about that.</p>
 
 
 

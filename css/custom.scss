@@ -1,0 +1,58 @@
+@import "variables";
+/*
+a.no-link {
+    pointer-events: none;
+    cursor: default;
+}
+a.disable-link {
+    pointer-events: none;
+    cursor: default;
+    opacity: 0.5;
+}
+*/
+
+body {
+  padding: 3rem;
+}
+
+nav.header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  margin-left: auto;
+  font-size: 18px;
+  line-height: 1.7;
+
+  > a {
+    border-bottom: 1px solid $link-color;
+  }
+
+  > a:not(:last-child) {
+    margin-right: 1.2rem;
+  }
+}
+
+header.profile {
+  width: 100%;
+  max-width: 700px;
+  margin: auto;
+  display: flex;
+  flex-direction: row;
+}
+
+a.profile-icon {
+  border: none;
+  height: 50px;
+  width: 50px;
+  position: relative;
+
+  img {
+    border-radius: 50%;
+  }
+}
+
+.c-article__body {
+  p {
+    text-align: justify;
+  }
+}

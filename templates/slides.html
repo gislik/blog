@@ -1,88 +1,72 @@
-<!doctype html>
-<html lang="en">
+{% extends "index.html" %}
+{% import "post_macros.html" as post_macros %}
 
-	<head>
-		<meta charset="utf-8">
+{% block title -%}
+<title>{{page.title}} | {{config.title}}</title>
+<meta property="og:title" content="{{page.title}} | {{config.title}}" />
+<meta name="twitter:title" content="{{page.title}} | {{config.title}}" />
+{%- endblock title %}
 
-        $if(title)$
-        <title>G&iacute;sli Kristj&aacute;ns &#x276f;&#x276f;= $title$</title>
-        $else$
-        <title>G&iacute;sli Kristj&aacute;ns</title>
-        $endif$
+{% block content %}
+<article class="p-article">
+    <header>
+        <h1>{{ page.title }}</h1>
+        <div>
+            <div class="c-time">
 
-		<meta name="author" content="G&iacute;sli Kristj&aacute;ns">
-
-		<meta name="apple-mobile-web-app-capable" content="yes" />
-		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-
-		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-
-		<link rel="stylesheet" href="/assets/reveal.js/css/reveal.min.css">
-		<link rel="stylesheet" href="/assets/reveal.js/css/theme/default.css" id="theme">
-
-		<!-- For syntax highlighting -->
-		<link rel="stylesheet" href="/assets/reveal.js/lib/css/zenburn.css">
-
-		<!-- If the query includes 'print-pdf', include the PDF print sheet -->
-		<script>
-			if( window.location.search.match( /print-pdf/gi ) ) {
-				var link = document.createElement( 'link' );
-				link.rel = 'stylesheet';
-				link.type = 'text/css';
-				link.href = '/assets/reveal.js/css/print/pdf.css';
-				document.getElementsByTagName( 'head' )[0].appendChild( link );
-			}
-		</script>
-
-		<!--[if lt IE 9]>
-		<script src="/assets/reveal.js/lib/js/html5shiv.js"></script>
-		<![endif]-->
-	</head>
-
-	<body>
-
-		<div class="reveal">
-
-			<!-- Any section element inside of this container is displayed as a slide -->
-			<div class="slides">
-$body$
-			</div>
-
-		</div>
-
-		<script src="/assets/reveal.js/lib/js/head.min.js"></script>
-		<script src="/assets/reveal.js/js/reveal.min.js"></script>
-
-		<script>
-
-			// Full list of configuration options available here:
-			// https://github.com/hakimel/reveal.js#configuration
-			Reveal.initialize({
-				controls: true,
-				progress: true,
-				history: true,
-				center: true,
-                
-
-				theme: Reveal.getQueryHash().theme, // available themes are in /css/theme
-				transition: Reveal.getQueryHash().transition || 'default', // default/cube/page/concave/zoom/linear/fade/none
-
-				// Parallax scrolling
-                parallaxBackgroundImage: '/assets/reveal.js-img/reveal-parallax-1.jpg',
-                parallaxBackgroundSize: '2100px 900px',
-
-				// Optional libraries used to extend on reveal.js
-				dependencies: [
-					{ src: '/assets/reveal.js/lib/js/classList.js', condition: function() { return !document.body.classList; } },
-					{ src: '/assets/reveal.js/plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
-					{ src: '/assets/reveal.js/plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
-					{ src: '/assets/reveal.js/plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
-					{ src: '/assets/reveal.js/plugin/zoom-js/zoom.js', async: true, condition: function() { return !!document.body.classList; } },
-					{ src: '/assets/reveal.js/plugin/notes/notes.js', async: true, condition: function() { return !!document.body.classList; } }
-				]
-			});
-
-		</script>
-
-	</body>
-</html>
+                <time datetime="{{ page.date | date(format="%F") | safe }}">
+                    {{ page.date | date(format="%F") }}
+                </time>
+                {% if page.extra.author -%}
+                  by {{ page.extra.author}}
+                {%- endif %}
+                {{ " - " }}({{ page.reading_time }} min read)
+            </div>
+        </div>
+    </header>
+    {% if page.toc and page.extra.toc -%}
+    <div class="post-toc" id="post-toc">
+        <h2 class="post-toc-title">Contents</h2>
+        <div class="post-toc-content always-active">
+            <nav id="TableOfContents">
+                <ul>
+                    {% for h1 in page.toc %}
+                    <li>
+                        <a href="{{h1.permalink | safe}}" class="toc-link">{{ post_macros::polish(content=h1.title) }}</a>
+                        {% if h1.children %}
+                        <ul>
+                            {% for h2 in h1.children %}
+                            <li>
+                                <a href="{{h2.permalink | safe}}" class="toc-link">{{ post_macros::polish(content=h2.title) }}</a>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                        {% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+            </nav>
+        </div>
+    </div>
+    {%- endif %}
+    <section id="js-article" class="p-article__body">
+        {{ post_macros::polish(content=page.content) }}
+    </section>
+    <footer>
+        <nav class="c-pagination p-pagination">
+            <div class="c-pagination__ctrl">
+                <div class="c-pagination__newer">
+                    {% if page.later -%}
+                    <a href="{{ page.later.permalink }}">{{ page.later.title }}</a>
+                    {%- endif %}
+                </div>
+                <div class="c-pagination__older">
+                    {% if page.earlier -%}
+                    <a href="{{ page.earlier.permalink }}">{{ page.earlier.title }}</a>
+                    {%- endif %}
+                </div>
+            </div>
+        </nav>
+    </footer>
+</article>
+{%- endblock content %}
