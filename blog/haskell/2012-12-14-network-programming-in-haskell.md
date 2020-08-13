@@ -1,7 +1,7 @@
 ---
 title: Network programming in Haskell
 author: Gísli Kristjánsson
-tags: haskell, hjossi
+tags: testing
 id: 22
 ---
 

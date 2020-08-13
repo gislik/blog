@@ -1,5 +1,6 @@
 ---
 title: Receiving bitcoins
+tags: testing
 ---
 
 # Testnet

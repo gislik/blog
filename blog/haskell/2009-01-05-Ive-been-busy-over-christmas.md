@@ -1,7 +1,6 @@
 ---
 title: I've been busy over christmas...
 author: Gísli Kristjánsson
-tags: haskell
 id: 15
 timestamp: 05.01.2009 03:16:34
 filename: 2009-01-05-I've-been-busy-over-christmas....html

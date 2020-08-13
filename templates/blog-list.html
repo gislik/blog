@@ -1,14 +1,29 @@
+<p style="text-align: right">
+$categories$
+</p>
+<p>
+</p>
             $for(blogs)$
             <article class="c-article p-list-article">
-                $partial("templates/blog-title.html")$
-                <section class="c-article__body">
-                    $if(teaser)-$
-                    $teaser$
+            <header>
+            <h2 class="c-title c-article__title"><a href="$url$">$title$</a></h2>
+            <p class="c-article__meta">
+                <time datetime="$date$">$date$</time> in $category$
+            </p>
+            </header>
+                <section class="c-article__summary">
+<p>I have been dreading porting my Blog application from HAppS to Happstack for a long time now. It is however apparent that HAppS is dying and Happstack (a fork of HAppS designed to take things further) was the only way to roll.</p>
+                    $if(showdeadcode)$
+                    $if(summary)-$
+                    $summary$
                     $else$
                     $body$
                     $endif$
+                    $endif$
                 </section>
+                $if(showdeadcode)$
                 <a href="$url$" class="c-article__btn p-list-article__btn">More</a>
+                $endif$
             </article>
             $endfor$
             

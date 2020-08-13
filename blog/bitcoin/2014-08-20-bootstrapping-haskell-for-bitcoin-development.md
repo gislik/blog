@@ -1,5 +1,6 @@
 ---
 title: Bootstrapping Haskell for Bitcoin development
+tags: testing
 ---
 
 It's time to get our hands dirty. Let's begin bootstrapping our Haskell development environment. Before we proceed it's probably fair to note that it's _very_ early days for Bitcoin development using Haskell and like users of most languages one should expect the Bitcoin libraries to be changing rapidly.

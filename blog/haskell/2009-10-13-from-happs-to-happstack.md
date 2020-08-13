@@ -1,7 +1,6 @@
 ---
 title: From HAppS to Happstack
 author: Gísli Kristjánsson
-tags: haskell
 id: 19
 timestamp: 13.10.2009 00:13:47
 filename: 2009-10-13-from-happs-to-happstack.html

@@ -1,7 +1,7 @@
 ---
 title: baldurkristjans.is - screen cast, code and more
 author: Gísli Kristjánsson
-tags: haskell, happstack
+tags: happstack
 id: 16
 timestamp: 20.01.2009 19:14:32
 filename: 2009-01-20-baldurkristjans.is-screen-cast-code-and-more.html

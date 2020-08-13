@@ -51,6 +51,26 @@ a.profile-icon {
   }
 }
 
+.p-list-article {
+    h2 {
+      font-size: 2em;      
+      margin-block-start: 1.4em;
+      margin-block-end: 0.0em;
+      margin-inline-start: 0px;
+      margin-inline-end: 0px;
+    }
+    .c-article__meta {
+      margin-block-start: 0.5em;
+      margin-block-end: 0.5em;
+      margin-inline-start: 0px;
+      margin-inline-end: 0px;
+    }
+}
+
+.p-article > header {
+  text-align: center;
+}
+
 .c-article__body, .p-article__body {
   p {
     text-align: justify;

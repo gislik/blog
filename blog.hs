@@ -28,9 +28,8 @@ import            Hakyll
 {-
    1. Series
    2. Count words (5 min read)
-   3. Tags
-   4. RSS -> Twitter?
-   5. RSS respecting <!--more-->
+   3. RSS -> Twitter?
+   4. RSS respecting <!--more-->
 -}
 
 --------------------------------------------------------------------------------
@@ -47,8 +46,9 @@ main = do
       excludePattern <- liftM fromList $ includeTagM "icelandic" <=< getMatches $ blogPattern
       let visiblePattern = allPattern .&&. complement excludePattern
 
-      categories <- buildCategories visiblePattern (fromCapture "*/index.html")
       pages      <- buildPages Nothing visiblePattern
+      categories <- buildCategories visiblePattern (fromCapture "*/index.html")
+      tags       <- buildTags visiblePattern (fromCapture "tags/*/index.html")
 
       -- static content
       match staticPattern $ do
@@ -80,14 +80,14 @@ main = do
          route idRoute
          compile $ do
             getResourceBody
-               >>= applyAsTemplate (pageCtx 1 pages categories)
+               >>= applyAsTemplate (pageCtx 1 pages categories tags)
                >>= loadAndApplyTemplate "templates/default.html" defaultCtx 
 
       -- blog pages
       paginateRules pages $ \i _ -> do
          route idRoute
          compile $ makeItem (show i)
-            >>= loadAndApplyTemplate "templates/blog-list.html" (pageCtx i pages categories)
+            >>= loadAndApplyTemplate "templates/blog-list.html" (pageCtx i pages categories tags)
             >>= loadAndApplyTemplate "templates/default.html" defaultCtx
 
       -- blog category index
@@ -96,15 +96,28 @@ main = do
          route idRoute
          compile $ do
             makeItem category
-               >>= loadAndApplyTemplate "templates/blog-list.html" (pageCtx 1 catPages categories)
+               >>= loadAndApplyTemplate "templates/blog-list.html" (pageCtx 1 catPages categories tags)
                >>= loadAndApplyTemplate "templates/default.html" defaultCtx
-
-         -- blog category pages
-         paginateRules catPages $ \i _ -> do
+         paginateRules catPages $ \i _ -> do -- blog category pages
             route idRoute
             compile $ do
                makeItem category
-                  >>= loadAndApplyTemplate "templates/blog-list.html" (pageCtx i catPages categories)
+                  >>= loadAndApplyTemplate "templates/blog-list.html" (pageCtx i catPages categories tags)
+                  >>= loadAndApplyTemplate "templates/default.html" defaultCtx
+
+      -- blog tags index 
+      tagsRules tags $ \tag pattern -> do
+         tagPages <- buildPages (Just $ "tags" </> tag) pattern
+         route idRoute
+         compile $ do
+            makeItem tag
+               >>= loadAndApplyTemplate "templates/blog-list.html" (pageCtx 1 tagPages categories tags)
+               >>= loadAndApplyTemplate "templates/default.html" defaultCtx
+         paginateRules tagPages $ \i _ -> do -- blog tags pages
+            route idRoute
+            compile $ do
+               makeItem tag
+                  >>= loadAndApplyTemplate "templates/blog-list.html" (pageCtx i tagPages categories tags)
                   >>= loadAndApplyTemplate "templates/default.html" defaultCtx
 
       -- blogs
@@ -112,7 +125,7 @@ main = do
          route blogRoute
          compile $ pandocCompiler
             >>= saveSnapshot blogSnapshot
-            >>= loadAndApplyTemplate "templates/blog-detail.html"    (blogDetailCtx categories)
+            >>= loadAndApplyTemplate "templates/blog-detail.html"    (blogDetailCtx categories tags)
             >>= loadAndApplyTemplate "templates/default.html" defaultCtx
 
       -- slides
@@ -147,7 +160,7 @@ blogPattern :: Pattern
 blogPattern = "blog/**"
 
 draftPattern :: Pattern
-draftPattern = "_rafts/**"
+draftPattern = "drafts/**"
 
 staticPattern :: Pattern
 staticPattern = "static/**"
@@ -188,11 +201,11 @@ defaultCtx =
    polishFunction   "polish"                                              <>
    missingField
 
-pageCtx :: PageNumber -> Paginate -> Tags -> Context String
-pageCtx i pages categories = 
-      listField "blogs" (blogDetailCtx categories) (loadBlogs pattern) <>
+pageCtx :: PageNumber -> Paginate -> Tags -> Tags -> Context String
+pageCtx i pages categories tags = 
+      listField "blogs" (blogDetailCtx categories tags) (loadBlogs pattern) <>
       field "categories" (const . renderTagList' $ categories)         <>
-      constField "title" "Pagination"                                  <>
+--      constField "title" "Pagination"                                  <>
       pagesField pages i                                               <>
       defaultCtx
   where
@@ -217,12 +230,15 @@ pageCtx i pages categories =
       alias "pages.count"           = "numPages"
       alias x                       = x
 
-blogDetailCtx :: Tags -> Context String
-blogDetailCtx categories  = 
-      dateField "date" "%B %e, %Y"              <>
-      mapContext dropFileName (urlField "url")  <>
-      categoryField' "category" categories      <>
-      teaserField "teaser" blogSnapshot         <>
+blogDetailCtx :: Tags -> Tags -> Context String
+blogDetailCtx categories tags = 
+      dateField "date" "%B %e, %Y"             <>
+      mapContext dropFileName (urlField "url") <>
+      categoryField' "category" categories     <>
+      -- tagsField "tags" categories              <>
+      -- tagsFieldWith (getTags <=< return . fromFilePath . (</> "index.html") . toFilePath) simpleRenderLink (mconcat . intersperse ",  ") "tags" tags <>
+      tagsField "tags" tags <>
+      teaserField "summary" blogSnapshot       <>
       defaultCtx
 
 slidesCtx :: Context String
@@ -329,7 +345,8 @@ slidesTitleField = mapContext (defaultTitle . slideTitle) . pathField
       
 
 categoryField' :: String -> Tags -> Context a -- drops the filename from the link
-categoryField' = tagsFieldWith getCategory simpleRenderLink (mconcat . intersperse ", ")
+-- categoryField' = tagsFieldWith getCategory simpleRenderLink (mconcat . intersperse ", ")
+categoryField' = tagsFieldWith getCategory simpleRenderLink mconcat
    where
       getCategory :: Identifier -> Compiler [String]
       getCategory = return . return . takeBaseName . takeDirectory . toFilePath
