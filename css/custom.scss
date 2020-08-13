@@ -51,8 +51,39 @@ a.profile-icon {
   }
 }
 
-.c-article__body {
+.c-article__body, .p-article__body {
   p {
     text-align: justify;
+  }
+  > h1 {
+    font-size: 2.0rem;
+    margin-block-start: 1.33em;
+    margin-block-end: 1.33em;
+    margin-inline-start: 0px;
+    margin-inline-end: 0px;
+  }
+  > h2 {
+    font-size: 1.8rem;
+    margin-block-start: 1.67em;
+    margin-block-end: 1.67em;
+    margin-inline-start: 0px;
+    margin-inline-end: 0px;
+  }
+  > h3 {
+    font-size: 1.6rem;
+    margin-block-start: 2.33em;
+    margin-block-end: 2.33em;
+    margin-inline-start: 0px;
+    margin-inline-end: 0px;
+  }
+}
+
+pre.strikethrough {
+  code.sourceCode {
+    color: #999;
+    text-decoration: line-through;
+    span.ex {
+      color: #999;
+    }
   }
 }

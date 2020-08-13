@@ -16,21 +16,18 @@ filename: 2009-12-12-line-following-robot.html
 <li>Each team gets two attempts</li>
 <li>The team with the most points and then the best time will win</li>
 </ul>
-<div>Some limitations on the robot were:</div>
+<p>Some limitations on the robot were:</p>
 <ul>
 <li>Height 200mm</li>
 <li>Length 250mm</li>
 <li>Width 200mm</li>
 </ul>
-<div>What we came up with a was a "racer" which can be seen on the following photos:</div>
-<p style="text-align: center;"><img style="border: 1px solid black" src="/img/racer1.jpg" alt="Picture of Racer car 1" /><img style="margin-left: 10px; margin-right: 10px; border: 1px solid black" src="/img/racer2.jpg" alt="Picture of Racer car 2" width="240" height="320" /></p>
+<p>What we came up with a was a "racer" which can be seen on the following photos:</p>
+<div style="text-align: center"><img style="border: 1px solid black" src="/img/racer1.jpg" alt="Picture of Racer car 1" /><img style="margin-left: 10px; margin-right: 10px; border: 1px solid black" src="/img/racer2.jpg" alt="Picture of Racer car 2" width="240" height="320" /></div>
 <p>On the front is the <a href="../show/18">Arduino board</a> with connections to the motor controller which was used to control the motors. The controller can pulse the motors to decrease the 9V from the batteries and change the direction of the motors. This way (and with the help of the steel ball on the front rotating in all directions) the the racer could make any kind of turns and in fact turn on the spot - making it very maneuverable. A plate with LEDs was mounted under the racer with light sensors. The light sensors measure the light reflected from the surface under the racer and therefore sensing where the 25mm black track was.</p>
-<p style="text-align: center;"><img style="border: 1px solid black" src="/img/racer3.jpg" alt="Picture of Racer car 3" width="240" height="320" /></p>
+<div style="text-align: center"><img style="border: 1px solid black" src="/img/racer3.jpg" alt="Picture of Racer car 3" width="240" height="320" /></div>
 <p>We assigned the sensors a value from -3 (the sensor second furthest to the left) to +3 (the sensor second furthest to the right). As can be seen from the picture there are 8 sensors but because the Arduino board only has 6 analog inputs and we were unable to connect a comparator to connect the remaining 2 to the digital inputs of the board we left the two sensors on the edges unused.</p>
 <p>Armed with a way to control the motors and measure the location of the track the only thing left was to create a steering controller. After some pondering we decided to go with a <a href="http://en.wikipedia.org/wiki/PID_controller">PID controller</a> which I implemented in C++. The aim of the PID controller was to keep the average of the values of the sensors equal to zero. The code for the whole project can be found <a href="/assets/line_following_racer.zip">here</a>.</p>
 <p>When we arrived it was announced that the track was a modeled after the <a href="http://www.formula1.com/races/in_detail/japan_820/circuit_diagram.html">F1 Suzuka track in Japan.</a>&nbsp;After a few test rounds where we tweaked the parameters of our racers we were ready to go.&nbsp;</p>
-<p style="text-align: center;"><img src="/img/brautin.png" alt="The race track" width="498" height="255" /></p>
+<div style="text-align: center"><img src="/img/brautin.png" alt="The race track" width="498" height="255" /></div>
 <p>Four teams participated in the competition and we were the first team to race. We decided to be on the safe side and we reduced the speed to be sure to finish the track. And we did. Our time 29 seconds. None of the other teams made a successful lap. As we had the lead we decided to try for a faster lap. This time we however we went too fast into one of the turns and the racer lost control. Fortunately none of the other teams made it either and we were declared the winners with 10 points and a time of 29 seconds :)</p>
-
-
-

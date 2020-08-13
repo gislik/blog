@@ -1,13 +1,13 @@
             $for(blogs)$
             <article class="c-article p-list-article">
                 $partial("templates/blog-title.html")$
-                <div class="c-article__body">
+                <section class="c-article__body">
                     $if(teaser)-$
                     $teaser$
                     $else$
                     $body$
                     $endif$
-                </div>
+                </section>
                 <a href="$url$" class="c-article__btn p-list-article__btn">More</a>
             </article>
             $endfor$

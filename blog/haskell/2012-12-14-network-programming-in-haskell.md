@@ -91,29 +91,35 @@ The [bracket](http://hackage.haskell.org/packages/archive/base/latest/doc/html/C
 
 The `acceptConnection` function begins by performing an IO action by calling [accept](http://hackage.haskell.org/packages/archive/network/latest/doc/html/Network.html#v:accept) which blocks the execution until a client connects to the socket at which time the action will return a 3-tuple containing a ([Handle](http://hackage.haskell.org/packages/archive/base/4.6.0.0/doc/html/GHC-IO-Handle.html#t:Handle), [HostName](http://hackage.haskell.org/packages/archive/network/latest/doc/html/Network.html#t:HostName), [PortNumber](http://hackage.haskell.org/packages/archive/network/latest/doc/html/Network.html#t:PortNumber)). In this simple case we neither need the host name nor the port number of the client so we will prevent them from being captured by using the underscore (\_).
 
-~~~ {.haskell}
-    acceptConnection socket handler = do
-    (h,_,_) <- accept socket
-        forkIO (handler h)
-        acceptConnection socket handler
+~~~ haskell
+acceptConnection socket handler = do
+(h,_,_) <- accept socket
+    forkIO (handler h)
+    acceptConnection socket handler
 ~~~
 
 One thing to note about the handle `h` returned from `accept` is block-buffered by default. For an interactive application you may want to set the buffering mode on the `Handle` to [LineBuffering](http://hackage.haskell.org/packages/archive/base/4.6.0.0/doc/html/GHC-IO-Handle.html#v:LineBuffering) or [NoBuffering](http://hackage.haskell.org/packages/archive/base/4.6.0.0/doc/html/GHC-IO-Handle.html#v:NoBuffering), like so:
 
-        hSetBuffering h LineBuffering
+~~~ haskell
+    hSetBuffering h LineBuffering
+~~~
 
 
 The request is handled in a new thread for concurrency. It's worth mentioning that Haskell forks so-called [green threads](http://en.wikipedia.org/wiki/Green_threads) which are much lighter than normal OS threads and forking [hundreds of thousands](http://stackoverflow.com/questions/5847642/haskell-lightweight-threads-overhead-and-use-on-multicores) or even [millions](http://stackoverflow.com/questions/1900165/how-long-does-it-take-to-create-1-million-threads-in-haskell) is very doable. This way we don't need to be concerned with [thread pools](http://en.wikipedia.org/wiki/Thread_pool_pattern) even for highly concurrent servers.
 
 With recursion at the last line of `acceptConnection` we make sure the server continues to serve new clients after serving the first one.
 
-I always find it best to compile multi-threaded Haskell code with the (-threaded) command parameter which makes sure that if my code is linked to a C code with foreign function interface you don't lose concurrency.
+I always find it best to compile multi-threaded Haskell code with the (`-threaded`) command parameter which makes sure that if my code is linked to a C code with foreign function interface you don't lose concurrency.
 
-        $ ghc -O2 -threaded --make network-server
+~~~ 
+$ ghc -O2 -threaded --make network-server
+~~~
 
 By using Haskell you get multi-core support for free, so if you want to distribute the request handling over the cores in your machine you simply execute the server like so.  Substitute `x` in `-Nx` with the number of cores you want to use.
 
 
-        $ ./network-server +RTS -Nx
+~~~ 
+$ ./network-server +RTS -Nx
+~~~
 
 As can be seen from the above Haskell is a worthy tool in the concurrent developer's toolbox and like Clojure it features many paradigms like [Software Transactional Memory](http://www.haskell.org/haskellwiki/Software_transactional_memory) which help the programmer in the battle with multi-threaded, concurrent programs.

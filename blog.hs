@@ -56,18 +56,18 @@ main = do
          compile copyFileCompiler
 
       -- static css
-      match "css/*.css" $ do
+      match "css/**.css" $ do
          route idRoute
          compile compressCssCompiler
-
-      match "css/webfonts/*" $ do
-         route idRoute
-         compile copyFileCompiler
 
       match ("css/**.scss" .&&. complement "css/**_*.scss") $ do
          route $ setExtension "css"
          compile $  sassCompiler  >>=
             return . fmap compressCss
+
+      match "css/webfonts/*" $ do
+         route idRoute
+         compile copyFileCompiler
 
       -- static pages
       match "*.md" $ do
@@ -83,14 +83,14 @@ main = do
                >>= applyAsTemplate (pageCtx 1 pages categories)
                >>= loadAndApplyTemplate "templates/default.html" defaultCtx 
 
-      -- pages
+      -- blog pages
       paginateRules pages $ \i _ -> do
          route idRoute
          compile $ makeItem (show i)
             >>= loadAndApplyTemplate "templates/blog-list.html" (pageCtx i pages categories)
             >>= loadAndApplyTemplate "templates/default.html" defaultCtx
 
-      -- category index
+      -- blog category index
       tagsRules categories $ \category pattern -> do
          catPages <- buildPages (Just category) pattern
          route idRoute
@@ -99,7 +99,7 @@ main = do
                >>= loadAndApplyTemplate "templates/blog-list.html" (pageCtx 1 catPages categories)
                >>= loadAndApplyTemplate "templates/default.html" defaultCtx
 
-         -- category pages
+         -- blog category pages
          paginateRules catPages $ \i _ -> do
             route idRoute
             compile $ do
@@ -190,15 +190,18 @@ defaultCtx =
 
 pageCtx :: PageNumber -> Paginate -> Tags -> Context String
 pageCtx i pages categories = 
-      listField "blogs" (blogDetailCtx categories) (loadBlogs pattern)  <>
-      field "categories" (const . renderTagList' $ categories)          <>
-      constField "title" "Pagination"                                   <>
-      pagesField pages i                                                <>
+      listField "blogs" (blogDetailCtx categories) (loadBlogs pattern) <>
+      field "categories" (const . renderTagList' $ categories)         <>
+      constField "title" "Pagination"                                  <>
+      pagesField pages i                                               <>
       defaultCtx
   where
       pattern = fromList . fromMaybe [] . M.lookup i . paginateMap $ pages
-      pagesField pages i = mapContextP (".url" `isSuffixOf`) dropFileName (aliasContext' pages i)
-      pagesField' pages i = aliasContext' pages i
+      pagesField pages i = replaceWithBase . dropIndex $ aliasContext' pages i
+      dropIndex = mapContextP (".url" `isSuffixOf`) dropFileName 
+      replaceWithBase = mapContextP ("pages.previous.url" `isSuffixOf`) dropOne
+      dropOne url | "/1/" `isSuffixOf` url = joinPath . reverse . tail . reverse . splitPath $ url
+      dropOne url                          = url
       mapContextP p f c'@(Context c) = Context $ \k a i -> 
         if p k then unContext (mapContext f c') k a i else c k a i
       aliasContext' pages = aliasContext alias . paginateContext pages

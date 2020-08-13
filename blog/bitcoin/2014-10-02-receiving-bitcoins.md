@@ -2,13 +2,13 @@
 title: Receiving bitcoins
 ---
 
-###### Testnet
+# Testnet
 
 Some of you might be aware of the "other" Bitcoin blockchain &mdash; *testnet3* &mdash; which is mined in parallel to the main blockchain &mdash; *mainnet* &mdash; and since coins on testnet are entirely worthless we can develop safely without our mistakes being too costly.
 
 > Testnet coins are worthless - but useful. They are useful because they are worthless.
 
-<img style="float: right" src="/img/testnet-splashscreen.png" width="400" />
+<img style="float: right; margin-left: 1em" src="/img/testnet-splashscreen.png" width="400" />
 
 To receive testnet coins we can either mine them or withdraw some from a faucet. Although the difficulty of mining on testnet is orders of magnitudes lower than on mainnet it still takes too long for our needs. A faucet is simply a website run by a Bitcoin volunteer, who has mined some coins, where we can ask to be sent some coins to our wallets.
 
@@ -25,10 +25,12 @@ To access testnet we launch bitcoind or Bitcoin-Qt with `-testnet` as a command 
 
 Since there are not that many peers running constantly on the testnet peer discovery can be somewhat tricky. A standard trick is to use `-addnode` to seed our peer connections with a known peer who can notify us about other peers. The commercial version of [Haskoin](http://haskoin.com) runs both an official mainnet and testnet nodes on ports 8333 and 18333, respectively. 
 
-    $ ./Bitcoin-Qt -testnet -addnode=haskoin.com
+~~~
+$ ./Bitcoin-Qt -testnet -addnode=haskoin.com
+~~~
 
 
-###### keys, addresses and transactions
+# keys, addresses and transactions
 
 Bitcoin addresses are used to receive bitcoins but it is important to understand that the coins &mdash; a.k.a. _satoshis_ &mdash; are neither stored in that address nor are they stored in the recipient's wallet. When Alice wants to send Bob satoshis she or her wallet on her behalf will construct a transaction and broadcast it to the peer network. If the transaction is valid it will included in the blockchain. 
 
@@ -46,7 +48,7 @@ The value is the amount of satoshis Alice wants to send to Bob and the destinati
 > Seen in this light the blockchain is simply a journal of transactions &mdash; crediting a prior transaction and debiting an address &mdash; which allows satoshis to be spent by adding a new transaction to the journal and providing a signature proving the ownership of the referred address.
 
 
-###### Base58Check and Wallet Import Format (WIF)
+# Base58Check and Wallet Import Format (WIF)
 
 The private keys are 256 bit binary blobs which can be hard to move reliably between devices. Bitcoin uses a modified version of Base 58, called Base58Check, to encode both private keys and addresses in ASCII.  
 The resulting Base58Check-encoded private key is said to be in Wallet Import Format (WIF).
@@ -61,11 +63,11 @@ The relationship between the private key, public key and the bitcoin address can
 
 <br />
 
-###### Simplest wallet possible
+# Simplest wallet possible
 
 For the rest of the post our goal is to use Haskell to receive satoshis in as simple manner as possible. All we need to do is to generate a private key and derive from it an address. Using the address we can receive the coins and as long as we keep the key safe we can spend it later using any wallet which supports importing WIF keys.
 
-~~~ {.haskell}    
+~~~ haskell
 randomKey :: IO PrvKey
 randomKey = withSource devRandom genPrvKey
 
@@ -82,7 +84,7 @@ main = do
 
 Without any arguments this program will randomly generate a private key and print it (in WIF) and its derived address. It is also possible to pass the private key as an argument in which case the address will be derived from that key.
 
-~~~ {.bash}
+~~~
 $ cabal run 
 Key: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 Address: mpxf3UGxQdssHnnqjn2AbSrwNZ7wkd2wBS
@@ -90,7 +92,7 @@ Address: mpxf3UGxQdssHnnqjn2AbSrwNZ7wkd2wBS
 
 Note that the key above has been redacted. You should under no circumstances reveal your key since this will allow others to spend the satoshis associated with the key.
 
-###### Receiving satoshis to our wallet
+# Receiving satoshis to our wallet
 
 Let's try to fill our simple wallet with some coins. To do so we will broadcast a transaction, using Bitcoin-Qt, spending `0.002` to `mpxf3U...`.
 
@@ -107,7 +109,7 @@ The `0.0001` is the network fee which a miner collects who successfully adds a b
 
     0.002 + 0.2968 + 0.0001 = 0.2989
 
-###### Bitcoin scripts
+# Bitcoin scripts
 
 Most blockchain explorers present the previous UTXO as an address like `muAqCS...`. This is probably done to simplify things as it gives the illusion that money is being sent from one address (resembling a traditional bank account) to another. In reality a transaction references UTXOs in different transactions. 
 
@@ -119,22 +121,18 @@ _Incidently `95c384...` is RIPEMD-160 of the public key associated with the addr
 
 Wallets fulfill conditions by including a signature script (_scriptSig_) in the broadcasted transaction. In the simplest case the signature script contains an [secp256k1](https://en.bitcoin.it/wiki/Secp256k1) signature (_Sig_) and a full public key (_PubKey_).
 
-~~~ {.bash}
-<Sig> <PubKey> 
-~~~
+    <Sig> <PubKey> 
 
 Bitcoin's scripting language is a stack-based language deliberately designed to be stateless and not Turing complete. To test whether the transaction is valid the signature script is prepended to the pubkey script and the resulting script is evaluated.
 
-~~~ {.bash}
-<Sig> <PubKey> OP_DUP OP_HASH160 95c3848663509dcb35e5ec95653df88edae40482 OP_EQUALVERIFY OP_CHECKSIG
-~~~
+    <Sig> <PubKey> OP_DUP OP_HASH160 95c3848663509dcb35e5ec95653df88edae40482 OP_EQUALVERIFY OP_CHECKSIG
 
 Participants on the peer network only add the transaction to the blockchain (confirming the spending of the transaction) if this script evaluates to true. The above script evaluates to true if the transaction signature (using PubKey) equals Sig. 
 
 _In a later posts we will analyze how to read, write and evaluate scripts._
 
 
-###### Handing control over funds to another wallet
+# Handing control over funds to another wallet
 
 Finally &mdash; to drive the idea home that the satoshis are not stored in a wallet but as UTXO on the blockchain I'm going to show you how to hand over funds in our simplistic wallet to another wallet. As discussed previously funds are spent by broadcasting a transaction referencing a previous UTXO and proving that you were the intended recipient by providing a signature script. In most cases this means that you'll be providing a public key and a signature &mdash; both of which are derived from the private key.
 
@@ -152,8 +150,8 @@ This will force Bitcoin-Qt to rescan to blockchain for transactions related to t
 
 <div style="clear: both"></div>
 
-~~~ {.haskell}
-> importprivkey XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+~~~ 
+importprivkey XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 ~~~
 
 Next time we'll take a closer look at [haskoin-wallet](https://github.com/plaprade/haskoin-wallet).
