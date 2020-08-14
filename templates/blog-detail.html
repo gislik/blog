@@ -41,34 +41,28 @@
 
     <section>
         <p>
-        $if(category)$
-        Category: $category$
-        $endif$
+            $if(category)-$ $category$ $endif$
+            $if(tags)-$ $tags$ $endif$
         </p>
         <p>
-        $if(tags)$
-        Tags: $tags$
-        $endif$
         </p>
     </section>
 
-    $if(showdeadcode)$
     <footer>
         <nav class="c-pagination p-pagination">
             <div class="c-pagination__ctrl">
                 <div class="c-pagination__newer">
-                    {% if page.later -%}
-                    <a href="{{ page.later.permalink }}">{{ page.later.title }}</a>
-                    {%- endif %}
+                    $if(pages.previous.url)-$
+                    <a href="$pages.previous.url$">Older</a>
+                    $endif$
                 </div>
                 <div class="c-pagination__older">
-                    {% if page.earlier -%}
-                    <a href="{{ page.earlier.permalink }}">{{ page.earlier.title }}</a>
-                    {%- endif %}
+                    $if(pages.next.url)-$
+                    <a href="$pages.next.url$">Newer</a>
+                    $endif$
                 </div>
             </div>
         </nav>
     </footer>
-    $endif$
 
 </article>

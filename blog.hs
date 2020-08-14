@@ -15,6 +15,7 @@ import            Data.Time.Format                 (TimeLocale, defaultTimeLocal
 import            Text.Printf                      (printf)
 import            Text.Blaze.Html                  (toHtml, toValue, (!))
 import            Text.Blaze.Html.Renderer.String  (renderHtml)
+import            Text.HTML.TagSoup                (Tag(..), (~==))
 import qualified  Data.Set                         as S
 import qualified  Data.Map                         as M
 import qualified  Text.Blaze.Html5                 as H
@@ -46,104 +47,120 @@ main = do
       excludePattern <- liftM fromList $ includeTagM "icelandic" <=< getMatches $ blogPattern
       let visiblePattern = allPattern .&&. complement excludePattern
 
-      pages      <- buildPages Nothing visiblePattern
+      pages      <- buildPages visiblePattern (\i -> fromCapture "*/index.html" (show i))
       categories <- buildCategories visiblePattern (fromCapture "*/index.html")
       tags       <- buildTags visiblePattern (fromCapture "tags/*/index.html")
 
       -- static content
       match staticPattern $ do
-         route   rootRoute
-         compile copyFileCompiler
+         route   $ rootRoute
+         compile $ copyFileCompiler
 
       -- static css
       match "css/**.css" $ do
-         route idRoute
-         compile compressCssCompiler
+         route   $ idRoute
+         compile $ compressCssCompiler
 
       match ("css/**.scss" .&&. complement "css/**_*.scss") $ do
-         route $ setExtension "css"
-         compile $  sassCompiler  >>=
-            return . fmap compressCss
+         route   $ setExtension "css"
+         compile $ sassCompiler  
+            >>= return . fmap compressCss
+            >>= relativizeUrls
 
       match "css/webfonts/*" $ do
-         route idRoute
-         compile copyFileCompiler
+         route   $ idRoute
+         compile $ copyFileCompiler
 
       -- static pages
       match "*.md" $ do
-         route pageRoute
+         route   $ pageRoute
          compile $ pandocCompiler
             >>= loadAndApplyTemplate "templates/default.html" defaultCtx
+            >>= relativizeUrls
 
       -- index
       match "index.html" $ do
-         route idRoute
-         compile $ do
-            getResourceBody
-               >>= applyAsTemplate (pageCtx 1 pages categories tags)
-               >>= loadAndApplyTemplate "templates/default.html" defaultCtx 
+         route   $ idRoute
+         compile $ getResourceBody
+            >>= applyAsTemplate (pageCtx 1 pages categories tags)
+            >>= loadAndApplyTemplate "templates/default.html" defaultCtx 
+            >>= indexCompiler
+            >>= relativizeUrls
 
       -- blog pages
       paginateRules pages $ \i _ -> do
-         route idRoute
+         route   $ idRoute
          compile $ makeItem (show i)
             >>= loadAndApplyTemplate "templates/blog-list.html" (pageCtx i pages categories tags)
             >>= loadAndApplyTemplate "templates/default.html" defaultCtx
+            >>= indexCompiler
+            >>= relativizeUrls
 
       -- blog category index
       tagsRules categories $ \category pattern -> do
-         catPages <- buildPages (Just category) pattern
-         route idRoute
-         compile $ do
-            makeItem category
-               >>= loadAndApplyTemplate "templates/blog-list.html" (pageCtx 1 catPages categories tags)
-               >>= loadAndApplyTemplate "templates/default.html" defaultCtx
+         catPages <- buildPages pattern (\i -> fromCaptures "*/*/index.html" [category, show i])
+         route   $ idRoute
+         compile $ makeItem category
+            >>= loadAndApplyTemplate "templates/blog-list.html" (pageCtx 1 catPages categories tags)
+            >>= loadAndApplyTemplate "templates/default.html" defaultCtx
+            >>= indexCompiler
+            >>= relativizeUrls
          paginateRules catPages $ \i _ -> do -- blog category pages
-            route idRoute
-            compile $ do
-               makeItem category
-                  >>= loadAndApplyTemplate "templates/blog-list.html" (pageCtx i catPages categories tags)
-                  >>= loadAndApplyTemplate "templates/default.html" defaultCtx
+            route   $ idRoute
+            compile $ makeItem category
+               >>= loadAndApplyTemplate "templates/blog-list.html" (pageCtx i catPages categories tags)
+               >>= loadAndApplyTemplate "templates/default.html" defaultCtx
+               >>= indexCompiler
+               >>= relativizeUrls
 
       -- blog tags index 
       tagsRules tags $ \tag pattern -> do
-         tagPages <- buildPages (Just $ "tags" </> tag) pattern
-         route idRoute
-         compile $ do
-            makeItem tag
-               >>= loadAndApplyTemplate "templates/blog-list.html" (pageCtx 1 tagPages categories tags)
-               >>= loadAndApplyTemplate "templates/default.html" defaultCtx
+         tagPages <- buildPages pattern (\i -> fromCaptures "tags/*/*/index.html" [tag, show i])
+         route   $ idRoute
+         compile $ makeItem tag
+            >>= loadAndApplyTemplate "templates/blog-list.html" (pageCtx 1 tagPages categories tags)
+            >>= loadAndApplyTemplate "templates/default.html" defaultCtx
+            >>= indexCompiler
+            >>= relativizeUrls
          paginateRules tagPages $ \i _ -> do -- blog tags pages
             route idRoute
             compile $ do
                makeItem tag
                   >>= loadAndApplyTemplate "templates/blog-list.html" (pageCtx i tagPages categories tags)
                   >>= loadAndApplyTemplate "templates/default.html" defaultCtx
+                  >>= indexCompiler
+                  >>= relativizeUrls
 
       -- blogs
       match allPattern $ do
-         route blogRoute
+         route   $ blogRoute
          compile $ pandocCompiler
             >>= saveSnapshot blogSnapshot
             >>= loadAndApplyTemplate "templates/blog-detail.html"    (blogDetailCtx categories tags)
             >>= loadAndApplyTemplate "templates/default.html" defaultCtx
+            >>= indexCompiler
+            >>= relativizeUrls
 
       -- slides
       match "slides/*.md" $ do
-         route slidesRoute
+         route   $ slidesRoute
          compile $ pandocCompiler
             >>= saveSnapshot slidesSnapshot
             >>= loadAndApplyTemplate "templates/slides.html" slidesDetailCtx
+            >>= indexCompiler
+            >>= relativizeUrls
 
       match "slides/**" $ do
-        route   slidesAssetsRoute
-        compile copyFileCompiler
+         route   $ slidesAssetsRoute
+         compile $ copyFileCompiler
 
       create ["slides/index.html"] $ do
-         route  idRoute
+         route   $ idRoute
          compile $ makeItem "Slides"
             >>= loadAndApplyTemplate "templates/slides-list.html" slidesCtx
             >>= loadAndApplyTemplate "templates/default.html" slidesCtx
+            >>= indexCompiler
+            >>= relativizeUrls
 
       -- rss
       create ["rss/index.html"] $ do
@@ -151,7 +168,8 @@ main = do
          compile $ renderBlogRss <=< fmap (take 20) . loadBlogs $ visiblePattern
 
       -- templates
-      match "templates/*.html" $ compile templateCompiler
+      match "templates/*.html" $ 
+         compile $ templateCompiler
 
 --------------------------------------------------------------------------------
 -- CONFIGURATION
@@ -204,17 +222,18 @@ defaultCtx =
 pageCtx :: PageNumber -> Paginate -> Tags -> Tags -> Context String
 pageCtx i pages categories tags = 
       listField "blogs" (blogDetailCtx categories tags) (loadBlogs pattern) <>
-      field "categories" (const . renderTagList' $ categories)         <>
---      constField "title" "Pagination"                                  <>
-      pagesField pages i                                               <>
+      categoryListField "categories" categories                             <>
+      tagsListField "tags" tags                                             <>
+      pagesField pages i                                                    <>
       defaultCtx
   where
       pattern = fromList . fromMaybe [] . M.lookup i . paginateMap $ pages
-      pagesField pages i = replaceWithBase . dropIndex $ aliasContext' pages i
-      dropIndex = mapContextP (".url" `isSuffixOf`) dropFileName 
-      replaceWithBase = mapContextP ("pages.previous.url" `isSuffixOf`) dropOne
-      dropOne url | "/1/" `isSuffixOf` url = joinPath . reverse . tail . reverse . splitPath $ url
-      dropOne url                          = url
+      pagesField pages i = aliasContext' pages i
+      -- pagesField pages i = replaceWithBase $ aliasContext' pages i
+      -- dropIndex = mapContextP (".url" `isSuffixOf`) dropFileName 
+      -- replaceWithBase = mapContextP ("pages.previous.url" `isSuffixOf`) dropOne
+      -- dropOne url | "/1/" `isSuffixOf` url = joinPath . reverse . tail . reverse . splitPath $ url
+      -- dropOne url                          = url
       mapContextP p f c'@(Context c) = Context $ \k a i -> 
         if p k then unContext (mapContext f c') k a i else c k a i
       aliasContext' pages = aliasContext alias . paginateContext pages
@@ -235,9 +254,7 @@ blogDetailCtx categories tags =
       dateField "date" "%B %e, %Y"             <>
       mapContext dropFileName (urlField "url") <>
       categoryField' "category" categories     <>
-      -- tagsField "tags" categories              <>
-      -- tagsFieldWith (getTags <=< return . fromFilePath . (</> "index.html") . toFilePath) simpleRenderLink (mconcat . intersperse ",  ") "tags" tags <>
-      tagsField "tags" tags <>
+      tagsField' "tags" tags                   <>
       teaserField "summary" blogSnapshot       <>
       defaultCtx
 
@@ -320,36 +337,48 @@ prettyTitleField = mapContext (defaultTitle . pageTitle) . pathField
    where
       pageTitle :: String -> String
       pageTitle = intercalate " &#x276f;&#x276f;= " . splitDirectories . capitalize . dropFileName
-
       defaultTitle :: String -> String
       defaultTitle "." = "Blog"
       defaultTitle x = x
-
       capitalize :: String -> String
       capitalize [] = []
       capitalize (x:xs) = toUpper x : map toLower xs
+
+categoryListField :: String -> Tags -> Context a
+categoryListField key tags = field key (const $ renderList tags) 
+   where
+      renderList = renderTags makeLink (intercalate " ")
+      makeLink tag url _ _ _ = renderHtml $ do
+         "@"
+         H.a ! A.href (toValue url) $ toHtml tag
+
+tagsListField :: String -> Tags -> Context a
+tagsListField key tags = field key (const $ renderList tags) 
+   where
+      renderList = renderTags makeLink (intercalate " ")
+      makeLink tag url _ _ _ = renderHtml $ do
+         "#"
+         H.a ! A.href (toValue url) $ toHtml tag
+
+
+categoryField' :: String -> Tags -> Context a -- drops the filename from the link
+categoryField' = tagsFieldWith getCategory (renderLink "@") mconcat
+
+tagsField' :: String -> Tags -> Context a -- drops the filename from the link
+tagsField' = tagsFieldWith getTags (renderLink "#") (mconcat . intersperse ", ")
 
 slidesTitleField :: String -> Context a
 slidesTitleField = mapContext (defaultTitle . slideTitle) . pathField
    where
       slideTitle :: String -> String
       slideTitle = capitalize . drop 11 . takeBaseName
-
       defaultTitle :: String -> String
       defaultTitle [] = "Slides"
       defaultTitle x = x
-
       capitalize :: String -> String
       capitalize [] = []
       capitalize (x:xs) = toUpper x : map toLower xs
       
-
-categoryField' :: String -> Tags -> Context a -- drops the filename from the link
--- categoryField' = tagsFieldWith getCategory simpleRenderLink (mconcat . intersperse ", ")
-categoryField' = tagsFieldWith getCategory simpleRenderLink mconcat
-   where
-      getCategory :: Identifier -> Compiler [String]
-      getCategory = return . return . takeBaseName . takeDirectory . toFilePath
 
 aliasContext :: (String -> String) -> Context a -> Context a
 aliasContext f (Context c) = Context $ \k a i -> c (f k) a i <|> c' k
@@ -366,22 +395,8 @@ loadBlogs = blogOrder <=< flip loadAllSnapshots blogSnapshot
 
 loadSlides = blogOrder <=< flip loadAllSnapshots slidesSnapshot
 
-buildPages :: (MonadMetadata m, Functor m) => Maybe String -> Pattern -> m Paginate
-buildPages mprefix pattern = 
-   buildPaginateWith 
-      (return . paginateEvery blogPerPage)
-      pattern
-      (asIdentifier mprefix . show)
-   where
-      asIdentifier :: Maybe String -> String -> Identifier
-      asIdentifier Nothing    = fromCapture "*/index.html" 
-      asIdentifier (Just pre) = fromCapture . fromGlob $ pre <> "/*/index.html" 
-
-renderTagList' :: Tags -> Compiler String -- drops the filename from the link
-renderTagList' = renderTags makeLink (intercalate " ")
-   where
-      makeLink tag url count _ _ = renderHtml $
-         H.a ! A.href (toValue . dropFileName $ url) $ toHtml (tag ++ " (" ++ show count ++ ")")
+buildPages :: (MonadMetadata m, Functor m) => Pattern -> (PageNumber -> Identifier) -> m Paginate
+buildPages pattern makeId = buildPaginateWith (return . paginateEvery blogPerPage) pattern makeId
 
 renderBlogRss :: [Item String] -> Compiler (Item String)
 renderBlogRss = renderRss blogFeedConfiguration rssCtx
@@ -392,6 +407,15 @@ sassCompiler = getUnderlying >>=
         \file -> unixFilter "sass" [file] ""  >>=
         makeItem
 
+indexCompiler :: Item String -> Compiler (Item String)
+indexCompiler x = withItemBody (return . withTags dropIndex) x
+   where
+      -- dropIndex tag | tag ~== TagOpen "a" [] = tag
+      dropIndex (TagOpen "a" attrs) = TagOpen "a" (href <$> attrs)
+      dropIndex tag = tag
+      href ("href", url) = ("href", dropFileName url)
+      href x = x
+
 -- metadata
 includeTagM :: MonadMetadata m => String -> [Identifier] -> m [Identifier]
 includeTagM tag = filterTagsM (return . elem tag)
@@ -400,10 +424,12 @@ filterTagsM :: MonadMetadata m => ([String] -> m Bool) -> [Identifier] -> m [Ide
 filterTagsM p = filterM $ p <=< getTags 
 
 -- html
-simpleRenderLink :: String -> (Maybe FilePath) -> Maybe H.Html
-simpleRenderLink _   Nothing         = Nothing
-simpleRenderLink tag (Just filePath) =
-  Just $ H.a ! A.href (toValue $ toUrl . dropFileName $ filePath) $ toHtml tag
+renderLink :: String -> String -> (Maybe FilePath) -> Maybe H.Html
+renderLink _ _   Nothing            = Nothing
+renderLink pre text (Just url) =
+   Just $ do
+      toHtml pre
+      H.a ! A.href (toValue $ toUrl url) $ toHtml text
 
 -- dates
 tryParseDate :: Identifier -> Metadata -> Maybe UTCTime
