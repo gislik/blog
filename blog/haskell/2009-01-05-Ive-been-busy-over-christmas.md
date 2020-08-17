@@ -4,7 +4,6 @@ author: Gísli Kristjánsson
 id: 15
 timestamp: 05.01.2009 03:16:34
 filename: 2009-01-05-I've-been-busy-over-christmas....html
-summary: test
 ---
 
 <p>... but there's no activity on your blog you may say. Well I decided to do my <a href="http://baldurkristjans.is/">brother</a> a favor. He is a professional photographer working for a photo gallery called <a href="http://magg.is/">Magg</a> but with his own <em>clientele</em>. Now facing changes in the photographic scene as the recession begins to creep in he wanted to strengthen his own professional presence. The vehicle for such a requirement was an online photo gallery (due to open this week) with some of his more artistic images.</p>

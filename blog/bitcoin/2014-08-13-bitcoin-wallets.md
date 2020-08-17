@@ -1,7 +1,5 @@
 ---
 title: Bitcoin Wallets 
-tags: testing
-summary: test
 ---
 
 In this blog post I'm going to concentrate on [Bitcoin wallets](https://bitcoin.org/en/choose-your-wallet) which will be our foundation for a more developer-oriented discussion. Wallets are analogous to web browsers in that they are the main interface for end users to interact with the network. In its simplest form it is a file which contains a collection of [private keys](https://en.bitcoin.it/wiki/Private_key). In addition the wallet software usually takes care of communicating with peers, managing the blockchain and keeping records of wallet transactions.

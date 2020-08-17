@@ -5,7 +5,6 @@ tags: happstack
 id: 17
 timestamp: 05.05.2009 21:44:04
 filename: 2009-05-05-model-migration.html
-summary: test
 ---
 
 <p>My <a href="http://baldurkristjans.is">brother</a> has been asking me for a new feature for some time now. It's a simple video feature where instead of showing a picture when clicked on a video begins to play. I had been holding this project off for a while because I knew that model migration would probably be a hazzle.</p>

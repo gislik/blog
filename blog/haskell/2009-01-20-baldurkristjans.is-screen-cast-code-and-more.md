@@ -5,7 +5,6 @@ tags: happstack
 id: 16
 timestamp: 20.01.2009 19:14:32
 filename: 2009-01-20-baldurkristjans.is-screen-cast-code-and-more.html
-summary: test
 ---
 
 <p>As mentioned in my <a href="http://twitter.com/gislik/statuses/1121717423">tweet</a>&nbsp;my brother's online <a href="http://baldurkristjans.is">photo album</a> went live last Thursday. Since then I've been trying to think not so much about it because this project had started to consume my brain leaving little space for anything else (including <a href="http://conqueringsleepapnea.com/images/insomnia_2.jpg">sleeping</a>). I'm happy with the responses he's been getting over the last couple of days - and the most important thing; he's happy.</p>

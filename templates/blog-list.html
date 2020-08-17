@@ -15,14 +15,11 @@
                 </p>
             </header>
                 <section class="c-article__summary">
-<p>I have been dreading porting my Blog application from HAppS to Happstack for a long time now. It is however apparent that HAppS is dying and Happstack (a fork of HAppS designed to take things further) was the only way to roll.</p>
                     $if(showdeadcode)$
-                    $if(summary)-$
+<p>I have been dreading porting my Blog application from HAppS to Happstack for a long time now. It is however apparent that HAppS is dying and Happstack (a fork of HAppS designed to take things further) was the only way to roll.</p>
+                    $endif$
+
                     $summary$
-                    $else$
-                    $body$
-                    $endif$
-                    $endif$
                 </section>
                 $if(showdeadcode)$
                 <a href="$url$" class="c-article__btn p-list-article__btn">More</a>

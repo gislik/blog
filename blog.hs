@@ -1,22 +1,18 @@
 {-# LANGUAGE OverloadedStrings, TupleSections #-}
-import            Data.Typeable                    (Typeable)
-import            Data.Binary                      (Binary)
 import            Data.Maybe                       (fromMaybe, listToMaybe)
 import            Data.Monoid                      ((<>), mconcat)
-import            Data.Functor                     ((<$>))
-import            Data.List                        (intercalate, intersperse, unfoldr, sortBy, isSuffixOf)
+import            Data.Functor                     ((<$>), fmap)
+import            Data.List                        (intercalate, intersperse)
 import            Data.Char                        (toLower, toUpper)
 import            Data.Time.Clock                  (UTCTime (..))
-import            Control.Applicative              ((<|>))
-import            Control.Monad                    (msum, filterM, (<=<), liftM, forM, filterM)
+import            Control.Applicative              ((<|>), Alternative(..))
+import            Control.Monad                    (msum, filterM, (<=<), liftM, filterM)
 import            Control.Monad.Fail               (MonadFail)
 import            System.Environment               (getArgs)
 import            Data.Time.Format                 (TimeLocale, defaultTimeLocale, parseTimeM, formatTime)
-import            Text.Printf                      (printf)
 import            Text.Blaze.Html                  (toHtml, toValue, (!))
 import            Text.Blaze.Html.Renderer.String  (renderHtml)
-import            Text.HTML.TagSoup                (Tag(..), (~==))
-import qualified  Data.Set                         as S
+import            Text.HTML.TagSoup                (Tag(..), (~==), isTagText, fromTagText)
 import qualified  Data.Map                         as M
 import qualified  Text.Blaze.Html5                 as H
 import qualified  Text.Blaze.Html5.Attributes      as A
@@ -87,6 +83,16 @@ main = do
             >>= indexCompiler
             >>= relativizeUrls
 
+      -- blogs
+      match allPattern $ do
+         route   $ blogRoute
+         compile $ pandocCompiler
+            >>= saveSnapshot blogSnapshot
+            >>= loadAndApplyTemplate "templates/blog-detail.html"    (blogDetailCtx categories tags)
+            >>= loadAndApplyTemplate "templates/default.html" defaultCtx
+            >>= indexCompiler
+            >>= relativizeUrls
+
       -- blog pages
       paginateRules pages $ \i _ -> do
          route   $ idRoute
@@ -130,16 +136,6 @@ main = do
                   >>= loadAndApplyTemplate "templates/default.html" defaultCtx
                   >>= indexCompiler
                   >>= relativizeUrls
-
-      -- blogs
-      match allPattern $ do
-         route   $ blogRoute
-         compile $ pandocCompiler
-            >>= saveSnapshot blogSnapshot
-            >>= loadAndApplyTemplate "templates/blog-detail.html"    (blogDetailCtx categories tags)
-            >>= loadAndApplyTemplate "templates/default.html" defaultCtx
-            >>= indexCompiler
-            >>= relativizeUrls
 
       -- slides
       match "slides/*.md" $ do
@@ -189,20 +185,18 @@ blogSnapshot = "blog-content"
 blogPerPage :: Int
 blogPerPage = 4
 
-blogOrder :: (MonadMetadata m, MonadFail m) => [Item a] -> m [Item a]
-blogOrder = recentFirst
-
-blogFeedConfiguration :: FeedConfiguration
-blogFeedConfiguration = FeedConfiguration 
-                      { feedTitle = "Gísli Kristjánsson"
-                      , feedDescription = "Jack of all trades, master of none"
-                      , feedAuthorName = "G&iacute;sli Kristj&aacute;nsson"
-                      , feedAuthorEmail = "gislik@hamstur.is"
-                      , feedRoot = "http://gisli.hamstur.is"
-                      }
-
 slidesSnapshot :: Snapshot
 slidesSnapshot = "slides-content"
+
+feedConfiguration :: FeedConfiguration
+feedConfiguration =
+   FeedConfiguration
+      { feedTitle       = "Gísli Kristjánsson"
+      , feedDescription = "Jack of all trades, master of none"
+      , feedAuthorName  = "G&iacute;sli Kristj&aacute;nsson"
+      , feedAuthorEmail = "gislik@hamstur.is"
+      , feedRoot        = "http://gisli.hamstur.is"
+      }
 
 --------------------------------------------------------------------------------
 -- CONTEXTS
@@ -216,27 +210,19 @@ defaultCtx =
    titleField       "title"                                               <>
    urlField         "url"                                                 <>
    pathField        "path"                                                <>
-   polishFunction   "polish"                                              <>
-   missingField
+   polishField      "polish"                                              
+   -- missingField
 
 pageCtx :: PageNumber -> Paginate -> Tags -> Tags -> Context String
 pageCtx i pages categories tags = 
       listField "blogs" (blogDetailCtx categories tags) (loadBlogs pattern) <>
       categoryListField "categories" categories                             <>
       tagsListField "tags" tags                                             <>
-      pagesField pages i                                                    <>
+      pagesField i <>
       defaultCtx
   where
       pattern = fromList . fromMaybe [] . M.lookup i . paginateMap $ pages
-      pagesField pages i = aliasContext' pages i
-      -- pagesField pages i = replaceWithBase $ aliasContext' pages i
-      -- dropIndex = mapContextP (".url" `isSuffixOf`) dropFileName 
-      -- replaceWithBase = mapContextP ("pages.previous.url" `isSuffixOf`) dropOne
-      -- dropOne url | "/1/" `isSuffixOf` url = joinPath . reverse . tail . reverse . splitPath $ url
-      -- dropOne url                          = url
-      mapContextP p f c'@(Context c) = Context $ \k a i -> 
-        if p k then unContext (mapContext f c') k a i else c k a i
-      aliasContext' pages = aliasContext alias . paginateContext pages
+      pagesField = aliasContext alias . paginateContext pages
       alias "pages.first.number"    = "firstPageNum"
       alias "pages.first.url"       = "firstPageUrl"
       alias "pages.next.number"     = "nextPageNum"
@@ -251,35 +237,38 @@ pageCtx i pages categories tags =
 
 blogDetailCtx :: Tags -> Tags -> Context String
 blogDetailCtx categories tags = 
-      dateField "date" "%B %e, %Y"             <>
-      mapContext dropFileName (urlField "url") <>
-      categoryField' "category" categories     <>
-      tagsField' "tags" tags                   <>
-      teaserField "summary" blogSnapshot       <>
-      defaultCtx
+   dateField "date" "%B %e, %Y"             <>
+   mapContext dropFileName (urlField "url") <>
+   categoryField' "category" categories     <>
+   tagsField' "tags" tags                   <>
+   field "pages.next.url" nextBlog          <>
+   field "pages.previous.url" previousBlog  <>
+   defaultCtx                               <> -- summary from metadata
+   teaserField "summary" blogSnapshot       <> -- teaser is summary
+   previewField "summary" blogSnapshot         -- first paragraph is summary
 
 slidesCtx :: Context String
-slidesCtx = 
-    slidesTitleField "title"                                            <> 
-    listField "slides" slidesDetailCtx (loadSlides "slides/*.md") <> 
-    defaultCtx
+slidesCtx =
+   slidesTitleField "title"                                      <>
+   listField "slides" slidesDetailCtx (loadSlides "slides/*.md") <>
+   defaultCtx
 
 slidesDetailCtx :: Context String
 slidesDetailCtx = 
-    slidesTitleField "title" <> 
-    dateField "date" "%B %e, %Y" <> 
-    mapContext dropFileName (urlField "url") <>
-    functionField "featureimage" (\_ -> liftM (fromMaybe "") . getRoute . fromFilePath . featuredFileName)  <>
-    defaultCtx
-  where
-    featuredFileName = flip replaceExtension "png" . toFilePath . itemIdentifier
+   slidesTitleField "title"                                                                               <>
+   dateField "date" "%B %e, %Y"                                                                           <>
+   mapContext dropFileName (urlField "url")                                                               <>
+   functionField "featureimage" (\_ -> liftM (fromMaybe "") . getRoute . fromFilePath . featuredFileName) <>
+   defaultCtx
+   where
+      featuredFileName = flip replaceExtension "png" . toFilePath . itemIdentifier
 
 rssCtx :: Context String
 rssCtx = 
-      cdataContext metadataField    <>
-      bodyField "description"       <>
-      urlField "url"                <>
-      defaultCtx
+   cdataContext metadataField <>
+   bodyField "description"    <>
+   urlField "url"             <>
+   defaultCtx
    where
       cdataContext = mapContext (\s -> "<![CDATA[" <> s <> "]]>")
 
@@ -287,25 +276,26 @@ rssCtx =
 -- ROUTES
 --------------------------------------------------------------------------------
 rootRoute :: Routes 
-rootRoute = customRoute (joinPath . dropDirectory . splitPath . toFilePath)
+rootRoute =
+   customRoute (joinPath . dropDirectory . splitPath . toFilePath)
   where
-    dropDirectory [] = []
+    dropDirectory []       = []
     dropDirectory ("/":ds) = dropDirectory ds
-    dropDirectory ds = tail ds
+    dropDirectory ds       = tail ds
 
 pageRoute :: Routes
 pageRoute = removeExtension `composeRoutes` addIndex
    where 
-      removeExtension       = setExtension mempty
-      addIndex              = postfixRoute "index.html"
-      postfixRoute postfix  = customRoute $ (</> postfix) . toFilePath
+   removeExtension = setExtension mempty
+   addIndex = postfixRoute "index.html"
+   postfixRoute postfix = customRoute $ (</> postfix) . toFilePath
 
 blogRoute :: Routes
 blogRoute = 
-      customRoute (takeFileName . toFilePath)     `composeRoutes`
-      metadataRoute dateRoute                     `composeRoutes` 
-      dropDateRoute                               `composeRoutes` 
-      pageRoute
+   customRoute (takeFileName . toFilePath) `composeRoutes`
+   metadataRoute dateRoute                 `composeRoutes`
+   dropDateRoute                           `composeRoutes`
+   pageRoute
    where 
       dateRoute metadata = customRoute $ \id' -> joinPath [dateFolder id' metadata, toFilePath id']
       dateFolder id' = maybe mempty (formatTime defaultTimeLocale "%Y/%m") . tryParseDate id'
@@ -313,62 +303,39 @@ blogRoute =
 
 slidesRoute :: Routes
 slidesRoute = 
-      blogRoute `composeRoutes` prefixRoute "slides"
+   blogRoute `composeRoutes` prefixRoute "slides"
    where 
       prefixRoute prefix = customRoute $ (prefix </>) . toFilePath
 
 slidesAssetsRoute :: Routes
 slidesAssetsRoute = 
-      yearRoute     `composeRoutes`
-      monthRoute    `composeRoutes`
-      dropDayRoute  
+   yearRoute    `composeRoutes`
+   monthRoute   `composeRoutes`
+   dropDayRoute
    where 
       yearRoute = gsubRoute "[[:digit:]]{4}-" (\xs -> take 4 xs <> "/")
       monthRoute = gsubRoute "/[[:digit:]]{2}-" (\xs -> "/" <> (take 2 . drop 1) xs <> "/")
       dropDayRoute = gsubRoute "/[[:digit:]]{2}-" (const "/")
 
-
 --------------------------------------------------------------------------------
 -- HELPERS
 --------------------------------------------------------------------------------
 -- contexts
-prettyTitleField :: String -> Context a
-prettyTitleField = mapContext (defaultTitle . pageTitle) . pathField 
-   where
-      pageTitle :: String -> String
-      pageTitle = intercalate " &#x276f;&#x276f;= " . splitDirectories . capitalize . dropFileName
-      defaultTitle :: String -> String
-      defaultTitle "." = "Blog"
-      defaultTitle x = x
-      capitalize :: String -> String
-      capitalize [] = []
-      capitalize (x:xs) = toUpper x : map toLower xs
-
-categoryListField :: String -> Tags -> Context a
-categoryListField key tags = field key (const $ renderList tags) 
-   where
-      renderList = renderTags makeLink (intercalate " ")
-      makeLink tag url _ _ _ = renderHtml $ do
-         "@"
-         H.a ! A.href (toValue url) $ toHtml tag
-
-tagsListField :: String -> Tags -> Context a
-tagsListField key tags = field key (const $ renderList tags) 
-   where
-      renderList = renderTags makeLink (intercalate " ")
-      makeLink tag url _ _ _ = renderHtml $ do
-         "#"
-         H.a ! A.href (toValue url) $ toHtml tag
-
-
-categoryField' :: String -> Tags -> Context a -- drops the filename from the link
-categoryField' = tagsFieldWith getCategory (renderLink "@") mconcat
-
-tagsField' :: String -> Tags -> Context a -- drops the filename from the link
-tagsField' = tagsFieldWith getTags (renderLink "#") (mconcat . intersperse ", ")
+-- prettyTitleField :: String -> Context a
+-- prettyTitleField = mapContext (defaultTitle . pageTitle) . pathField 
+--    where
+--       pageTitle :: String -> String
+--       pageTitle = intercalate " &#x276f;&#x276f;= " . splitDirectories . capitalize . dropFileName
+--       defaultTitle :: String -> String
+--       defaultTitle "." = "Blog"
+--       defaultTitle x = x
+--       capitalize :: String -> String
+--       capitalize [] = []
+--       capitalize (x:xs) = toUpper x : map toLower xs
 
 slidesTitleField :: String -> Context a
-slidesTitleField = mapContext (defaultTitle . slideTitle) . pathField
+slidesTitleField = 
+   mapContext (defaultTitle . slideTitle) . pathField
    where
       slideTitle :: String -> String
       slideTitle = capitalize . drop 11 . takeBaseName
@@ -378,50 +345,106 @@ slidesTitleField = mapContext (defaultTitle . slideTitle) . pathField
       capitalize :: String -> String
       capitalize [] = []
       capitalize (x:xs) = toUpper x : map toLower xs
-      
+
+categoryField' :: String -> Tags -> Context a 
+categoryField' =
+   tagsFieldWith getCategory (renderLink "@") mconcat
+
+categoryListField :: String -> Tags -> Context a
+categoryListField key tags = 
+   field key (const $ renderList tags) 
+   where
+      renderList = renderTags makeLink (intercalate " ")
+      makeLink tag url _ _ _ = renderHtml $ do
+         "@"
+         H.a ! A.href (toValue url) $ toHtml tag
+
+tagsField' :: String -> Tags -> Context a 
+tagsField' = 
+   tagsFieldWith getTags (renderLink "#") (mconcat . intersperse " ")
+
+tagsListField :: String -> Tags -> Context a
+tagsListField key tags = 
+   field key (const $ renderList tags) 
+   where
+      renderList = renderTags makeLink (intercalate " ")
+      makeLink tag url _ _ _ = renderHtml $ do
+         "#"
+         H.a ! A.href (toValue url) $ toHtml tag
+
+previewField :: String -> Snapshot -> Context String
+previewField key snapshot  = 
+   field key trim'
+   where
+      trim' :: Item String -> Compiler String
+      trim' item = do
+         body <- loadSnapshotBody (itemIdentifier item) snapshot
+         return $ withTagList firstParagraph body
+      firstParagraph :: [Tag String] -> [Tag String]
+      firstParagraph = map fst . takeWhile (\(_, s) -> s > 0) . acc 0 . (map cnt)
+      acc _ [] = []
+      acc s ((x, s'):xs) = (x, s + s') : acc  (s + s') xs
+      cnt tag@(TagOpen "p" _) = (tag, 1)
+      cnt tag@(TagClose "p")  = (tag, -1)
+      cnt tag               = (tag, 0)
 
 aliasContext :: (String -> String) -> Context a -> Context a
-aliasContext f (Context c) = Context $ \k a i -> c (f k) a i <|> c' k
+aliasContext f (Context c) = 
+   Context $ \k a i -> c (f k) a i <|> c' k
    where 
       c' k = noResult $ unwords ["Tried to alias", k, "as", f k, "which doesn't exist"]
 
-polishFunction :: String -> Context a
-polishFunction name = functionField name f
-  where f (a:_) i = return a
+polishField :: String -> Context String
+polishField name = 
+   functionField name f
+   where 
+      f [] _    = return ""
+      f (a:_) _ = return a
 
 -- compilers
-loadBlogs :: (Typeable a, Binary a) => Pattern -> Compiler [Item a]
-loadBlogs = blogOrder <=< flip loadAllSnapshots blogSnapshot
+loadBlogs :: Pattern -> Compiler [Item String]
+loadBlogs = 
+   recentFirst <=< flip loadAllSnapshots blogSnapshot
 
-loadSlides = blogOrder <=< flip loadAllSnapshots slidesSnapshot
+loadSlides :: Pattern -> Compiler [Item String]
+loadSlides = 
+   recentFirst <=< flip loadAllSnapshots slidesSnapshot
 
-buildPages :: (MonadMetadata m, Functor m) => Pattern -> (PageNumber -> Identifier) -> m Paginate
-buildPages pattern makeId = buildPaginateWith (return . paginateEvery blogPerPage) pattern makeId
+buildPages :: (MonadMetadata m, MonadFail m) => Pattern -> (PageNumber -> Identifier) -> m Paginate
+buildPages pattern makeId = 
+   buildPaginateWith
+      (return . paginateEvery blogPerPage <=< sortRecentFirst) 
+      pattern 
+      makeId
 
 renderBlogRss :: [Item String] -> Compiler (Item String)
-renderBlogRss = renderRss blogFeedConfiguration rssCtx
+renderBlogRss = 
+   renderRss feedConfiguration rssCtx
 
 sassCompiler :: Compiler (Item String)
-sassCompiler = getUnderlying >>=
-        return . toFilePath >>= 
-        \file -> unixFilter "sass" [file] ""  >>=
-        makeItem
+sassCompiler = 
+   getUnderlying >>=
+   return . toFilePath >>= 
+   \file -> unixFilter "sass" [file] ""  >>=
+   makeItem
 
 indexCompiler :: Item String -> Compiler (Item String)
-indexCompiler x = withItemBody (return . withTags dropIndex) x
+indexCompiler x = 
+   withItemBody (return . withTags dropIndex) x
    where
-      -- dropIndex tag | tag ~== TagOpen "a" [] = tag
       dropIndex (TagOpen "a" attrs) = TagOpen "a" (href <$> attrs)
       dropIndex tag = tag
       href ("href", url) = ("href", dropFileName url)
-      href x = x
+      href z             = z
 
 -- metadata
 includeTagM :: MonadMetadata m => String -> [Identifier] -> m [Identifier]
-includeTagM tag = filterTagsM (return . elem tag)
+includeTagM tag = 
+   filterTagsM (return . elem tag)
 
 filterTagsM :: MonadMetadata m => ([String] -> m Bool) -> [Identifier] -> m [Identifier]
-filterTagsM p = filterM $ p <=< getTags 
+filterTagsM p = 
+   filterM $ p <=< getTags 
 
 -- html
 renderLink :: String -> String -> (Maybe FilePath) -> Maybe H.Html
@@ -433,7 +456,8 @@ renderLink pre text (Just url) =
 
 -- dates
 tryParseDate :: Identifier -> Metadata -> Maybe UTCTime
-tryParseDate = tryParseDateWithLocale defaultTimeLocale
+tryParseDate = 
+   tryParseDateWithLocale defaultTimeLocale
 
 tryParseDateWithLocale :: TimeLocale -> Identifier -> Metadata -> Maybe UTCTime
 tryParseDateWithLocale locale id' metadata = do
@@ -456,3 +480,28 @@ tryParseDateWithLocale locale id' metadata = do
          , "%B %e, %Y %l:%M %p"
          , "%B %e, %Y"
          ]
+
+
+nextBlog :: Item String -> Compiler String
+nextBlog blog = do
+   blogs <- loadBlogs blogPattern :: Compiler [Item String]
+   let idents = map itemIdentifier blogs
+       ident = itemAfter idents (itemIdentifier blog)
+   case ident of
+      Just i -> (fmap (maybe empty toUrl) . getRoute) i
+      Nothing -> empty
+   where
+      itemAfter xs x = 
+         lookup x $ zip xs (tail xs)
+
+previousBlog :: Item String -> Compiler String
+previousBlog blog = do
+   blogs <- loadBlogs blogPattern :: Compiler [Item String]
+   let idents = map itemIdentifier blogs
+       ident = itemBefore idents (itemIdentifier blog)
+   case ident of
+      Just i -> (fmap (maybe empty toUrl) . getRoute) i
+      Nothing -> empty
+   where
+         itemBefore xs x =
+            lookup x $ zip (tail xs) xs
