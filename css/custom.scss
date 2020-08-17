@@ -69,12 +69,14 @@ a.profile-icon {
       margin-inline-start: 0px;
       margin-inline-end: 0px;
     }
-    .c-article__meta {
-      margin-block-start: 0.5em;
-      margin-block-end: 0.5em;
-      margin-inline-start: 0px;
-      margin-inline-end: 0px;
-    }
+}
+
+.c-article__meta {
+  margin-block-start: 0.5em;
+  margin-block-end: 0.5em;
+  margin-inline-start: 0px;
+  margin-inline-end: 0px;
+  font-style: normal;
 }
 
 .p-article > header {
@@ -85,9 +87,12 @@ a.profile-icon {
       margin-inline-end: 0px;
 }
 
-.c-article__body, .p-article__body {
+.c-article__body, .p-article__body, .c-article__summary {
+
+    font-size: 1.5rem;
   p {
     text-align: justify;
+    font-size: 1.5rem;
   }
   > h1 {
     font-size: 2.0rem;
