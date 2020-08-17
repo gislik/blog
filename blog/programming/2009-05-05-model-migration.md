@@ -1,7 +1,7 @@
 ---
 title: Model migration
 author: Gísli Kristjánsson
-tags: happstack
+tags: haskell
 id: 17
 timestamp: 05.05.2009 21:44:04
 filename: 2009-05-05-model-migration.html

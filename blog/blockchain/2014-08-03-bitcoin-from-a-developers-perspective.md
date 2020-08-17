@@ -1,5 +1,6 @@
 ---
 title: Bitcoin from a developer's perspective
+tags: bitcoin
 ---
 
 [Bitcoin](https://bitcoin.org/en/) is an exciting new technology invented by the mysterious [Satoshi](http://en.wikipedia.org/wiki/Satoshi_Nakamoto) in 2009 which has been gaining some serious traction in the last few months. Although there are many introductory blog posts about Bitcoin there aren't necessarily many which tackle the subject from a developer's perspective.

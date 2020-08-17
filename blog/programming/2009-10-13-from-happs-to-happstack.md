@@ -4,6 +4,7 @@ author: Gísli Kristjánsson
 id: 19
 timestamp: 13.10.2009 00:13:47
 filename: 2009-10-13-from-happs-to-happstack.html
+tags: haskell
 ---
 
 <p>I have been dreading porting my Blog application from <em>HAppS</em> to <a href="happstack.com"><em>Happstack</em></a> for a long time now. It is however apparent that <em>HAppS</em> is dying and <em>Happstack</em> (a fork of <em>HAppS</em> designed to take things further) was the only way to roll.</p>

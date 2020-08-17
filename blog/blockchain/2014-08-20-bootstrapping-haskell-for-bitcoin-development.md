@@ -1,5 +1,6 @@
 ---
 title: Bootstrapping Haskell for Bitcoin development
+tags: bitcoin, haskell
 ---
 
 It's time to get our hands dirty. Let's begin bootstrapping our Haskell development environment. Before we proceed it's probably fair to note that it's _very_ early days for Bitcoin development using Haskell and like users of most languages one should expect the Bitcoin libraries to be changing rapidly.
@@ -7,8 +8,6 @@ It's time to get our hands dirty. Let's begin bootstrapping our Haskell developm
 Never the less the [authors](https://github.com/haskoin/haskoin/graphs/contributors) of [Haskoin](http://hackage.haskell.org/package/haskoin) have done a remarkable job implementing a Bitcoin library in Haskell from scratch &mdash; this includes most (if not all) the low-level [elliptic curve cryptography](http://hackage.haskell.org/package/haskoin-0.1.0.2/docs/Network-Haskoin-Crypto.html) functionality. They are distributing the library with a public domain license but their aim is to build a [commercial wallet service](http://haskoin.com/) on top of the library. Please consider signing up for their service to show them your support.
 
 Now I will show you how to create a sandboxed environment for your Bitcoin projects. This will reduce the risk of dependency conflicts (a.k.a. dependency hell) by installing a _sandboxed_ version of all the dependencies independent of other projects. Later we will see how we can share a sandbox between different Bitcoin projects. We will also likely require the bleeding edge development version of Haskoin pulled from [GitHub](https://github.com/haskoin/haskoin) and in due time I'll show you how to link the development version to your sandboxed project.
-
-<!--more-->
 
 In Haskell packages and dependencies are published to [Hackage](http://hackage.haskell.org/) and managed by [Cabal](http://www.haskell.org/cabal/) and since version 1.18 it has included support for sandboxed environments.
 

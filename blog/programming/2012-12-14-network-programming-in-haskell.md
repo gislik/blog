@@ -1,6 +1,7 @@
 ---
 title: Network programming in Haskell
 author: Gísli Kristjánsson
+tags: haskell
 id: 22
 ---
 
@@ -9,6 +10,7 @@ At work we use [Clojure](http://clojure.org) as our primary implementation langu
 Some of the machines we deploy are 256M and 512M instances and with multiple instances of the JVM the machines start swapping to disk sooner or later. The other day we needed a simple way to forward all HTTP traffic received by our DNS servers to our website. It seemed like the perfect project to introduce Haskell since the code is independent of everything else and extremely simple; just output a [HTTP 301 redirect](http://en.wikipedia.org/wiki/List_of_HTTP_status_codes#3xx_Redirection) response no matter what was received on the socket.
 
 The resulting code is as close to a networking skeleton written in Haskell which I hope others will benefit from when starting a Haskell project involving network communication.
+<!--more-->
 
 The following is the complete code and below I will step through some of the more interesting parts:
 
@@ -62,8 +64,6 @@ acceptConnection socket handler = do
     forkIO (handler h)
     acceptConnection socket handler
 ~~~
-
-<!--more-->
 
 If you care about your code being able to run on Windows care must be taken to initialize the Windows network stack.
 
