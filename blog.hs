@@ -2,7 +2,7 @@
 import            Data.Maybe                       (fromMaybe, listToMaybe)
 import            Data.Monoid                      ((<>), mconcat)
 import            Data.Functor                     ((<$>), fmap)
-import            Data.List                        (intercalate, intersperse)
+import            Data.List                        (intercalate, intersperse, foldl')
 import            Data.Char                        (toLower, toUpper)
 import            Data.Time.Clock                  (UTCTime (..))
 import            Control.Applicative              ((<|>), Alternative(..))
@@ -237,15 +237,16 @@ pageCtx i pages categories tags =
 
 blogDetailCtx :: Tags -> Tags -> Context String
 blogDetailCtx categories tags = 
-   dateField "date" "%B %e, %Y"             <>
-   mapContext dropFileName (urlField "url") <>
-   categoryField' "category" categories     <>
-   tagsField' "tags" tags                   <>
-   field "pages.next.url" nextBlog          <>
-   field "pages.previous.url" previousBlog  <>
-   defaultCtx                               <> -- summary from metadata
-   teaserField "summary" blogSnapshot       <> -- teaser is summary
-   previewField "summary" blogSnapshot         -- first paragraph is summary
+   dateField "date" "%B %e, %Y"                 <>
+   mapContext dropFileName (urlField "url")     <>
+   categoryField' "category" categories         <>
+   tagsField' "tags" tags                       <>
+   field "pages.next.url" nextBlog              <>
+   field "pages.previous.url" previousBlog      <>
+   defaultCtx                                   <>  -- summary from metadata
+   teaserField "summary" blogSnapshot           <>  -- teaser is summary
+   previewField "summary" blogSnapshot          <>  -- first paragraph is summary
+   readingTimeField "reading.time" blogSnapshot
 
 slidesCtx :: Context String
 slidesCtx =
@@ -376,17 +377,28 @@ previewField :: String -> Snapshot -> Context String
 previewField key snapshot  = 
    field key trim'
    where
-      trim' :: Item String -> Compiler String
       trim' item = do
          body <- loadSnapshotBody (itemIdentifier item) snapshot
          return $ withTagList firstParagraph body
-      firstParagraph :: [Tag String] -> [Tag String]
       firstParagraph = map fst . takeWhile (\(_, s) -> s > 0) . acc 0 . (map cnt)
       acc _ [] = []
       acc s ((x, s'):xs) = (x, s + s') : acc  (s + s') xs
       cnt tag@(TagOpen "p" _) = (tag, 1)
       cnt tag@(TagClose "p")  = (tag, -1)
       cnt tag               = (tag, 0)
+
+readingTimeField :: String -> Snapshot -> Context String
+readingTimeField key snapshot = 
+   field key calculate
+   where
+      calculate :: Item String -> Compiler String
+      calculate item = do
+         body <- loadSnapshotBody (itemIdentifier item) snapshot
+         return $ withTagList acc body
+      acc ts = [TagText (show (time ts))]
+      time ts = foldl' count 0  ts `div` 265
+      count n (TagText s) = n + length (words s)
+      count n _           = n
 
 aliasContext :: (String -> String) -> Context a -> Context a
 aliasContext f (Context c) = 
