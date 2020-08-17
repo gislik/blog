@@ -1,6 +1,7 @@
 ---
 title: Receiving bitcoins
-tags: testing
+summary: The goal is to use Haskell to receive satoshis in as simple manner as possible by  generate a private key and deriveing from it an address. Using the address we can receive the coins and as long as we keep the key safe we can spend it later using any wallet which supports importing WIF keys.
+
 ---
 
 # Testnet
