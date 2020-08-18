@@ -6,12 +6,14 @@
 
 		<title>$title$</title>
 
+		$if(reveal)$
 		<link rel="stylesheet" href="/reveal.js/reset.css">
 		<link rel="stylesheet" href="/reveal.js/reveal.css">
 		<link rel="stylesheet" href="/reveal.js/theme/$theme$.css" id="theme">
 
 		<!-- Theme used for syntax highlighted code -->
 		<link rel="stylesheet" href="/reveal.js/plugin/highlight/monokai.css" id="highlight-theme">
+		$endif$
 	</head>
 	<body>
 		<div class="reveal">
@@ -20,6 +22,7 @@
 			</div>
 		</div>
 
+		$if(reveal)$
 		<script src="/reveal.js/reveal.js"></script>
 		<script src="/reveal.js/plugin/notes/notes.js"></script>
 		<script src="/reveal.js/plugin/markdown/markdown.js"></script>
@@ -35,5 +38,6 @@
 				plugins: [ RevealMarkdown, RevealHighlight, RevealNotes ]
 			});
 		</script>
+		$endif$
 	</body>
 </html>

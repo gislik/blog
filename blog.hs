@@ -250,20 +250,21 @@ blogDetailCtx categories tags =
 
 decksCtx :: Context String
 decksCtx =
-   decksTitleField "title"                                      <>
+   -- decksTitleField "title"                                      <>
    listField "decks" decksDetailCtx (loaddecks "decks/*.md") <>
    defaultCtx
 
 decksDetailCtx :: Context String
 decksDetailCtx = 
-   decksTitleField "title"                                                                               <>
+   -- decksTitleField "title"                                                                               <>
    dateField "date" "%B %e, %Y"                                                                           <>
    mapContext dropFileName (urlField "url")                                                               <>
-   functionField "featureimage" (\_ -> liftM (fromMaybe "") . getRoute . fromFilePath . featuredFileName) <>
+   -- functionField "featureimage" (\_ -> liftM (fromMaybe "") . getRoute . fromFilePath . featuredFileName) <>
    defaultCtx                                                                                             <>
    constField "theme" "black"
    where
-      featuredFileName = flip replaceExtension "png" . toFilePath . itemIdentifier
+      featuredFileName = 
+        flip replaceExtension "png" . toFilePath . itemIdentifier
 
 rssCtx :: Context String
 rssCtx = 
@@ -335,18 +336,18 @@ decksAssetsRoute =
 --       capitalize [] = []
 --       capitalize (x:xs) = toUpper x : map toLower xs
 
-decksTitleField :: String -> Context a
-decksTitleField = 
-   mapContext (defaultTitle . deckTitle) . pathField
-   where
-      deckTitle :: String -> String
-      deckTitle = capitalize . drop 11 . takeBaseName
-      defaultTitle :: String -> String
-      defaultTitle [] = "decks"
-      defaultTitle x = x
-      capitalize :: String -> String
-      capitalize []     = []
-      capitalize (x:xs) = toUpper x : map toLower xs
+-- decksTitleField :: String -> Context a
+-- decksTitleField = 
+--    mapContext (defaultTitle . deckTitle) . pathField
+--    where
+--       deckTitle :: String -> String
+--       deckTitle = capitalize . drop 11 . takeBaseName
+--       defaultTitle :: String -> String
+--       defaultTitle [] = "decks"
+--       defaultTitle x = x
+--       capitalize :: String -> String
+--       capitalize []     = []
+--       capitalize (x:xs) = toUpper x : map toLower xs
 
 categoryField' :: String -> Tags -> Context a 
 categoryField' =

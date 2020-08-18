@@ -7,14 +7,16 @@
                 </p>
             </header>
                 <section class="c-article__body">
+                    $if(featureimage)$
+                    <a href="$url$">
+                        <img src="$featureimage$" alt="">
+                    </a>
+                    $endif$
                     $if(summary)$
                     <p>
                         $summary$
                     </p>
                     $endif$
-                    <a href="$url$">
-                        <img src="/$featureimage$" alt="">
-                    </a>
                 </section>
                 $if(showdeadcode)$
                 <a href="$url$" class="c-article__btn p-list-article__btn">More</a>
