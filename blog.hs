@@ -47,30 +47,11 @@ main = do
       categories <- buildCategories visiblePattern (fromCapture "*/index.html")
       tags       <- buildTags visiblePattern (fromCapture "tags/*/index.html")
 
-      -- static content
-      match staticPattern $ do
-         route   $ rootRoute
-         compile $ copyFileCompiler
-
-      -- static css
-      match "css/**.css" $ do
-         route   $ idRoute
-         compile $ compressCssCompiler
-
-      match ("css/**.scss" .&&. complement "css/**_*.scss") $ do
-         route   $ setExtension "css"
-         compile $ sassCompiler  
-            >>= return . fmap compressCss
-            >>= relativizeUrls
-
-      match "css/webfonts/*" $ do
-         route   $ idRoute
-         compile $ copyFileCompiler
-
       -- static pages
       match "*.md" $ do
          route   $ pageRoute
          compile $ pandocCompiler
+            >>= loadAndApplyTemplate "templates/page-detail.html" defaultCtx
             >>= loadAndApplyTemplate "templates/default.html" defaultCtx
             >>= relativizeUrls
 
@@ -78,7 +59,7 @@ main = do
       match "index.html" $ do
          route   $ idRoute
          compile $ getResourceBody
-            >>= applyAsTemplate (pageCtx 1 pages categories tags)
+            >>= applyAsTemplate (blogCtx 1 pages categories tags)
             >>= loadAndApplyTemplate "templates/default.html" defaultCtx 
             >>= indexCompiler
             >>= relativizeUrls
@@ -97,7 +78,7 @@ main = do
       paginateRules pages $ \i _ -> do
          route   $ idRoute
          compile $ makeItem (show i)
-            >>= loadAndApplyTemplate "templates/blog-list.html" (pageCtx i pages categories tags)
+            >>= loadAndApplyTemplate "templates/blog-list.html" (blogCtx i pages categories tags)
             >>= loadAndApplyTemplate "templates/default.html" defaultCtx
             >>= indexCompiler
             >>= relativizeUrls
@@ -107,14 +88,14 @@ main = do
          catPages <- buildPages pattern (\i -> fromCaptures "*/*/index.html" [category, show i])
          route   $ idRoute
          compile $ makeItem category
-            >>= loadAndApplyTemplate "templates/blog-list.html" (pageCtx 1 catPages categories tags)
+            >>= loadAndApplyTemplate "templates/blog-list.html" (blogCtx 1 catPages categories tags)
             >>= loadAndApplyTemplate "templates/default.html" defaultCtx
             >>= indexCompiler
             >>= relativizeUrls
          paginateRules catPages $ \i _ -> do -- blog category pages
             route   $ idRoute
             compile $ makeItem category
-               >>= loadAndApplyTemplate "templates/blog-list.html" (pageCtx i catPages categories tags)
+               >>= loadAndApplyTemplate "templates/blog-list.html" (blogCtx i catPages categories tags)
                >>= loadAndApplyTemplate "templates/default.html" defaultCtx
                >>= indexCompiler
                >>= relativizeUrls
@@ -124,7 +105,7 @@ main = do
          tagPages <- buildPages pattern (\i -> fromCaptures "tags/*/*/index.html" [tag, show i])
          route   $ idRoute
          compile $ makeItem tag
-            >>= loadAndApplyTemplate "templates/blog-list.html" (pageCtx 1 tagPages categories tags)
+            >>= loadAndApplyTemplate "templates/blog-list.html" (blogCtx 1 tagPages categories tags)
             >>= loadAndApplyTemplate "templates/default.html" defaultCtx
             >>= indexCompiler
             >>= relativizeUrls
@@ -132,7 +113,7 @@ main = do
             route idRoute
             compile $ do
                makeItem tag
-                  >>= loadAndApplyTemplate "templates/blog-list.html" (pageCtx i tagPages categories tags)
+                  >>= loadAndApplyTemplate "templates/blog-list.html" (blogCtx i tagPages categories tags)
                   >>= loadAndApplyTemplate "templates/default.html" defaultCtx
                   >>= indexCompiler
                   >>= relativizeUrls
@@ -162,6 +143,26 @@ main = do
       create ["atom.xml"] $ do
          route idRoute
          compile $ renderBlogAtom <=< fmap (take 20) . loadBlogs $ visiblePattern
+
+      -- static content
+      match staticPattern $ do
+         route   $ rootRoute
+         compile $ copyFileCompiler
+
+      -- static css
+      match "css/**.css" $ do
+         route   $ idRoute
+         compile $ compressCssCompiler
+
+      match ("css/**.scss" .&&. complement "css/**_*.scss") $ do
+         route   $ setExtension "css"
+         compile $ sassCompiler
+            >>= return . fmap compressCss
+            >>= relativizeUrls
+
+      match "css/webfonts/*" $ do
+         route   $ idRoute
+         compile $ copyFileCompiler
 
       -- templates
       match "templates/*.html" $ 
@@ -220,20 +221,20 @@ writerToc =
 --------------------------------------------------------------------------------
 defaultCtx :: Context String
 defaultCtx = 
-   constField       "pagetitle" "Gísli Kristjánsson | Jack of all trades" <>
-   bodyField        "body"                                                <>
-   metadataField                                                          <>
-   titleField       "title"                                               <>
-   urlField         "url"                                                 <>
-   pathField        "path"                                                <>
-   polishField      "polish"
+   constField "page.title" "Gísli Kristjánsson | Jack of all trades" <>
+   bodyField "body"                                                  <>
+   metadataField                                                     <>
+   titleField "title"                                                <>
+   urlField "url"                                                    <>
+   pathField "path"                                                  <>
+   polishField "polish"
 
-pageCtx :: PageNumber -> Paginate -> Tags -> Tags -> Context String
-pageCtx i pages categories tags = 
+blogCtx :: PageNumber -> Paginate -> Tags -> Tags -> Context String
+blogCtx i pages categories tags = 
       listField "blogs" (blogDetailCtx categories tags) (loadBlogs pattern) <>
       categoryListField "categories" categories                             <>
       tagsListField "tags" tags                                             <>
-      pagesField i <>
+      pagesField i                                                          <>
       defaultCtx
   where
       pattern = fromList . fromMaybe [] . M.lookup i . paginateMap $ pages
@@ -460,11 +461,25 @@ aliasContext f (Context c) =
       c' k = noResult $ unwords ["Tried to alias", k, "as", f k, "which doesn't exist"]
 
 polishField :: String -> Context String
-polishField name = 
-   functionField name f
+polishField name =
+   functionField name (\args _ -> return $ withTags text' (unwords args))
    where 
-      f [] _    = return ""
-      f (a:_) _ = return a
+      text' (TagText s) = TagText (unwords $ map f (words s))
+      text' t           = t
+      f ""                   = ""
+      f ":smile:"            = "😄"
+      f ":sushi:"            = "🍣"
+      f ":rice_ball:"        = "🍙"
+      f ":ramen:"            = "🍜"
+      f ":+1:"               = "👍"
+      f ":thumbsup:"         = "👍"
+      f ":stuck_out_tongue:" = "😛"
+      f ":grinning:"         = "😀"
+      f ":frowning:"         = "😦"
+      f ":heart:"            = "❤"
+      f ":disappointed:"     = "😞"
+      f ":tada:"             = "🎉"
+      f x                    = x
 
 -- metadata
 includeTagM :: MonadMetadata m => String -> [Identifier] -> m [Identifier]

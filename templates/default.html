@@ -8,9 +8,9 @@
         <!-- <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" /> -->
         <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 
-        <title>$pagetitle$</title>
-        <meta property="og:title" content="$pagetitle$" />
-        <meta name="twitter:title" content="$pagetitle$" />
+        <title>$page.title$</title>
+        <meta property="og:title" content="$title$" />
+        <meta name="twitter:title" content="$title$" />
 
         $if(showdeadcode)$
         {% if config.description -%}
@@ -20,7 +20,7 @@
         {%- endif %}
         $endif$
 
-        <meta property="og:site_name" content="$pagetitle$" />
+        <meta property="og:site_name" content="$page.title$" />
         <meta property="og:url" content="/" />
 
         <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
@@ -42,7 +42,7 @@
         <!-- <link rel="apple-touch-icon" sizes="384x384" href="" /> -->
         <!-- <link rel="apple-touch-icon" sizes="512x512" href="" /> -->
 
-        <link rel="alternate" type="application/atom+xml" title="$pagetitle$" href="/atom.xml">
+        <link rel="alternate" type="application/atom+xml" title="$page.title$" href="/atom.xml">
     </head>
     <body>
         <a href="#main" class="skip-link p-screen-reader-text">Skip to content</a>
