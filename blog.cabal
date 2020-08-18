@@ -3,20 +3,20 @@
 
 name:                blog
 version:             0.4.0.0
--- synopsis:            
--- description:         
--- license:             
+-- synopsis:
+-- description:
+-- license:
 license-file:        LICENSE
--- author:              
--- maintainer:          
--- copyright:           
--- category:            
+-- author:
+-- maintainer:
+-- copyright:
+-- category:
 build-type:          Simple
 cabal-version:       >=1.8
 
 executable blog
   main-is:             blog.hs
-  -- other-modules:       
+  -- other-modules:
   build-depends:      base ==4.12.*
                     , binary ==0.8.*
                     , time ==1.8.*

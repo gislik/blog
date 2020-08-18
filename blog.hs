@@ -1,33 +1,31 @@
 {-# LANGUAGE OverloadedStrings, TupleSections #-}
-import            Data.Maybe                       (fromMaybe, listToMaybe)
-import            Data.Monoid                      ((<>), mconcat)
-import            Data.Functor                     ((<$>), fmap)
-import            Data.List                        (intercalate, intersperse, foldl', isPrefixOf)
-import            Data.Time.Clock                  (UTCTime (..))
-import            Control.Applicative              ((<|>), Alternative(..))
-import            Control.Monad                    (msum, filterM, (<=<), liftM, filterM)
-import            Control.Monad.Fail               (MonadFail)
-import            System.Environment               (getArgs)
-import            Data.Time.Format                 (TimeLocale, defaultTimeLocale, parseTimeM, formatTime)
-import            Text.Blaze.Html                  (toHtml, toValue, (!))
-import            Text.Blaze.Html.Renderer.String  (renderHtml)
-import            Text.HTML.TagSoup                (Tag(..))
-import qualified  Data.Map                         as M
-import qualified  Text.Blaze.Html5                 as H
-import qualified  Text.Blaze.Html5.Attributes      as A
-import            System.FilePath                  
+import            Data.Maybe                      (fromMaybe, listToMaybe)
+import            Data.Monoid                     ((<>), mconcat)
+import            Data.Functor                    ((<$>), fmap)
+import            Data.List                       (intercalate, intersperse, foldl', isPrefixOf)
+import            Data.Time.Clock                 (UTCTime(..))
+import            Control.Applicative             ((<|>), Alternative(..))
+import            Control.Monad                   (msum, filterM, (<=<), liftM, filterM)
+import            Control.Monad.Fail              (MonadFail)
+import            System.Environment              (getArgs)
+import            System.FilePath                 ((</>), takeFileName, dropFileName, splitPath, joinPath)
+import            Data.Time.Format                (TimeLocale, defaultTimeLocale, parseTimeM, formatTime)
+import            Text.Pandoc.Options             (WriterOptions(..))
+import            Text.Blaze.Html                 (toHtml, toValue, (!))
+import            Text.Blaze.Html5.Attributes     (href, class_)
+import            Text.Blaze.Html.Renderer.String (renderHtml)
+import            Text.HTML.TagSoup               (Tag(..))
+import qualified  Data.Map                        as M
+import qualified  Text.Blaze.Html5                as H
 import            Hakyll
 
 --------------------------------------------------------------------------------
 -- TODO
 --------------------------------------------------------------------------------
-{-
- - 1. TOC
- - 2. About
- - 3. README
- - 4. Docker?
-   5. Series
--}
+-- 1. About
+-- 2. Docker?
+-- 3. Series
+
 
 --------------------------------------------------------------------------------
 -- SITE
@@ -35,13 +33,15 @@ import            Hakyll
 main :: IO ()
 main = do
    isWatching <- fmap (== "watch") <$> listToMaybe <$> getArgs
-   let allPattern = case isWatching of
-                        Just True -> (blogPattern .||. draftPattern) 
-                        _         -> blogPattern
-   hakyll $ do
+   let allPattern = 
+         case isWatching of
+            Just True -> (blogPattern .||. draftPattern) 
+            _         -> blogPattern
 
+   hakyll $ do
       excludePattern <- liftM fromList $ includeTagM "icelandic" <=< getMatches $ blogPattern
-      let visiblePattern = allPattern .&&. complement excludePattern
+      let visiblePattern = 
+            allPattern .&&. complement excludePattern
 
       pages      <- buildPages visiblePattern (\i -> fromCapture "*/index.html" (show i))
       categories <- buildCategories visiblePattern (fromCapture "*/index.html")
@@ -86,7 +86,7 @@ main = do
       -- blogs
       match allPattern $ do
          route   $ blogRoute
-         compile $ pandocCompiler
+         compile $ blogCompiler
             >>= saveSnapshot blogSnapshot
             >>= loadAndApplyTemplate "templates/blog-detail.html"    (blogDetailCtx categories tags)
             >>= loadAndApplyTemplate "templates/default.html" defaultCtx
@@ -198,20 +198,35 @@ feedConfiguration =
       , feedRoot        = "http://gisli.hamstur.is"
       }
 
+writerToc :: WriterOptions
+writerToc = 
+   defaultHakyllWriterOptions
+      { writerTableOfContents = True
+      , writerNumberSections  = True
+      , writerTOCDepth        = 2
+      , writerTemplate        = 
+         let
+            toc = "$toc$" :: String
+            body = "$body$" :: String
+         in
+            Just . renderHtml $ do
+               H.div ! class_ "toc" $ do
+                  toHtml toc
+               toHtml body
+      }
+
 --------------------------------------------------------------------------------
 -- CONTEXTS
 --------------------------------------------------------------------------------
 defaultCtx :: Context String
 defaultCtx = 
    constField       "pagetitle" "Gísli Kristjánsson | Jack of all trades" <>
-   -- prettyTitleField "title"                                               <>
    bodyField        "body"                                                <>
    metadataField                                                          <>
    titleField       "title"                                               <>
    urlField         "url"                                                 <>
    pathField        "path"                                                <>
-   polishField      "polish"                                              
-   -- missingField
+   polishField      "polish"
 
 pageCtx :: PageNumber -> Paginate -> Tags -> Tags -> Context String
 pageCtx i pages categories tags = 
@@ -250,13 +265,11 @@ blogDetailCtx categories tags =
 
 decksCtx :: Context String
 decksCtx =
-   -- decksTitleField "title"                                      <>
-   listField "decks" decksDetailCtx (loaddecks "decks/*.md") <>
+   listField "decks" decksDetailCtx (loadDecks "decks/*.md") <>
    defaultCtx
 
 decksDetailCtx :: Context String
 decksDetailCtx = 
-   -- decksTitleField "title"               <>
    dateField "date" "%B %e, %Y"             <>
    mapContext dropFileName (urlField "url") <>
    defaultCtx                               <>
@@ -276,22 +289,88 @@ atomCtx =
       cdata s                              = "<![CDATA[" <> s <> "]]>"
 
 --------------------------------------------------------------------------------
--- ROUTES
+-- HELPERS
 --------------------------------------------------------------------------------
+-- compilers
+blogCompiler :: Compiler (Item String)
+blogCompiler = do
+   ident <- getUnderlying
+   toc   <- getMetadataField ident "withtoc"
+   pandocCompilerWith readerOptions (maybe writerOptions writerToc' toc)
+   where
+      writerToc' = const writerToc
+      readerOptions = defaultHakyllReaderOptions
+      writerOptions = defaultHakyllWriterOptions
+
+
+indexCompiler :: Item String -> Compiler (Item String)
+indexCompiler x = 
+   withItemBody (return . withTags dropIndex) x
+   where
+      dropIndex (TagOpen "a" attrs) = TagOpen "a" (dropIndex' <$> attrs)
+      dropIndex tag                 = tag
+      dropIndex' ("href", url) = ("href", dropFileName url <> takeHash url)
+      dropIndex' z             = z
+      takeHash = dropWhile (/= '#')
+
+sassCompiler :: Compiler (Item String)
+sassCompiler = do
+   ident <- getUnderlying
+   output <- unixFilter "sass" [toFilePath ident] ""
+   makeItem output
+
+loadBlogs :: Pattern -> Compiler [Item String]
+loadBlogs = 
+   recentFirst <=< flip loadAllSnapshots blogSnapshot
+
+nextBlog :: Item String -> Compiler String
+nextBlog blog = do
+   blogs <- loadBlogs blogPattern 
+   let idents = map itemIdentifier blogs
+       ident = itemAfter idents (itemIdentifier blog)
+   case ident of
+      Just i -> (fmap (maybe empty toUrl) . getRoute) i
+      Nothing -> empty
+   where
+      itemAfter xs x = 
+         lookup x $ zip xs (tail xs)
+
+previousBlog :: Item String -> Compiler String
+previousBlog blog = do
+   blogs <- loadBlogs blogPattern 
+   let idents = map itemIdentifier blogs
+       ident = itemBefore idents (itemIdentifier blog)
+   case ident of
+      Just i -> (fmap (maybe empty toUrl) . getRoute) i
+      Nothing -> empty
+   where
+      itemBefore xs x =
+         lookup x $ zip (tail xs) xs
+
+loadDecks :: Pattern -> Compiler [Item String]
+loadDecks = 
+   recentFirst <=< flip loadAllSnapshots decksSnapshot
+
+renderBlogAtom :: [Item String] -> Compiler (Item String)
+renderBlogAtom = 
+   renderAtom feedConfiguration atomCtx
+
+-- routes
 rootRoute :: Routes 
 rootRoute =
    customRoute (joinPath . dropDirectory . splitPath . toFilePath)
-  where
-    dropDirectory []       = []
-    dropDirectory ("/":ds) = dropDirectory ds
-    dropDirectory ds       = tail ds
+   where
+      dropDirectory []       = []
+      dropDirectory ("/":ds) = dropDirectory ds
+      dropDirectory ds       = tail ds
 
 pageRoute :: Routes
-pageRoute = removeExtension `composeRoutes` addIndex
+pageRoute = 
+   removeExtension `composeRoutes` addIndex
    where 
-   removeExtension = setExtension mempty
-   addIndex = postfixRoute "index.html"
-   postfixRoute postfix = customRoute $ (</> postfix) . toFilePath
+      removeExtension = setExtension mempty
+      addIndex = postfixRoute "index.html"
+      postfixRoute postfix = customRoute $ (</> postfix) . toFilePath
 
 blogRoute :: Routes
 blogRoute = 
@@ -320,35 +399,7 @@ decksAssetsRoute =
       monthRoute = gsubRoute "/[[:digit:]]{2}-" (\xs -> "/" <> (take 2 . drop 1) xs <> "/")
       dropDayRoute = gsubRoute "/[[:digit:]]{2}-" (const "/")
 
---------------------------------------------------------------------------------
--- HELPERS
---------------------------------------------------------------------------------
 -- contexts
--- prettyTitleField :: String -> Context a
--- prettyTitleField = mapContext (defaultTitle . pageTitle) . pathField 
---    where
---       pageTitle :: String -> String
---       pageTitle = intercalate " &#x276f;&#x276f;= " . splitDirectories . capitalize . dropFileName
---       defaultTitle :: String -> String
---       defaultTitle "." = "Blog"
---       defaultTitle x = x
---       capitalize :: String -> String
---       capitalize [] = []
---       capitalize (x:xs) = toUpper x : map toLower xs
-
--- decksTitleField :: String -> Context a
--- decksTitleField = 
---    mapContext (defaultTitle . deckTitle) . pathField
---    where
---       deckTitle :: String -> String
---       deckTitle = capitalize . drop 11 . takeBaseName
---       defaultTitle :: String -> String
---       defaultTitle [] = "decks"
---       defaultTitle x = x
---       capitalize :: String -> String
---       capitalize []     = []
---       capitalize (x:xs) = toUpper x : map toLower xs
-
 categoryField' :: String -> Tags -> Context a 
 categoryField' =
    tagsFieldWith getCategory (renderLink "@") mconcat
@@ -360,7 +411,7 @@ categoryListField key tags =
       renderList = renderTags makeLink (intercalate " ")
       makeLink tag url _ _ _ = renderHtml $ do
          "@"
-         H.a ! A.href (toValue url) $ toHtml tag
+         H.a ! href (toValue url) $ toHtml tag
 
 tagsField' :: String -> Tags -> Context a 
 tagsField' = 
@@ -373,7 +424,7 @@ tagsListField key tags =
       renderList = renderTags makeLink (intercalate " ")
       makeLink tag url _ _ _ = renderHtml $ do
          "#"
-         H.a ! A.href (toValue url) $ toHtml tag
+         H.a ! href (toValue url) $ toHtml tag
 
 previewField :: String -> Snapshot -> Context String
 previewField key snapshot  = 
@@ -383,11 +434,11 @@ previewField key snapshot  =
          body <- loadSnapshotBody (itemIdentifier item) snapshot
          return $ withTagList firstParagraph body
       firstParagraph = map fst . takeWhile (\(_, s) -> s > 0) . acc 0 . (map cnt)
-      acc _ [] = []
+      acc _ []           = []
       acc s ((x, s'):xs) = (x, s + s') : acc  (s + s') xs
       cnt tag@(TagOpen "p" _) = (tag, 1)
       cnt tag@(TagClose "p")  = (tag, -1)
-      cnt tag               = (tag, 0)
+      cnt tag                 = (tag, 0)
 
 readingTimeField :: String -> Snapshot -> Context String
 readingTimeField key snapshot = 
@@ -415,42 +466,6 @@ polishField name =
       f [] _    = return ""
       f (a:_) _ = return a
 
--- compilers
-loadBlogs :: Pattern -> Compiler [Item String]
-loadBlogs = 
-   recentFirst <=< flip loadAllSnapshots blogSnapshot
-
-loaddecks :: Pattern -> Compiler [Item String]
-loaddecks = 
-   recentFirst <=< flip loadAllSnapshots decksSnapshot
-
-buildPages :: (MonadMetadata m, MonadFail m) => Pattern -> (PageNumber -> Identifier) -> m Paginate
-buildPages pattern makeId = 
-   buildPaginateWith
-      (return . paginateEvery blogPerPage <=< sortRecentFirst) 
-      pattern 
-      makeId
-
-renderBlogAtom :: [Item String] -> Compiler (Item String)
-renderBlogAtom = 
-   renderAtom feedConfiguration atomCtx
-
-sassCompiler :: Compiler (Item String)
-sassCompiler = 
-   getUnderlying >>=
-   return . toFilePath >>= 
-   \file -> unixFilter "sass" [file] ""  >>=
-   makeItem
-
-indexCompiler :: Item String -> Compiler (Item String)
-indexCompiler x = 
-   withItemBody (return . withTags dropIndex) x
-   where
-      dropIndex (TagOpen "a" attrs) = TagOpen "a" (href <$> attrs)
-      dropIndex tag = tag
-      href ("href", url) = ("href", dropFileName url)
-      href z             = z
-
 -- metadata
 includeTagM :: MonadMetadata m => String -> [Identifier] -> m [Identifier]
 includeTagM tag = 
@@ -458,7 +473,15 @@ includeTagM tag =
 
 filterTagsM :: MonadMetadata m => ([String] -> m Bool) -> [Identifier] -> m [Identifier]
 filterTagsM p = 
-   filterM $ p <=< getTags 
+   filterM (p <=< getTags)
+
+-- pagination
+buildPages :: (MonadMetadata m, MonadFail m) => Pattern -> (PageNumber -> Identifier) -> m Paginate
+buildPages pattern makeId = 
+   buildPaginateWith
+      (return . paginateEvery blogPerPage <=< sortRecentFirst) 
+      pattern 
+      makeId
 
 -- html
 renderLink :: String -> String -> (Maybe FilePath) -> Maybe H.Html
@@ -466,7 +489,7 @@ renderLink _ _   Nothing            = Nothing
 renderLink pre text (Just url) =
    Just $ do
       toHtml pre
-      H.a ! A.href (toValue $ toUrl url) $ toHtml text
+      H.a ! href (toValue $ toUrl url) $ toHtml text
 
 -- dates
 tryParseDate :: Identifier -> Metadata -> Maybe UTCTime
@@ -477,7 +500,6 @@ tryParseDateWithLocale :: TimeLocale -> Identifier -> Metadata -> Maybe UTCTime
 tryParseDateWithLocale locale id' metadata = do
    let tryField k fmt = lookupString k metadata >>= parseTime' fmt
        fn             = takeFileName $ toFilePath id'
-
    maybe empty' return $ msum $
       [tryField "published" fmt | fmt <- formats] ++
       [tryField "date"      fmt | fmt <- formats] ++
@@ -494,28 +516,3 @@ tryParseDateWithLocale locale id' metadata = do
          , "%B %e, %Y %l:%M %p"
          , "%B %e, %Y"
          ]
-
-
-nextBlog :: Item String -> Compiler String
-nextBlog blog = do
-   blogs <- loadBlogs blogPattern :: Compiler [Item String]
-   let idents = map itemIdentifier blogs
-       ident = itemAfter idents (itemIdentifier blog)
-   case ident of
-      Just i -> (fmap (maybe empty toUrl) . getRoute) i
-      Nothing -> empty
-   where
-      itemAfter xs x = 
-         lookup x $ zip xs (tail xs)
-
-previousBlog :: Item String -> Compiler String
-previousBlog blog = do
-   blogs <- loadBlogs blogPattern :: Compiler [Item String]
-   let idents = map itemIdentifier blogs
-       ident = itemBefore idents (itemIdentifier blog)
-   case ident of
-      Just i -> (fmap (maybe empty toUrl) . getRoute) i
-      Nothing -> empty
-   where
-         itemBefore xs x =
-            lookup x $ zip (tail xs) xs
