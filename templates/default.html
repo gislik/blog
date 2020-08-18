@@ -32,7 +32,16 @@
         <link href="/css/fontawesome/brands.css" rel="stylesheet">
         <link href="/css/fontawesome/solid.css" rel="stylesheet">
 
-        <link rel='icon' type='image/x-icon' href="/favicon.png" />
+        <link rel='icon' type='image/x-icon' href="/icon48x48.png" />
+        <link rel="apple-touch-icon" sizes="48x48" href="/icon48x48.png" />
+        <link rel="apple-touch-icon" sizes="72x72" href="/icon72x72.png" />
+        <link rel="apple-touch-icon" sizes="96x96" href="/icon96x96.png" />
+        <link rel="apple-touch-icon" sizes="144x144" href="/icon144x144.png" />
+        <link rel="apple-touch-icon" sizes="192x192" href="/icon192x192.png" />
+        <!-- <link rel="apple-touch-icon" sizes="256x256" href="" /> -->
+        <!-- <link rel="apple-touch-icon" sizes="384x384" href="" /> -->
+        <!-- <link rel="apple-touch-icon" sizes="512x512" href="" /> -->
+
         <link rel="alternate" type="application/atom+xml" title="$pagetitle$" href="/atom.xml">
     </head>
     <body>
@@ -47,14 +56,6 @@
                 <a href="/decks/">Decks</a>
             </nav>
         </header>
-        $if(showdeadcode)$
-        <header class="l-header">
-            <h1 class="c-title p-title"><a href="/" class="p-title__link">$pagetitle$</a></h1>
-            <p class="p-subtitle">
-                EXTRA SUBTITLE
-            </p>
-        </header>
-        $endif$
 
         <main id="main" class="l-main">
         $body$
