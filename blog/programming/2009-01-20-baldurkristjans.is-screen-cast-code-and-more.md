@@ -10,11 +10,10 @@ filename: 2009-01-20-baldurkristjans.is-screen-cast-code-and-more.html
 <p>As mentioned in my <a href="http://twitter.com/gislik/statuses/1121717423">tweet</a>&nbsp;my brother's online <a href="http://baldurkristjans.is">photo album</a> went live last Thursday. Since then I've been trying to think not so much about it because this project had started to consume my brain leaving little space for anything else (including <a href="http://conqueringsleepapnea.com/images/insomnia_2.jpg">sleeping</a>). I'm happy with the responses he's been getting over the last couple of days - and the most important thing; he's happy.</p>
 <p>Readers of this blog know by now that this website was entirely written in Haskell/HAppS and I loved writing it. In this post I'll attempt to discuss some of the more interesting parts of the site and show you a <a href="http://www.screencast-o-matic.com/">screen cast</a> of the administrative panel.</p>
 <div style="text-align: center">
-<object width="600" height="450" data="../../video/player.swf" type="application/x-shockwave-flash">
-<param name="wmode" value="opaque" />
-<param name="flashvars" value="controlbar=over&amp;file=/img/baldurkristjans.is.flv&amp;image=/img/baldurkristjans.is.jpg&amp;location=/img/baldurkristjans.is.jpg" />
-<param name="src" value="../../video/player.swf" />
-</object>
+
+<video  controls>
+<source src="/img/baldurkristjans.is.mp4"type="video/mp4">
+</video>
 </div>
 <p>Because I'm using HAppS there is no need for a database. <a href="http://hackage.haskell.org/cgi-bin/hackage-scripts/package/HAppS-State">HAppS-State</a> simply persist my native data structure. The photos are represented as maps of photos.</p>
 
