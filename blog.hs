@@ -2,7 +2,7 @@
 import            Data.Maybe                       (fromMaybe, listToMaybe)
 import            Data.Monoid                      ((<>), mconcat)
 import            Data.Functor                     ((<$>), fmap)
-import            Data.List                        (intercalate, intersperse, foldl')
+import            Data.List                        (intercalate, intersperse, foldl', isPrefixOf)
 import            Data.Time.Clock                  (UTCTime (..))
 import            Control.Applicative              ((<|>), Alternative(..))
 import            Control.Monad                    (msum, filterM, (<=<), liftM, filterM)
@@ -23,9 +23,6 @@ import            Hakyll
 --------------------------------------------------------------------------------
 {-
    1. Series
-   2. Count words (5 min read)
-   3. RSS -> Twitter?
-   4. RSS respecting <!--more-->
 -}
 
 --------------------------------------------------------------------------------
@@ -157,10 +154,10 @@ main = do
             >>= indexCompiler
             >>= relativizeUrls
 
-      -- rss
-      create ["rss/index.html"] $ do
+      -- atom
+      create ["atom.xml"] $ do
          route idRoute
-         compile $ renderBlogRss <=< fmap (take 20) . loadBlogs $ visiblePattern
+         compile $ renderBlogAtom <=< fmap (take 20) . loadBlogs $ visiblePattern
 
       -- templates
       match "templates/*.html" $ 
@@ -190,9 +187,9 @@ decksSnapshot = "decks-content"
 feedConfiguration :: FeedConfiguration
 feedConfiguration =
    FeedConfiguration
-      { feedTitle       = "Gísli Kristjánsson"
-      , feedDescription = "Jack of all trades, master of none"
-      , feedAuthorName  = "G&iacute;sli Kristj&aacute;nsson"
+      { feedTitle       = "Jack of all trades, master of none"
+      , feedDescription = "My thoughs on blockchain and programming"
+      , feedAuthorName  = "Gísli Kristjánsson"
       , feedAuthorEmail = "gislik@hamstur.is"
       , feedRoot        = "http://gisli.hamstur.is"
       }
@@ -255,20 +252,24 @@ decksCtx =
 
 decksDetailCtx :: Context String
 decksDetailCtx = 
-   -- decksTitleField "title"                                                                               <>
-   dateField "date" "%B %e, %Y"                                                                           <>
-   mapContext dropFileName (urlField "url")                                                               <>
-   defaultCtx                                                                                             <>
+   -- decksTitleField "title"               <>
+   dateField "date" "%B %e, %Y"             <>
+   mapContext dropFileName (urlField "url") <>
+   defaultCtx                               <>
    constField "theme" "black"
 
-rssCtx :: Context String
-rssCtx = 
-   cdataContext metadataField <>
-   bodyField "description"    <>
-   urlField "url"             <>
-   defaultCtx
+atomCtx :: Context String
+atomCtx = 
+      mapContext cdata (titleField "title")   <>
+      aliasContext alias metadataField        <>  -- description from metadata
+      teaserField "description" blogSnapshot  <>  -- teaser is description
+      previewField "description" blogSnapshot <>  -- first paragraph is description
+      urlField "url"
    where
-      cdataContext = mapContext (\s -> "<![CDATA[" <> s <> "]]>")
+      alias "description" = "summary"
+      alias x             = x
+      cdata s | "<![CDATA[" `isPrefixOf` s = s
+      cdata s                              = "<![CDATA[" <> s <> "]]>"
 
 --------------------------------------------------------------------------------
 -- ROUTES
@@ -426,9 +427,9 @@ buildPages pattern makeId =
       pattern 
       makeId
 
-renderBlogRss :: [Item String] -> Compiler (Item String)
-renderBlogRss = 
-   renderRss feedConfiguration rssCtx
+renderBlogAtom :: [Item String] -> Compiler (Item String)
+renderBlogAtom = 
+   renderAtom feedConfiguration atomCtx
 
 sassCompiler :: Compiler (Item String)
 sassCompiler = 
