@@ -137,24 +137,24 @@ main = do
                   >>= indexCompiler
                   >>= relativizeUrls
 
-      -- slides
-      match "slides/*.md" $ do
-         route   $ slidesRoute
+      -- decks
+      match "decks/*.md" $ do
+         route   $ decksRoute
          compile $ pandocCompiler
-            >>= saveSnapshot slidesSnapshot
-            >>= loadAndApplyTemplate "templates/slides.html" slidesDetailCtx
+            >>= saveSnapshot decksSnapshot
+            >>= loadAndApplyTemplate "templates/decks-detail.html" decksDetailCtx
             >>= indexCompiler
             >>= relativizeUrls
 
-      match "slides/**" $ do
-         route   $ slidesAssetsRoute
+      match "decks/**" $ do
+         route   $ decksAssetsRoute
          compile $ copyFileCompiler
 
-      create ["slides/index.html"] $ do
+      create ["decks/index.html"] $ do
          route   $ idRoute
-         compile $ makeItem "Slides"
-            >>= loadAndApplyTemplate "templates/slides-list.html" slidesCtx
-            >>= loadAndApplyTemplate "templates/default.html" slidesCtx
+         compile $ makeItem "decks"
+            >>= loadAndApplyTemplate "templates/decks-list.html" decksCtx
+            >>= loadAndApplyTemplate "templates/default.html" decksCtx
             >>= indexCompiler
             >>= relativizeUrls
 
@@ -185,8 +185,8 @@ blogSnapshot = "blog-content"
 blogPerPage :: Int
 blogPerPage = 4
 
-slidesSnapshot :: Snapshot
-slidesSnapshot = "slides-content"
+decksSnapshot :: Snapshot
+decksSnapshot = "decks-content"
 
 feedConfiguration :: FeedConfiguration
 feedConfiguration =
@@ -248,19 +248,20 @@ blogDetailCtx categories tags =
    previewField "summary" blogSnapshot          <>  -- first paragraph is summary
    readingTimeField "reading.time" blogSnapshot
 
-slidesCtx :: Context String
-slidesCtx =
-   slidesTitleField "title"                                      <>
-   listField "slides" slidesDetailCtx (loadSlides "slides/*.md") <>
+decksCtx :: Context String
+decksCtx =
+   decksTitleField "title"                                      <>
+   listField "decks" decksDetailCtx (loaddecks "decks/*.md") <>
    defaultCtx
 
-slidesDetailCtx :: Context String
-slidesDetailCtx = 
-   slidesTitleField "title"                                                                               <>
+decksDetailCtx :: Context String
+decksDetailCtx = 
+   decksTitleField "title"                                                                               <>
    dateField "date" "%B %e, %Y"                                                                           <>
    mapContext dropFileName (urlField "url")                                                               <>
    functionField "featureimage" (\_ -> liftM (fromMaybe "") . getRoute . fromFilePath . featuredFileName) <>
-   defaultCtx
+   defaultCtx                                                                                             <>
+   constField "theme" "black"
    where
       featuredFileName = flip replaceExtension "png" . toFilePath . itemIdentifier
 
@@ -302,14 +303,14 @@ blogRoute =
       dateFolder id' = maybe mempty (formatTime defaultTimeLocale "%Y/%m") . tryParseDate id'
       dropDateRoute = gsubRoute "[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}-" (const mempty)
 
-slidesRoute :: Routes
-slidesRoute = 
-   blogRoute `composeRoutes` prefixRoute "slides"
+decksRoute :: Routes
+decksRoute = 
+   blogRoute `composeRoutes` prefixRoute "decks"
    where 
       prefixRoute prefix = customRoute $ (prefix </>) . toFilePath
 
-slidesAssetsRoute :: Routes
-slidesAssetsRoute = 
+decksAssetsRoute :: Routes
+decksAssetsRoute = 
    yearRoute    `composeRoutes`
    monthRoute   `composeRoutes`
    dropDayRoute
@@ -334,17 +335,17 @@ slidesAssetsRoute =
 --       capitalize [] = []
 --       capitalize (x:xs) = toUpper x : map toLower xs
 
-slidesTitleField :: String -> Context a
-slidesTitleField = 
-   mapContext (defaultTitle . slideTitle) . pathField
+decksTitleField :: String -> Context a
+decksTitleField = 
+   mapContext (defaultTitle . deckTitle) . pathField
    where
-      slideTitle :: String -> String
-      slideTitle = capitalize . drop 11 . takeBaseName
+      deckTitle :: String -> String
+      deckTitle = capitalize . drop 11 . takeBaseName
       defaultTitle :: String -> String
-      defaultTitle [] = "Slides"
+      defaultTitle [] = "decks"
       defaultTitle x = x
       capitalize :: String -> String
-      capitalize [] = []
+      capitalize []     = []
       capitalize (x:xs) = toUpper x : map toLower xs
 
 categoryField' :: String -> Tags -> Context a 
@@ -418,9 +419,9 @@ loadBlogs :: Pattern -> Compiler [Item String]
 loadBlogs = 
    recentFirst <=< flip loadAllSnapshots blogSnapshot
 
-loadSlides :: Pattern -> Compiler [Item String]
-loadSlides = 
-   recentFirst <=< flip loadAllSnapshots slidesSnapshot
+loaddecks :: Pattern -> Compiler [Item String]
+loaddecks = 
+   recentFirst <=< flip loadAllSnapshots decksSnapshot
 
 buildPages :: (MonadMetadata m, MonadFail m) => Pattern -> (PageNumber -> Identifier) -> m Paginate
 buildPages pattern makeId = 
