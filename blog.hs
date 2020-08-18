@@ -3,7 +3,6 @@ import            Data.Maybe                       (fromMaybe, listToMaybe)
 import            Data.Monoid                      ((<>), mconcat)
 import            Data.Functor                     ((<$>), fmap)
 import            Data.List                        (intercalate, intersperse, foldl')
-import            Data.Char                        (toLower, toUpper)
 import            Data.Time.Clock                  (UTCTime (..))
 import            Control.Applicative              ((<|>), Alternative(..))
 import            Control.Monad                    (msum, filterM, (<=<), liftM, filterM)
@@ -12,7 +11,7 @@ import            System.Environment               (getArgs)
 import            Data.Time.Format                 (TimeLocale, defaultTimeLocale, parseTimeM, formatTime)
 import            Text.Blaze.Html                  (toHtml, toValue, (!))
 import            Text.Blaze.Html.Renderer.String  (renderHtml)
-import            Text.HTML.TagSoup                (Tag(..), (~==), isTagText, fromTagText)
+import            Text.HTML.TagSoup                (Tag(..))
 import qualified  Data.Map                         as M
 import qualified  Text.Blaze.Html5                 as H
 import qualified  Text.Blaze.Html5.Attributes      as A
@@ -259,12 +258,8 @@ decksDetailCtx =
    -- decksTitleField "title"                                                                               <>
    dateField "date" "%B %e, %Y"                                                                           <>
    mapContext dropFileName (urlField "url")                                                               <>
-   -- functionField "featureimage" (\_ -> liftM (fromMaybe "") . getRoute . fromFilePath . featuredFileName) <>
    defaultCtx                                                                                             <>
    constField "theme" "black"
-   where
-      featuredFileName = 
-        flip replaceExtension "png" . toFilePath . itemIdentifier
 
 rssCtx :: Context String
 rssCtx = 
