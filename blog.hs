@@ -2,6 +2,7 @@
 import            Data.Maybe                      (fromMaybe, listToMaybe)
 import            Data.Monoid                     ((<>), mconcat)
 import            Data.Functor                    ((<$>), fmap)
+import            Data.Char                       (isSpace)
 import            Data.List                       (intercalate, intersperse, foldl', isPrefixOf)
 import            Data.Time.Clock                 (UTCTime(..))
 import            Control.Applicative             ((<|>), Alternative(..))
@@ -23,9 +24,9 @@ import            Hakyll
 -- TODO
 --------------------------------------------------------------------------------
 -- 1. About
--- 2. Docker?
--- 3. Series
-
+-- 2. Titles
+-- 3. Docker?
+-- 4. Series
 
 --------------------------------------------------------------------------------
 -- SITE
@@ -221,7 +222,7 @@ writerToc =
 --------------------------------------------------------------------------------
 defaultCtx :: Context String
 defaultCtx = 
-   constField "page.title" "Gísli Kristjánsson | Jack of all trades" <>
+   constField "page.title" "Gísli | Jack of all trades" <>
    bodyField "body"                                                  <>
    metadataField                                                     <>
    titleField "title"                                                <>
@@ -462,22 +463,24 @@ aliasContext f (Context c) =
 
 polishField :: String -> Context String
 polishField name =
-   functionField name (\args _ -> return $ withTags text' (unwords args))
+   functionField name $ \args _ -> 
+      return $ withTags text' (unwords args)
    where 
-      text' (TagText s) = TagText (unwords $ map f (words s))
+      text' (TagText s) = TagText (unwords $ map f (split isSpace s))
       text' t           = t
       f ""                   = ""
+      f ":+1:"               = "👍"
+      f ":coffee:"           = "☕️"
+      f ":disappointed:"     = "😞"
+      f ":frowning:"         = "😦"
+      f ":grinning:"         = "😀"
+      f ":heart:"            = "❤"
+      f ":ramen:"            = "🍜"
+      f ":rice_ball:"        = "🍙"
       f ":smile:"            = "😄"
       f ":sushi:"            = "🍣"
-      f ":rice_ball:"        = "🍙"
-      f ":ramen:"            = "🍜"
-      f ":+1:"               = "👍"
-      f ":thumbsup:"         = "👍"
       f ":stuck_out_tongue:" = "😛"
-      f ":grinning:"         = "😀"
-      f ":frowning:"         = "😦"
-      f ":heart:"            = "❤"
-      f ":disappointed:"     = "😞"
+      f ":thumbsup:"         = "👍"
       f ":tada:"             = "🎉"
       f x                    = x
 
@@ -531,3 +534,13 @@ tryParseDateWithLocale locale id' metadata = do
          , "%B %e, %Y %l:%M %p"
          , "%B %e, %Y"
          ]
+
+-- misc
+split :: (Char -> Bool) -> String -> [String]
+split p' s =
+   go p' ("", s)
+   where
+      go p ("", "") = []
+      go p ("", y) = go (not . p) (span (not . p) y)
+      go p (x, y) = x : go (not . p) (span (not . p) y)
+

@@ -1,4 +1,4 @@
-gisli.hamstur.is-hakyll
+gisli.hamstur.is
 =======================
 
 Source for my personal website
