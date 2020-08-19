@@ -23,10 +23,9 @@ import            Hakyll
 --------------------------------------------------------------------------------
 -- TODO
 --------------------------------------------------------------------------------
--- 1. About
--- 2. Titles
--- 3. Docker?
--- 4. Series
+-- 1. Code comments?
+-- 2. Docker?
+-- 3. Series
 
 --------------------------------------------------------------------------------
 -- SITE
@@ -220,6 +219,15 @@ writerToc =
 --------------------------------------------------------------------------------
 -- CONTEXTS
 --------------------------------------------------------------------------------
+pageTitleField :: String -> Context String
+pageTitleField key = 
+   aliasContext alias metadataField   <> -- use page title from metadata
+   pathTitleField key                 <> -- or read from the path
+   constField key"Jack of all trades"    -- alternatively use this
+   where
+      alias x | x == key = "title"
+      alias x            = x
+
 defaultCtx :: Context String
 defaultCtx = 
    bodyField "body"            <>
@@ -401,15 +409,6 @@ decksAssetsRoute =
       dropDayRoute = gsubRoute "/[[:digit:]]{2}-" (const "/")
 
 -- contexts
-pageTitleField :: String -> Context String
-pageTitleField key = 
-   aliasContext alias metadataField   <> -- use page title from metadata
-   pathTitleField key                 <> -- or read from the path
-   constField key"Jack of all trades"    -- alternatively use this
-   where
-      alias x | x == key = "title"
-      alias x            = x
-
 pathTitleField :: String -> Context String
 pathTitleField = 
    flip field title
