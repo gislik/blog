@@ -8,4 +8,12 @@ Ever since reading my first programming book as a kid I have been drawn towards 
 
 Most of my time I spend between the family and working on my [second startup](https://monerium.com) which aims to close the gap between the traditional financial world and the brave new world.
 
-Despite my affection for software I have probably written enough content management systems for a lifetime. That is why this website is simply generated from Markdown sources stored in regular files in a git [repo](https://github.com/gislik/gisli.hamstur.is). This way it's both simpler and more fun working on the actual content. An extra benefit is that there's no vendor lock-in.
+Despite my affection for software I have probably written enough content management systems for a lifetime. That is why this website is simply generated from Markdown files in a git [repo](https://github.com/gislik/gisli.hamstur.is). This way it is both simpler and more fun working on the actual content. 
+
+[Gisli]{.handwritten}
+
+<p class="center social-media">
+[[]{.fab .fa-github} Repos](https://github.com/gislik)
+[[]{.fab .fa-twitter} Social](https://twitter.com/gislik)
+[[]{.fab .fa-keybase} Chat](https://keybase.io/gislik)
+</p>

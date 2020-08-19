@@ -1,4 +1,5 @@
 @import "variables";
+@import url('https://fonts.googleapis.com/css2?family=Rock+Salt&display=swap');
 /*
 a.no-link {
     pointer-events: none;
@@ -113,7 +114,9 @@ a.profile-icon {
   font-size: 1.5rem;
   p {
     text-align: justify;
-    font-size: 1.5rem;
+  }
+  p.center {
+    text-align: center;
   }
   > h1 {
     font-size: 2.0rem;
@@ -137,9 +140,13 @@ a.profile-icon {
     margin-inline-end: 0px;
   }
   .header-section-number {
-    color: #337ab7;
+    color: $link-color;
     margin-right: 1rem;
   }
+}
+
+.p-pagination {
+  margin: 1em 0;
 }
 
 pre.strikethrough {
@@ -150,4 +157,20 @@ pre.strikethrough {
       color: #999;
     }
   }
+}
+
+.social-media {
+  margin-top: 3em;
+  margin-bottom: 0em;
+  a {
+    margin: 1rem;
+    .fab {
+      margin-right: 0.2em;      
+    }
+  }
+}
+
+.handwritten {
+  font-family: 'Rock Salt', cursive;
+  font-size: 1.5em;
 }
