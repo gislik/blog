@@ -304,7 +304,6 @@ blogCompiler = do
       readerOptions = defaultHakyllReaderOptions
       writerOptions = defaultHakyllWriterOptions
 
-
 indexCompiler :: Item String -> Compiler (Item String)
 indexCompiler x = 
    withItemBody (return . withTags dropIndex) x
@@ -411,22 +410,12 @@ pageTitleField key =
       alias x | x == key = "title"
       alias x            = x
 
-
 pathTitleField :: String -> Context String
--- pathTitleField = mapContext (defaultTitle . pageTitle) . pathField 
 pathTitleField = 
    flip field title
    where
-      title :: Item String -> Compiler String
-      title item = do
-         path <- getRoute (itemIdentifier item)
-         case path of
-            Nothing -> empty
-            Just path' -> emptyTitle (pageTitle path')
-      -- pageTitle = intercalate " &#x276f;&#x276f;= " . splitDirectories . capitalize . dropFileName
-      pageTitle = last . splitDirectories . capitalize . dropFileName
-      -- defaultTitle "." = return "Jack of all trades"
-      -- defaultTitle x   = x
+      title = maybe empty (emptyTitle . pageTitle) <=< getRoute . itemIdentifier
+      pageTitle = intercalate " &#x276f;&#x276f;= " . splitDirectories . capitalize . dropFileName
       emptyTitle "." = empty
       emptyTitle x = return x
       capitalize []     = []
