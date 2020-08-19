@@ -2,14 +2,14 @@
 import            Data.Maybe                      (fromMaybe, listToMaybe)
 import            Data.Monoid                     ((<>), mconcat)
 import            Data.Functor                    ((<$>), fmap)
-import            Data.Char                       (isSpace)
+import            Data.Char                       (isSpace, toLower, toUpper)
 import            Data.List                       (intercalate, intersperse, foldl', isPrefixOf)
 import            Data.Time.Clock                 (UTCTime(..))
 import            Control.Applicative             ((<|>), Alternative(..))
 import            Control.Monad                   (msum, filterM, (<=<), liftM, filterM)
 import            Control.Monad.Fail              (MonadFail)
 import            System.Environment              (getArgs)
-import            System.FilePath                 ((</>), takeFileName, dropFileName, splitPath, joinPath)
+import            System.FilePath                 ((</>), takeFileName, dropFileName, splitPath, joinPath, splitDirectories)
 import            Data.Time.Format                (TimeLocale, defaultTimeLocale, parseTimeM, formatTime)
 import            Text.Pandoc.Options             (WriterOptions(..))
 import            Text.Blaze.Html                 (toHtml, toValue, (!))
@@ -70,7 +70,7 @@ main = do
          route   $ blogRoute
          compile $ blogCompiler
             >>= saveSnapshot blogSnapshot
-            >>= loadAndApplyTemplate "templates/blog-detail.html"    (blogDetailCtx categories tags)
+            >>= loadAndApplyTemplate "templates/blog-detail.html" (blogDetailCtx categories tags)
             >>= loadAndApplyTemplate "templates/default.html" defaultCtx
             >>= indexCompiler
             >>= relativizeUrls
@@ -222,12 +222,12 @@ writerToc =
 --------------------------------------------------------------------------------
 defaultCtx :: Context String
 defaultCtx = 
-   constField "page.title" "Gísli | Jack of all trades" <>
-   bodyField "body"                                                  <>
-   metadataField                                                     <>
-   titleField "title"                                                <>
-   urlField "url"                                                    <>
-   pathField "path"                                                  <>
+   bodyField "body"            <>
+   metadataField               <>
+   pageTitleField "page.title" <>
+   titleField "title"          <>
+   urlField "url"              <>
+   pathField "path"            <>
    polishField "polish"
 
 blogCtx :: PageNumber -> Paginate -> Tags -> Tags -> Context String
@@ -393,8 +393,8 @@ decksRoute =
 
 decksAssetsRoute :: Routes
 decksAssetsRoute = 
-   yearRoute    `composeRoutes`
-   monthRoute   `composeRoutes`
+   yearRoute  `composeRoutes`
+   monthRoute `composeRoutes`
    dropDayRoute
    where 
       yearRoute = gsubRoute "[[:digit:]]{4}-" (\xs -> take 4 xs <> "/")
@@ -402,6 +402,36 @@ decksAssetsRoute =
       dropDayRoute = gsubRoute "/[[:digit:]]{2}-" (const "/")
 
 -- contexts
+pageTitleField :: String -> Context String
+pageTitleField key = 
+   aliasContext alias metadataField   <> -- use page title from metadata
+   pathTitleField key                 <> -- or read from the path
+   constField key"Jack of all trades"    -- alternatively use this
+   where
+      alias x | x == key = "title"
+      alias x            = x
+
+
+pathTitleField :: String -> Context String
+-- pathTitleField = mapContext (defaultTitle . pageTitle) . pathField 
+pathTitleField = 
+   flip field title
+   where
+      title :: Item String -> Compiler String
+      title item = do
+         path <- getRoute (itemIdentifier item)
+         case path of
+            Nothing -> empty
+            Just path' -> emptyTitle (pageTitle path')
+      -- pageTitle = intercalate " &#x276f;&#x276f;= " . splitDirectories . capitalize . dropFileName
+      pageTitle = last . splitDirectories . capitalize . dropFileName
+      -- defaultTitle "." = return "Jack of all trades"
+      -- defaultTitle x   = x
+      emptyTitle "." = empty
+      emptyTitle x = return x
+      capitalize []     = []
+      capitalize (x:xs) = toUpper x : map toLower xs
+
 categoryField' :: String -> Tags -> Context a 
 categoryField' =
    tagsFieldWith getCategory (renderLink "@") mconcat
