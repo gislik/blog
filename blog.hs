@@ -24,6 +24,7 @@ import            Hakyll
 -- TODO
 --------------------------------------------------------------------------------
 -- 1. Analytics
+-- 2. Keep header on non-detail pages
 -- 2. Snippets (youtube, google slides, ...)
 -- 3. Series
 
