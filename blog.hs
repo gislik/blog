@@ -464,7 +464,6 @@ readingTimeField :: String -> Snapshot -> Context String
 readingTimeField key snapshot = 
    field key calculate
    where
-      calculate :: Item String -> Compiler String
       calculate item = do
          body <- loadSnapshotBody (itemIdentifier item) snapshot
          return $ withTagList acc body
@@ -473,6 +472,8 @@ readingTimeField key snapshot =
       count n (TagText s) = n + length (words s)
       count n _           = n
 
+-- aliasContext maps a new key to another key. If the other key
+-- is not defined or returns empty the alias returns empty.
 aliasContext :: (String -> String) -> Context a -> Context a
 aliasContext f (Context c) = 
    Context $ \k a i -> c (f k) a i <|> c' k

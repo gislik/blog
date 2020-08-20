@@ -4,6 +4,7 @@ tags: haskell
 withtoc: true
 ---
 
+# Hakyll :heart: Pandoc
 Since I don't write Haskell code professionally anymore it takes me longer to get into the right rythm. This post is intended for my future self more or less and should serve as a cheatsheet for Hakyll development. I've already written a high level overview of how to edit content and build the website in this [README](https://github.com/gislik/gisli.hamstur.is/blob/master/README.md). Here I want to go deeper into how to construct new compilers and how to apply them in a context to templates. 
 
 Under the hood Hakyll integrates natively with [Pandoc](http://johnmacfarlane.net/pandoc/) -- the swiss-army knife of file converters. Pandoc is also written in Haskell and can convert files between a wide variety of file formats and can be extended with custom [Lua](http://www.lua.org/) filters. All this has some configuration complexities associated with it and below I also discuss the various configurations and extensions used to enable the auto-generation of table of contents and LaTeX math support on this website.
@@ -48,7 +49,7 @@ create ["index.html"] $ do
 
 ## Templates and their contexts
 
-Optionally the compiler may load apply a template to the input and interpolate variables from a context. We do so by chaining multiple compilers together into a more feature rich compiler. The output of a previous compiler is interpolated into the \$body\$ variable of the template. Other variables are made available to the template by defining them in the context.
+Optionally the compiler may load apply a template to the input and interpolate variables from a context. We do so by chaining multiple compilers together into a more feature rich compiler. The output of a previous compiler is interpolated into the \$body\$ variable of the template. Other variables are made available to the template by defining them in the context. Before templates can be loaded they need to be compiled using the `templateCompiler`. 
 
 ~~~haskell
 -- static pages
@@ -58,6 +59,10 @@ match "*.md" $ do
       >>= loadAndApplyTemplate "templates/page-detail.html" defaultCtx
       >>= loadAndApplyTemplate "templates/default.html" defaultCtx
       >>= relativizeUrls
+
+-- templates
+match "templates/*.html" $  -- note that the order does not matter
+   compile $ templateCompiler
 ~~~
 
 Contexts are monoids and can therefore be easily combined to create bigger contexts where the earlier definition of a non-empty (`mempty`) field takes precedence.
@@ -88,7 +93,7 @@ A special case of the string context is the function context which defines a var
 
 ## Metadata, flow control and list iteration
 
-Metadata can be placed in the front matter of the markdown formatted as [YAML](https://yaml.org/). The metadata can be made available both to the compiler and to the template in case the `metadataField :: Context a`{haskell} is applied to the template.
+Metadata can be placed in the front matter of the markdown formatted as [YAML](https://yaml.org/). The metadata can be made available both to the compiler and to the template in case the `metadataField :: Context a` is applied to the template.
 
 ~~~markdown
 ---
@@ -120,5 +125,197 @@ $endfor$
 </div>
 ~~~
 
+# Advanced features
+
+## Auto-generated table of contents
+## LaTeX math
+
 # Rolling your own
 
+
+## Collecting rules in the Rules monad
+
+The compiler rules live inside the `Rules` monad which is an instance of the `MonadMetadata` type class which enables monads to retrive the `Metadata` of the source file identified by the `Identifier`. `Metadata` is a wrapper around a YAML object with [functions](https://www.stackage.org/haddock/lts-16.10/hakyll-4.13.4.0/Hakyll-Core-Metadata.html) to lookup it's values as either strings or lists of strings.
+
+~~~haskell
+data Rules a
+
+instance Monad Rules
+instance Functor Rules
+instance Applicative Rules
+instance MonadMetadata
+
+class Monad m => MonadMetadata m where
+   getMetadata    :: Identifier -> m Metadata
+   getMatches     :: Pattern -> m [Identifier]
+
+-- getAllMetadata returns all metadata associated with a pattern
+getAllMetadata :: MonadMetadata m => Pattern -> m [(Identifier, Metadata)]
+
+-- getItemUTC tries to extract and parse the time from the published field or from the filename. 
+getItemUTC :: MonadMetadata m	=> TimeLocale	-> Identifier	-> m UTCTime	
+
+-- match matches a pattern and adds a rule for it.
+match :: Pattern -> Rules () -> Rules ()
+
+-- hakyll runs the rules in the IO monad
+hakyll :: Rules a -> IO ()
+~~~
+
+## Identifiers and patterns
+
+~~~haskell
+data Item a = Item
+   { itemIdentifier :: Identifier
+   , itemBody       :: a
+   } deriving (Show, Typeable)
+
+instance Item
+instance Item
+instance Item
+instance Show a => Show (Item a)
+instance Binary a => Binary (Item a)
+~~~
+
+
+## Writing Compilers and loading Items
+The other monad to implement the `MonadMetadata` type class is the `Compiler` monad which as the name implies compiles matched source files and takes care of dependencies between rules such that if one rule relies on the results of another rule they are executed in the correct order. The `Compiler` monad is an instance of `Alternative` which makes it easy to combine potentially failing compilers (using `empty`, `fail`, or `throwError`) compilers which are tried in sequence until one of them succeeds or else the combined compiler fails.
+
+`Compiler a` values have access to a range of functions which can retrieve the identifier, the source and path of both the matched file and any file identified by an `Identifier`. Keep in mind that for such function to succeed there needs to exist a rule for that `Identifier` in the `Rules` monad. Otherwise Hakyll doesn't have any knowledge of its existence.
+
+~~~haskell
+data Compiler a -- a is the the type of the output - usually String
+
+instance Monad Compiler
+instance Functor Compiler
+instance Applicative Compiler
+instance Alternative Compiler
+instance MonadMetadata Compiler
+instance MonadError Compiler
+
+-- compile adds a compiler to the Rules monad. Note that the Compiler value is Item a
+compile :: (Binary a, Typeable a, Writable a) => Compiler (Item a) -> Rules ()
+
+-- makeItem lifts a value into the the Compiler monad.
+makeItem :: a -> Compiler (Item a)
+
+-- getRoute returns the route for a specified item
+getRoute :: Identifier -> Compiler (Maybe FilePath)
+
+Parser to try to extract and parse the time from the published field or from the filename. See dateField for more information. Exported for user convenience.
+
+-- getResourceBody returns the full contents of the matched source file
+-- as a string without metadata preamble.
+getResourceBody :: Compiler (Item String)
+
+-- load an item compiled elsewhere.
+load :: (Binary a, Typeable a) => Identifier -> Compiler (Item a)
+
+-- loadAll loads a dynamic list of items.
+loadAll :: (Binary a, Typeable a) => Pattern -> Compiler [Item a]
+~~~
+
+
+## Snapshots to define a pipeline stage
+
+When loading a compiled resource it usually has the base layout templates applied to it making it unusable in dynamic lists. Snapshots are the solution to that problem. During the compiler construction a snapshot of the resource can be saved in middle of the pipeline allowing you to later `load` that stage of the compiled resource.
+
+~~~haskell
+-- blogs
+match allPattern $ do
+   route   $ blogRoute
+   compile $ blogCompiler
+      >>= saveSnapshot blogSnapshot -- saving a Snapshot before templates are applied
+      >>= loadAndApplyTemplate "templates/blog-detail.html" (blogDetailCtx categories tags)
+      >>= loadAndApplyTemplate "templates/default.html" defaultCtx
+      >>= indexCompiler
+      >>= relativizeUrls
+
+loadBlogs :: Pattern -> Compiler [Item String]
+loadBlogs = 
+   recentFirst <=< flip loadAllSnapshots blogSnapshot -- load blog items using a Snapshot
+~~~
+
+
+## Working with contexts and templates
+
+Contexts define variables which can be accessed and interpolated in a template. There are three ways to define a `Context`.
+
+1. Use the `Context` data constructor.
+1. Use field functions, e.g. `field`, `constField` or `listField`.
+1. Derive a new context from another context using `mapContext`.
+
+~~~haskell
+data ContextField
+   = StringField String
+   | forall a. ListField (Context a) [Item a]
+
+-- Context data constructor wraps a function which takes a key (variable name), 
+-- a list of arguments (for function fields), an item and returns a ContextField
+-- in the Compiler monad
+newtype Context a = Context
+   { unContext :: String -> [String] -> Item a -> Compiler ContextField
+   }
+
+instance Semigroup (Context a)
+instance Monoid (Context a) where
+   -- mempty is basically empty from Alternative
+   mempty                          = missingField 
+   -- mappend is <|> from Alternative
+   mappend (Context f) (Context g) = Context $ \k a i -> f k a i <|> g k a i 
+
+-- field takes a key and a function that constructs a value based on the item 
+-- (e.g. accessing metadata) and returns a new context.
+field :: String	-> (Item a -> Compiler String)-> Context a	 
+
+-- constField takes a key and a constant value and returns a context
+constField :: String -> String -> Context a
+
+-- listField takes a string, a context to be applied inside a 
+-- $for(..)$ expression, and the items to iterate over.
+listField :: String -> Context a -> Compiler [Item a] -> Context b
+
+-- mapContext takes a function, a context and returns a new context
+-- with all field values transformed.
+mapContext :: (String -> String) -> Context a -> Context a
+~~~
+
+The `Context` data constructor is rarely used but necessary if the the context needs to be able to return `mempty` which is implimented as a failing `Compiler`. In the `Compiler` monad failure can be signalled with `empty`, `noResult` or `throwError`.
+
+~~~haskell
+-- aliasContext maps a new key to another key. If the other key
+-- is not defined or returns empty the alias returns empty.
+aliasContext :: (String -> String) -> Context a -> Context a
+aliasContext f (Context c) = 
+   Context $ \k a i -> c (f k) a i <|> c' k -- Compiler implements Alternative
+   where 
+      c' k = noResult $ unwords ["Tried to alias", k, "as", f k, "which doesn't exist"]
+
+readingTimeField :: String -> Snapshot -> Context String
+readingTimeField key snapshot = 
+   field key calculate -- calculate :: Item String -> Compiler String
+   where
+      calculate item = do
+         body <- loadSnapshotBody (itemIdentifier item) snapshot
+         return $ withTagList acc body
+      acc ts = [TagText (show (time ts))]
+      time ts = foldl' count 0  ts `div` 265
+      count n (TagText s) = n + length (words s)
+      count n _           = n
+
+decksDetailCtx :: Context String
+decksDetailCtx = 
+   dateField "date" "%B %e, %Y"             <>
+   mapContext dropFileName (urlField "url") <> -- drops the file name from the urlField
+   defaultCtx                               <>
+   constField "theme" "black"
+
+-- fail with an error message
+noResult :: String -> Compiler a
+
+-- empty is the identity of <|>
+empty :: Alternative f => f a
+
+-- throwError used within a monadic computation begins exception processing
+throwError :: Monad m, MonadError e m | m -> e => e -> m a
+~~~
