@@ -1,0 +1,43 @@
+<article class="p-article">
+
+    <header>
+        <h2 class="c-title c-article__title"><a href="$url$">$title$</a></h2>
+        <p class="c-article__meta">
+            <time datetime="$date$">$date$</time>
+        </p>
+        <p class="c-article__meta">
+            $reading.time$ min read
+        </p>
+    </header>
+
+    <section id="js-article" class="c-article__body">
+        $polish(body)$
+    </section>
+
+    <section>
+        <p>
+            $if(category)-$ $category$ $endif$
+            $if(tags)-$ $tags$ $endif$
+        </p>
+        <p>
+        </p>
+    </section>
+
+    <footer>
+        <nav class="c-pagination p-pagination">
+            <div class="c-pagination__ctrl">
+                <div class="c-pagination__newer">
+                    $if(pages.previous.url)-$
+                    <a href="$pages.previous.url$">Newer</a>
+                    $endif$
+                </div>
+                <div class="c-pagination__older">
+                    $if(pages.next.url)-$
+                    <a href="$pages.next.url$">Older</a>
+                    $endif$
+                </div>
+            </div>
+        </nav>
+    </footer>
+
+</article>

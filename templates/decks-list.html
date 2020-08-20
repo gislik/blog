@@ -1,0 +1,53 @@
+            $for(decks)$
+            <article class="c-article p-list-article">
+            <header>
+                <h2 class="c-title c-article__title"><a href="$url$">$title$</a></h2>
+                <p class="c-article__meta">
+                    $date$
+                </p>
+            </header>
+                <section class="c-article__body">
+                    $if(featureimage)$
+                    <a href="$url$">
+                        <img src="$featureimage$" alt="">
+                    </a>
+                    $endif$
+                    $if(summary)$
+                    <p>
+                        $summary$
+                    </p>
+                    $endif$
+                </section>
+                $if(showdeadcode)$
+                <a href="$url$" class="c-article__btn p-list-article__btn">More</a>
+                $endif$
+            </article>
+            $endfor$
+            
+            $if(showdeadcode)$
+            <nav class="c-pagination p-pagination">
+                <div class="c-pagination__ctrl">
+                    <div class="c-pagination__newer">
+                        $if(showdeadcode)$
+                        $if(pages.first.url)-$
+                        <a href="$pages.first.url$">First</a>
+                        $endif$
+                        $endif$
+                        $if(pages.previous.url)-$
+                        <a href="$pages.previous.url$">Newer</a>
+                        $endif$
+                    </div>
+                    <div class="c-pagination__older">
+                        $if(pages.next.url)-$
+                        <a href="$pages.next.url$">Older</a>
+                        $endif$
+                        $if(showdeadcode)$
+                        $if(pages.last.url)-$
+                        <a href="$pages.last.url$">Last</a>
+                        $endif$
+                        $endif$
+                    </div>
+                </div>
+                <span class="c-pagination__count p-pagination__count">Page $pages.current.number$ of $pages.count$</span>
+            </nav>
+            $endif$

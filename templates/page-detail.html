@@ -1,0 +1,25 @@
+<article class="p-article">
+
+    <header>
+        <h2 class="c-title c-article__title">$polish(title)$</h2>
+        <!-- 
+        <p class="c-article__meta">
+            <time datetime=""></time>
+        </p>
+        -->
+    </header>
+
+    <section id="js-article" class="c-article__body">
+        $polish(body)$
+    </section>
+
+    <section>
+        <p>
+            $if(category)-$ $category$ $endif$
+            $if(tags)-$ $tags$ $endif$
+        </p>
+        <p>
+        </p>
+    </section>
+
+</article>

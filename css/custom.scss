@@ -1,0 +1,178 @@
+@import "variables";
+@import url('https://fonts.googleapis.com/css2?family=Rock+Salt&display=swap');
+/*
+a.no-link {
+    pointer-events: none;
+    cursor: default;
+}
+a.disable-link {
+    pointer-events: none;
+    cursor: default;
+    opacity: 0.5;
+}
+*/
+
+body {
+  padding: 3rem;
+}
+
+nav.header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  margin-left: auto;
+  font-size: 18px;
+  line-height: 1.7;
+
+  > a {
+    border-bottom: 1px solid $link-color;
+  }
+
+  > a:not(:last-child) {
+    margin-right: 1.2rem;
+  }
+}
+
+header.profile {
+  width: 100%;
+  max-width: 700px;
+  margin: auto;
+  display: flex;
+  flex-direction: row;
+}
+
+a.profile-icon {
+  border: none;
+  height: 50px;
+  width: 50px;
+  position: relative;
+
+  img {
+    border-radius: 50%;
+  }
+}
+
+.l-header {
+  display: block;
+  padding: 0.4em;
+  text-align: center;
+  margin-block-start: 0.0em;
+  margin-block-end: 0.0em;
+  margin-inline-start: 0px;
+  margin-inline-end: 0px;
+}
+
+.toc {
+  background-color: aliceblue;
+  margin-top: 2.8em;
+  margin-bottom: 1em;
+  margin-left: 1.2em;
+  margin-right: 0em;
+  float: right;
+  > .header {
+    font-size: 1.8rem;
+    margin: 0 0 1em 1em;
+  }
+  > ul {
+    line-height: 1.8em;
+    padding-left: 1em;
+    padding-right: 1em;
+  }
+    li {
+      font-size: 1.3rem;
+      list-style-type: none;
+  }
+}
+
+.p-list-article {
+    h2 {
+      font-size: 2em;
+      margin-block-start: 1.4em;
+      margin-block-end: 0.0em;
+      margin-inline-start: 0px;
+      margin-inline-end: 0px;
+    }
+}
+
+.c-article__meta {
+  margin-block-start: 0.5em;
+  margin-block-end: 0.5em;
+  margin-inline-start: 0px;
+  margin-inline-end: 0px;
+  font-style: normal;
+}
+
+.p-article > header {
+  text-align: center;
+      margin-block-start: 0.5em;
+      margin-block-end: 5em;
+      margin-inline-start: 0px;
+      margin-inline-end: 0px;
+}
+
+.c-article__body, .p-article__body, .c-article__summary {
+  font-size: 1.5rem;
+  p {
+    font-size: 1.5rem;
+    text-align: justify;
+  }
+  p.center {
+    font-size: 1.5rem;
+    text-align: center;
+  }
+  > h1 {
+    font-size: 2.0rem;
+    margin-block-start: 1.33em;
+    margin-block-end: 1.33em;
+    margin-inline-start: 0px;
+    margin-inline-end: 0px;
+  }
+  > h2 {
+    font-size: 1.8rem;
+    margin-block-start: 1.67em;
+    margin-block-end: 1.67em;
+    margin-inline-start: 0px;
+    margin-inline-end: 0px;
+  }
+  > h3 {
+    font-size: 1.6rem;
+    margin-block-start: 2.33em;
+    margin-block-end: 2.33em;
+    margin-inline-start: 0px;
+    margin-inline-end: 0px;
+  }
+  .header-section-number {
+    color: $link-color;
+    margin-right: 1rem;
+  }
+}
+
+.p-pagination {
+  margin: 1em 0;
+}
+
+pre.strikethrough {
+  code.sourceCode {
+    color: #999;
+    text-decoration: line-through;
+    span.ex {
+      color: #999;
+    }
+  }
+}
+
+.social-media {
+  margin-top: 3em;
+  margin-bottom: 0em;
+  a {
+    margin: 1rem;
+    .fab {
+      margin-right: 0.2em;      
+    }
+  }
+}
+
+.handwritten {
+  font-family: 'Rock Salt', cursive;
+  font-size: 1.5em;
+}
