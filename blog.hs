@@ -158,7 +158,6 @@ main = do
          route   $ setExtension "css"
          compile $ sassCompiler
             >>= return . fmap compressCss
-            >>= relativizeUrls
 
       match "css/webfonts/*" $ do
          route   $ idRoute
