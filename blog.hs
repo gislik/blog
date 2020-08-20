@@ -9,7 +9,6 @@ import            Control.Applicative             ((<|>), Alternative(..))
 import            Control.Monad                   (msum, filterM, (<=<), liftM, filterM)
 import            Control.Monad.Fail              (MonadFail)
 import            System.Environment              (getArgs)
-import            System.FilePath                 ((</>), takeFileName, dropFileName, splitPath, joinPath, splitDirectories)
 import            Data.Time.Format                (TimeLocale, defaultTimeLocale, parseTimeM, formatTime)
 import            Text.Pandoc.Options             (WriterOptions(..))
 import            Text.Blaze.Html                 (toHtml, toValue, (!))
@@ -18,14 +17,14 @@ import            Text.Blaze.Html.Renderer.String (renderHtml)
 import            Text.HTML.TagSoup               (Tag(..))
 import qualified  Data.Map                        as M
 import qualified  Text.Blaze.Html5                as H
+import            System.FilePath
 import            Hakyll
 
 --------------------------------------------------------------------------------
 -- TODO
 --------------------------------------------------------------------------------
--- 1. Code comments?
--- 2. Docker?
--- 3. Series
+-- 1. Snippets (youtube, google slides, ...)
+-- 2. Series
 
 --------------------------------------------------------------------------------
 -- SITE
@@ -56,10 +55,10 @@ main = do
             >>= relativizeUrls
 
       -- index
-      match "index.html" $ do
+      create ["index.html"] $ do
          route   $ idRoute
-         compile $ getResourceBody
-            >>= applyAsTemplate (blogCtx 1 pages categories tags)
+         compile $ makeItem ""
+            >>= loadAndApplyTemplate "templates/blog-list.html" (blogCtx 1 pages categories tags)
             >>= loadAndApplyTemplate "templates/default.html" defaultCtx 
             >>= indexCompiler
             >>= relativizeUrls
@@ -192,13 +191,14 @@ decksSnapshot = "decks-content"
 feedConfiguration :: FeedConfiguration
 feedConfiguration =
    FeedConfiguration
-      { feedTitle       = "Jack of all trades, master of none"
-      , feedDescription = "My thoughs on blockchain and programming"
+      { feedTitle       = "Crypto and Code"
+      , feedDescription = "My thoughs on blockchains and software"
       , feedAuthorName  = "Gísli Kristjánsson"
       , feedAuthorEmail = "gislik@hamstur.is"
       , feedRoot        = "http://gisli.hamstur.is"
       }
 
+-- writerToc configures pandoc to include a table of contents
 writerToc :: WriterOptions
 writerToc = 
    defaultHakyllWriterOptions
@@ -221,9 +221,9 @@ writerToc =
 --------------------------------------------------------------------------------
 pageTitleField :: String -> Context String
 pageTitleField key = 
-   aliasContext alias metadataField   <> -- use page title from metadata
-   pathTitleField key                 <> -- or read from the path
-   constField key"Jack of all trades"    -- alternatively use this
+   aliasContext alias metadataField <> -- use page title from metadata
+   pathTitleField key               <> -- or read from the path
+   constField key "Crypto and Code"    -- alternatively use this
    where
       alias x | x == key = "title"
       alias x            = x
@@ -484,7 +484,7 @@ polishField name =
    functionField name $ \args _ -> 
       return $ withTags text' (unwords args)
    where 
-      text' (TagText s) = TagText (unwords $ map f (split isSpace s))
+      text' (TagText s) = TagText (concat $ map f (split isSpace s))
       text' t           = t
       f ""                   = ""
       f ":+1:"               = "👍"
@@ -558,7 +558,7 @@ split :: (Char -> Bool) -> String -> [String]
 split p' s =
    go p' ("", s)
    where
-      go p ("", "") = []
+      go _ ("", "") = []
       go p ("", y) = go (not . p) (span (not . p) y)
       go p (x, y) = x : go (not . p) (span (not . p) y)
 
