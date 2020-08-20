@@ -128,10 +128,13 @@ $endfor$
 # Advanced features
 
 ## Auto-generated table of contents
+TBD
+
 ## LaTeX math
+TBD
+
 
 # Rolling your own
-
 
 ## Collecting rules in the Rules monad
 
@@ -319,3 +322,11 @@ empty :: Alternative f => f a
 -- throwError used within a monadic computation begins exception processing
 throwError :: Monad m, MonadError e m | m -> e => e -> m a
 ~~~
+
+## Paginating posts
+
+TBD
+
+## Support for tags and categories
+
+TBD
