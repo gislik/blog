@@ -2,12 +2,13 @@
 title: My personal Hakyll cheatsheet
 tags: haskell
 withtoc: true
+summary: A cheatsheet for my future self. We cover using the Hakyll eDSL to write website rules, advanced configuration which enables interesting features such as auto-generation of table of contents and \( \LaTeX \) math support on this website as well as discussion on how to roll your own Hakyll constructs.
 ---
 
 # Hakyll :heart: Pandoc
 Since I don't write Haskell code professionally anymore it takes me longer to get into the right rythm. This post is intended for my future self more or less and should serve as a cheatsheet for Hakyll development. I've already written a high level overview of how to edit content and build the website in this [README](https://github.com/gislik/gisli.hamstur.is/blob/master/README.md). Here I want to go deeper into how to construct new compilers and how to apply them in a context to templates. 
 
-Under the hood Hakyll integrates natively with [Pandoc](http://johnmacfarlane.net/pandoc/) -- the swiss-army knife of file converters. Pandoc is also written in Haskell and can convert files between a wide variety of file formats and can be extended with custom [Lua](http://www.lua.org/) filters. All this has some configuration complexities associated with it and below I also discuss the various configurations and extensions used to enable the auto-generation of table of contents and LaTeX math support on this website.
+Under the hood Hakyll integrates natively with [Pandoc](http://johnmacfarlane.net/pandoc/) -- the swiss-army knife of file converters. Pandoc is also written in Haskell and can convert files between a wide variety of file formats and can be extended with custom [Lua](http://www.lua.org/) filters. All this has some configuration complexities associated with it and below I also discuss the various configurations and extensions used to enable the auto-generation of table of contents and $\LaTeX$ math support on this website.  
 
 
 # Website rules
@@ -127,12 +128,97 @@ $endfor$
 
 # Advanced features
 
+Using the `pandocCompilerWith` some options can be passed in which affect the behavior of Pandoc. In addition extensions can be enabled which unlock additional features. 
+
+~~~haskell
+pandocCompilerWith :: ReaderOptions -> WriterOptions -> Compiler (Item String)
+
+blogCompiler :: Compiler (Item String)
+blogCompiler = do
+   ident <- getUnderlying
+   toc   <- getMetadataField ident "withtoc"
+   pandocCompilerWith blogReaderOptions (maybe defaultOptions blogOptions toc)
+   where
+      defaultOptions = defaultHakyllWriterOptions
+      blogOptions = const blogWriterOptions
+
+~~~
+
 ## Auto-generated table of contents
-TBD
 
-## LaTeX math
-TBD
+~~~haskell
+-- blogWriterOptions configures pandoc to include a table of contents
+-- and uses MathJax to render math.
+blogWriterOptions :: WriterOptions
+blogWriterOptions = 
+   defaultHakyllWriterOptions
+      {
+        writerHTMLMathMethod = MathJax ""
+      , writerTableOfContents = True
+      , writerNumberSections  = True
+      , writerTOCDepth        = 2
+      , writerTemplate        = 
+         let
+            toc = "$toc$" :: String
+            body = "$body$" :: String
+         in
+            Just . renderHtml $ do
+               H.div ! class_ "toc" $ do
+                  toHtml toc
+               toHtml body
+      }
+~~~
 
+## \( \KaTeX\ \) to render \( \LaTeX \)  math
+
+Pandoc can transform math to MathJax when configured correctly. KaTeX is able to render the output by embedding the javascript and CSS.
+
+~~~html
+<link rel="stylesheet" href="/katex/katex.min.css">
+<script defer src="/katex/katex.min.js"></script>
+<script type="text/javascript" script defer src="/katex/auto-render.min.js" 
+  onload="renderMathInElement(document.body);"></script>
+~~~
+
+Equations can be place on their own lines.
+
+<p class="center">
+`$$ \ln x = \int_{-\infty}^x \frac 1 y \, dy  $$`{.center}
+</p>
+<p class="center">
+or
+</p>
+<p class="center">
+`\[ \ln x = \int_{-\infty}^x \frac 1 y \, dy  \]`{.center}
+</p>
+
+<p class="center">
+becomes
+</p>
+$$ \ln x = \int_{-\infty}^x \frac 1 y \, dy  $$
+
+
+
+Writing `$x \equiv a \pmod{b}$` or `\( x \equiv a \pmod{b} \)` prdouces \( x \equiv a \pmod{b} \).
+
+
+~~~haskell
+blogReaderOptions :: ReaderOptions
+blogReaderOptions = 
+   defaultHakyllReaderOptions
+      {
+         readerExtensions = 
+            (readerExtensions defaultHakyllReaderOptions) <> extensionsFromList
+               [ 
+                 Ext_tex_math_single_backslash  -- TeX math btw (..) [..]
+               , Ext_tex_math_double_backslash  -- TeX math btw \(..\) \[..\]
+               , Ext_tex_math_dollars           -- TeX math between $..$ or $$..$$
+               , Ext_latex_macros               -- Parse LaTeX macro definitions (for math only)
+               , Ext_inline_code_attributes     -- Ext_inline_code_attributes
+               , Ext_abbreviations              -- PHP markdown extra abbreviation definitions
+               ]
+      }
+~~~
 
 # Rolling your own
 
