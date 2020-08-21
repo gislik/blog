@@ -10,7 +10,6 @@ import            Control.Monad                   (msum, filterM, (<=<), liftM, 
 import            Control.Monad.Fail              (MonadFail)
 import            System.Environment              (getArgs)
 import            Data.Time.Format                (TimeLocale, defaultTimeLocale, parseTimeM, formatTime)
-import            Text.Pandoc.Options             (WriterOptions(..))
 import            Text.Blaze.Html                 (toHtml, toValue, (!))
 import            Text.Blaze.Html5.Attributes     (href, class_)
 import            Text.Blaze.Html.Renderer.String (renderHtml)
@@ -18,6 +17,7 @@ import            Text.HTML.TagSoup               (Tag(..))
 import qualified  Data.Map                        as M
 import qualified  Text.Blaze.Html5                as H
 import            System.FilePath
+import            Text.Pandoc.Options
 import            Hakyll
 
 --------------------------------------------------------------------------------
@@ -199,11 +199,30 @@ feedConfiguration =
       , feedRoot        = "http://gisli.hamstur.is"
       }
 
--- writerToc configures pandoc to include a table of contents
-writerToc :: WriterOptions
-writerToc = 
+blogReaderOptions :: ReaderOptions
+blogReaderOptions = 
+   defaultHakyllReaderOptions
+      {
+         readerExtensions = 
+            (readerExtensions defaultHakyllReaderOptions) <> extensionsFromList
+               [ 
+                 Ext_tex_math_single_backslash  -- TeX math btw (..) [..]
+               , Ext_tex_math_double_backslash  -- TeX math btw \(..\) \[..\]
+               , Ext_tex_math_dollars           -- TeX math between $..$ or $$..$$
+               , Ext_latex_macros               -- Parse LaTeX macro definitions (for math only)
+               , Ext_inline_code_attributes     -- Ext_inline_code_attributes
+               , Ext_abbreviations              -- PHP markdown extra abbreviation definitions
+               ]
+      }
+
+-- blogWriterOptions configures pandoc to include a table of contents
+-- and uses MathJax to render math.
+blogWriterOptions :: WriterOptions
+blogWriterOptions = 
    defaultHakyllWriterOptions
-      { writerTableOfContents = True
+      {
+        writerHTMLMathMethod = MathJax ""
+      , writerTableOfContents = True
       , writerNumberSections  = True
       , writerTOCDepth        = 2
       , writerTemplate        = 
@@ -307,11 +326,10 @@ blogCompiler :: Compiler (Item String)
 blogCompiler = do
    ident <- getUnderlying
    toc   <- getMetadataField ident "withtoc"
-   pandocCompilerWith readerOptions (maybe writerOptions writerToc' toc)
+   pandocCompilerWith blogReaderOptions (maybe defaultOptions blogOptions toc)
    where
-      writerToc' = const writerToc
-      readerOptions = defaultHakyllReaderOptions
-      writerOptions = defaultHakyllWriterOptions
+      defaultOptions = defaultHakyllWriterOptions
+      blogOptions = const blogWriterOptions
 
 indexCompiler :: Item String -> Compiler (Item String)
 indexCompiler x = 
