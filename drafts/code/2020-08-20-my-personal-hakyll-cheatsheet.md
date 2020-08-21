@@ -241,7 +241,8 @@ class Monad m => MonadMetadata m where
 -- getAllMetadata returns all metadata associated with a pattern
 getAllMetadata :: MonadMetadata m => Pattern -> m [(Identifier, Metadata)]
 
--- getItemUTC tries to extract and parse the time from the published field or from the filename. 
+-- getItemUTC tries to extract and parse the time from the published field 
+-- or from the filename. 
 getItemUTC :: MonadMetadata m	=> TimeLocale	-> Identifier	-> m UTCTime	
 
 -- match matches a pattern and adds a rule for it.
