@@ -145,7 +145,7 @@ main = do
          compile $ renderBlogAtom <=< fmap (take 20) . loadBlogs $ visiblePattern
 
       -- static content
-      match staticPattern $ do
+      match "static/**" $ do
          route   $ rootRoute
          compile $ copyFileCompiler
 
@@ -159,7 +159,11 @@ main = do
          compile $ sassCompiler
             >>= return . fmap compressCss
 
-      match "css/webfonts/*" $ do
+      match ("css/webfonts/*") $ do
+         route   $ idRoute
+         compile $ copyFileCompiler
+
+      create [".nojekyll"] $ do -- disable GitHub's Jekyll
          route   $ idRoute
          compile $ copyFileCompiler
 
@@ -175,9 +179,6 @@ blogPattern = "blog/**"
 
 draftPattern :: Pattern
 draftPattern = "drafts/**"
-
-staticPattern :: Pattern
-staticPattern = "static/**"
 
 blogSnapshot :: Snapshot
 blogSnapshot = "blog-content"
