@@ -4,7 +4,7 @@ title: "Turning ☕️ into ⚡️"
 
 <link rel="stylesheet" href="/css/handwritten.css" />
 
-With an academic background in mathematics, an interest in software and a working experience in financial markets I have found my sweet spot; **code** and **crypto**. This includes blockchains, cryptography, cryptocurrency and software. I strongly believe that they are a fundamental technology and a social layer on which we will build the next wave of social contracts such as money and financial transactions.
+With an academic background in mathematics, an interest in software and a working experience in financial markets I have found my sweet spot; **code** and **crypto**. This includes permissionless blockchains, cryptography, cryptocurrency and software. I strongly believe that they are a fundamental technology and a social layer on which we will build the next wave of social contracts such as money and financial transactions.
 
 Ever since reading my first programming book as a kid I have been drawn towards the art of writing code. Connecting to a BBS over the land line using a modem and later to the Internet was magical. It always felt like in cyber space you could do anything -- and it still feels that way. At the same time open source was coming of age. The tension between believers and non-believers was almost like a cold war -- a sentiment all to present in today's crypto market. Now nothing feels more natural and even then arch-enemy Microsoft has embraced open source and Linux runs on ¾ of all mobile phones.
 
