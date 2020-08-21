@@ -6,7 +6,7 @@ summary: A cheatsheet for my future self. We cover using the Hakyll eDSL to writ
 ---
 
 # Hakyll :heart: Pandoc
-Since I don't write Haskell code professionally anymore it takes me longer to get into the right rythm. This post is intended for my future self more or less and should serve as a cheatsheet for Hakyll development. I've already written a high level overview of how to edit content and build the website in this [README](https://github.com/gislik/gisli.hamstur.is/blob/master/README.md). Here I want to go deeper into how to construct new compilers and how to apply them in a context to templates. 
+Since I don't write Haskell code professionally anymore it takes me longer to get into the right rhythm. This post is intended for my future self more or less and should serve as a cheatsheet for Hakyll development. I've already written a high level overview of how to edit content and build the website in this [README](https://github.com/gislik/gisli.hamstur.is/blob/master/README.md). Here I want to go deeper into how to construct new compilers and how to apply them in a context to templates. 
 
 Under the hood Hakyll integrates natively with [Pandoc](http://johnmacfarlane.net/pandoc/) -- the swiss-army knife of file converters. Pandoc is also written in Haskell and can convert files between a wide variety of file formats and can be extended with custom [Lua](http://www.lua.org/) filters. All this has some configuration complexities associated with it and below I also discuss the various configurations and extensions used to enable the auto-generation of table of contents and $\LaTeX$ math support on this website.  
 
@@ -94,18 +94,22 @@ A special case of the string context is the function context which defines a var
 
 ## Metadata, flow control and list iteration
 
-Metadata can be placed in the front matter of the markdown formatted as [YAML](https://yaml.org/). The metadata can be made available both to the compiler and to the template in case the `metadataField :: Context a` is applied to the template.
+Metadata can be placed in the front matter of the markdown formatted as [YAML](https://yaml.org/). The metadata can be made available both to the compiler and to the template in case the `metadataField :: Context a` is applied to the template. Tags can eiter be comma separated or as a valid YAML list.
 
 ~~~markdown
 ---
 title: This is the blog title
 tags: tag1, tag2
+tags: 
+   - tag1
+   - tag2
 summary: |
   Introduction to the blog content
 ---
 
 This is the blog body
 ~~~
+
 
 Special function variables are used to define conditional branches to display and iterate over items. The variable names used within the \$for(blogs)\$ loop are defined in the `blog` list field. Everything between \$sep\$ and \$endfor\$ will be used as a separator between items, i.e. it is not included for the last element.
 
@@ -218,6 +222,241 @@ blogReaderOptions =
                , Ext_abbreviations              -- PHP markdown extra abbreviation definitions
                ]
       }
+~~~
+
+## Decks and presentations
+
+Gooogle decks can easily be embedded using an HTML snippet and requires no special handling on Hakyll's side. I wrap the standard `<iframe>` tag in a `div` tag with the a special class which makes the presentation responsive.
+
+~~~html
+<div class="responsive">
+<iframe src="https://docs.google.com/presentation/d/e/<ID>/embed
+  ?start=false&loop=false&delayms=3000" frameborder="0" width="960" height="569" 
+  allowfullscreen="true" mozallowfullscreen="true" webkitallowfullscreen="true"></iframe>
+</div>
+~~~
+
+~~~css
+.responsive {
+  overflow: hidden;
+  padding-bottom:56.25%;
+  position: relative;
+  height: 0;
+  iframe {
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 100%;
+    position: absolute;
+  }
+}
+~~~
+
+[reveal.js](https://revealjs.com/) -- the HTML presentation framework -- uses standard HTML tags to define the presentation and supports themes. Enabling reveal.js is achieved by modifying the deck's base template and adding a few options to the decks metadata. 
+
+~~~markdown
+---
+reveal: true
+theme: league
+---
+~~~
+
+
+~~~html
+<head>
+$if(reveal)$
+  <link rel="stylesheet" href="/reveal.js/reset.css">
+  <link rel="stylesheet" href="/reveal.js/reveal.css">
+  <link rel="stylesheet" href="/reveal.js/theme/$theme$.css" id="theme">
+
+  <!-- Theme used for syntax highlighted code -->
+  <link rel="stylesheet" href="/reveal.js/plugin/highlight/monokai.css" id="highlight-theme">
+$endif$
+</head>
+~~~
+
+~~~html
+<body>
+  <div class="reveal">
+    <div class="slides">
+      $body$
+    </div>
+  </div>
+
+$if(reveal)$
+  <script src="/reveal.js/reveal.js"></script>
+  <script src="/reveal.js/plugin/notes/notes.js"></script>
+  <script src="/reveal.js/plugin/markdown/markdown.js"></script>
+  <script src="/reveal.js/plugin/highlight/highlight.js"></script>
+  <script>
+    // More info about initialization & config:
+    // - https://revealjs.com/initialization/
+    // - https://revealjs.com/config/
+    Reveal.initialize({
+      hash: true,
+
+      // Learn about plugins: https://revealjs.com/plugins/
+      plugins: [ RevealMarkdown, RevealHighlight, RevealNotes ]
+    });
+		</script>
+$endif$
+</body>
+~~~
+
+## Paginating posts
+
+Blog posts are paginated by constructing a `Paginate` object with `buildPaginateWith` and then creating rules for every page. 
+
+~~~haskell
+type PageNumber = Int
+
+data Paginate = Paginate
+   { paginateMap        :: M.Map PageNumber [Identifier] -- used in blogCtx
+   , paginateMakeId     :: PageNumber -> Identifier 
+   , paginateDependency :: Dependency
+   }
+
+buildPaginateWith
+    :: MonadMetadata m
+    => ([Identifier] -> m [[Identifier]])  -- group items into pages
+    -> Pattern                             -- items to paginate
+    -> (PageNumber -> Identifier)          -- identifiers for the pages
+    -> m Paginate
+~~~
+
+~~~haskell
+hakyll $ do
+
+   pages <- buildPages visiblePattern (\i -> fromCapture "*/index.html" (show i))
+
+   paginateRules pages $ \i _ -> do -- i is the page number
+      route   $ idRoute
+      compile $ makeItem (show i)
+         >>= loadAndApplyTemplate "templates/blog-list.html" (blogCtx i pages categories tags)
+         >>= loadAndApplyTemplate "templates/default.html" defaultCtx
+         >>= indexCompiler
+         >>= relativizeUrls
+
+buildPages :: (MonadMetadata m, MonadFail m) 
+   => Pattern -> (PageNumber -> Identifier) -> m Paginate
+buildPages pattern makeId = 
+   buildPaginateWith
+      (return . paginateEvery blogPerPage <=< sortRecentFirst) 
+      pattern 
+      makeId
+
+~~~
+
+To access pages pagination links are added to the relevant context. `paginateContext` returns a default paginate context which provides standard pagination fields but I like to alias those fields to give them a bit more friendly names.
+
+~~~haskell
+-- paginateContext returns a default pagin
+paginateContext :: Paginate -> PageNumber -> Context a
+
+blogCtx :: PageNumber -> Paginate -> Tags -> Tags -> Context String
+blogCtx i pages categories tags = 
+      listField "blogs" (blogDetailCtx categories tags) (loadBlogs pat) <>
+      categoryListField "categories" categories                         <>
+      tagsListField "tags" tags                                         <>
+      pagesField i                                                      <> --page links
+      defaultCtx
+  where
+      pat = fromList . fromMaybe [] . M.lookup i . paginateMap $ pages
+      pagesField = aliasContext alias . paginateContext pages -- alias standard fields
+      alias "pages.first.number"    = "firstPageNum"
+      alias "pages.first.url"       = "firstPageUrl"
+      alias "pages.next.number"     = "nextPageNum"
+      alias "pages.next.url"        = "nextPageUrl"
+      alias "pages.previous.number" = "previousPageNum"
+      alias "pages.previous.url"    = "previousPageUrl"
+      alias "pages.last.number"     = "lastPageNum"
+      alias "pages.last.url"        = "lastPageUrl"
+      alias "pages.current.number"  = "currentPageNum"
+      alias "pages.count"           = "numPages"
+      alias x                       = x
+~~~
+
+## Support for tags and categories
+
+Tags are supported in a similar manner to pagination. The `Tags` object is constructed with either `buildTags` or `buildTagsWith`. Hakyll provides [functions](https://www.stackage.org/haddock/lts-16.10/hakyll-4.13.4.0/Hakyll-Web-Tags.html) to sort tags, render them and adding to a context. Rules for each tag must be created `using tagsRules` in order for tags to work. 
+
+
+~~~haskell
+data Tags = Tags
+   { tagsMap        :: [(String, [Identifier])]
+   , tagsMakeId     :: String -> Identifier
+   , tagsDependency :: Dependency
+   }
+
+-- buildTags takes a pattern for loading resources and 
+-- a mapping from the tag name to its identifier
+buildTags :: MonadMetadata m => Pattern -> (String -> Identifier) -> m Tags
+
+-- getTags returns the tag field from the metadata as a list of strings
+-- the field value can either be tags separated by a comma or a valid YAML list
+getTags :: MonadMetadata m => Identifier -> m [String]
+~~~
+
+
+~~~haskell
+hakyll $ do
+
+   tags <- buildTags visiblePattern (fromCapture "tags/*/index.html")
+
+   -- index
+   create ["index.html"] $ do
+      route   $ idRoute
+      compile $ makeItem ""
+         -- tags passed to blogCtx
+         >>= loadAndApplyTemplate "templates/blog-list.html" (blogCtx 1 pages categories tags)
+         >>= loadAndApplyTemplate "templates/default.html" defaultCtx 
+         >>= indexCompiler
+         >>= relativizeUrls
+
+      tagsRules tags $ \tag pattern -> do
+         tagPages <- buildPages pattern (\i -> fromCaptures "tags/*/*/index.html" [tag, show i])
+         route   $ idRoute
+         compile $ makeItem tag
+            >>= loadAndApplyTemplate "templates/blog-list.html" (blogCtx 1 tagPages categories tags)
+            >>= loadAndApplyTemplate "templates/default.html" defaultCtx
+            >>= indexCompiler
+            >>= relativizeUrls
+         paginateRules tagPages $ \i _ -> do -- blog tags pages (i is page within tag)
+            route idRoute
+            compile $ do
+               makeItem tag
+                  >>= loadAndApplyTemplate "templates/blog-list.html" (blogCtx i tagPages categories tags)
+                  >>= loadAndApplyTemplate "templates/default.html" defaultCtx
+                  >>= indexCompiler
+                  >>= relativizeUrls
+
+blogDetailCtx :: Tags -> Tags -> Context String
+blogDetailCtx categories tags = 
+   dateField "date" "%B %e, %Y"                 <>
+   mapContext dropFileName (urlField "url")     <>
+   categoryField' "category" categories         <>
+   tagsField' "tags" tags                       <> -- tags to context
+   field "pages.next.url" nextBlog              <>
+   field "pages.previous.url" previousBlog      <>
+   defaultCtx                                   <> 
+   teaserField "summary" blogSnapshot           <> 
+   previewField "summary" blogSnapshot          <> 
+   readingTimeField "reading.time" blogSnapshot
+~~~
+
+Tags can be rendered in a standard way using `renderTags`, as a tag cloud using `renderTagCloud` or in a custom way using `tagsFieldWith`.
+
+~~~haskell
+tagsField' :: String -> Tags -> Context a 
+tagsField' = 
+   tagsFieldWith getTags (renderLink "#") (mconcat . intersperse " ")
+
+renderLink :: String -> String -> (Maybe FilePath) -> Maybe H.Html
+renderLink _ _   Nothing       = Nothing
+renderLink pre text (Just url) =
+   Just $ do
+      toHtml pre
+      H.a ! href (toValue $ toUrl url) $ toHtml text
 ~~~
 
 # Rolling your own
@@ -410,10 +649,3 @@ empty :: Alternative f => f a
 throwError :: Monad m, MonadError e m | m -> e => e -> m a
 ~~~
 
-## Paginating posts
-
-TBD
-
-## Support for tags and categories
-
-TBD

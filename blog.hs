@@ -540,7 +540,7 @@ buildPages pattern makeId =
 
 -- html
 renderLink :: String -> String -> (Maybe FilePath) -> Maybe H.Html
-renderLink _ _   Nothing            = Nothing
+renderLink _ _   Nothing       = Nothing
 renderLink pre text (Just url) =
    Just $ do
       toHtml pre
