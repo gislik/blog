@@ -186,17 +186,32 @@ blogSnapshot = "blog-content"
 blogPerPage :: Int
 blogPerPage = 4
 
+blogTitle :: String
+blogTitle = "Crypto and Code"
+
+blogDescription :: String
+blogDescription = "My thoughts on blockchains and software"
+
+blogAuthor :: String
+blogAuthor = "Gísli Kristjánsson"
+
+blogAuthorEmail :: String
+blogAuthorEmail = "gislik@hamstur.is"
+
+blogRoot :: String
+blogRoot = "https://gisli.hamstur.is"
+
 decksSnapshot :: Snapshot
 decksSnapshot = "decks-content"
 
 feedConfiguration :: FeedConfiguration
 feedConfiguration =
    FeedConfiguration
-      { feedTitle       = "Crypto and Code"
-      , feedDescription = "My thoughs on blockchains and software"
-      , feedAuthorName  = "Gísli Kristjánsson"
-      , feedAuthorEmail = "gislik@hamstur.is"
-      , feedRoot        = "http://gisli.hamstur.is"
+      { feedTitle       = blogTitle
+      , feedDescription = blogDescription
+      , feedAuthorName  = blogAuthor
+      , feedAuthorEmail = blogAuthorEmail
+      , feedRoot        = blogRoot
       }
 
 blogReaderOptions :: ReaderOptions
@@ -250,12 +265,13 @@ pageTitleField key =
 
 defaultCtx :: Context String
 defaultCtx = 
-   bodyField "body"            <>
-   metadataField               <>
-   pageTitleField "page.title" <>
-   titleField "title"          <>
-   urlField "url"              <>
-   pathField "path"            <>
+   bodyField "body"                              <>
+   metadataField                                 <>
+   pageTitleField "page.title"                   <>
+   constField "page.description" blogDescription <>
+   titleField "title"                            <>
+   urlField "url"                                <>
+   pathField "path"                              <>
    polishField "polish"
 
 blogCtx :: PageNumber -> Paginate -> Tags -> Tags -> Context String

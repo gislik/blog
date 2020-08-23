@@ -21,13 +21,11 @@
         <meta property="og:title" content="$title$" />
         <meta name="twitter:title" content="$title$" />
 
-        $if(showdeadcode)$
-        {% if config.description -%}
-        <meta name="description" content="{{ config.description }}">
-        <meta property="og:description" content="{{ config.description }}">
-        <meta name="twitter:description" content="{{ config.description | truncate(length=200) }}">
-        {%- endif %}
-        $endif$
+        $if(page.description)-$
+        <meta name="description" content="$page.description$">
+        <meta property="og:description" content="$page.description$">
+        <meta name="twitter:description" content="$page.description$">
+        $-endif$
 
         <meta property="og:site_name" content="$page.title$" />
         <meta property="og:url" content="/" />
