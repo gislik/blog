@@ -9,7 +9,7 @@
             $for(blogs)$
             <article class="c-article p-list-article">
             <header>
-                <h2 class="c-title c-article__title"><a href="$url$">$title$</a></h2>
+                <h2 class="c-title c-article__title"><a href="$page.url$">$title$</a></h2>
                 <p class="c-article__meta">
                     <time datetime="$date$">$date$</time> $category$ $if(tags)-$ $tags$ $endif$
                 </p>
@@ -18,7 +18,7 @@
                     $summary$
                 </section>
                 $if(showdeadcode)$
-                <a href="$url$" class="c-article__btn p-list-article__btn">More</a>
+                <a href="$page.url$" class="c-article__btn p-list-article__btn">More</a>
                 $endif$
             </article>
             $endfor$

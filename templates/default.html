@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" prefix="og: http://ogp.me/ns#">
     <head>
         <meta charset="utf-8" />
         <meta name="referrer" content="no-referrer">
@@ -19,25 +19,20 @@
         <!-- End Google Tag Manager -->
 
         <meta property="og:title" content="Gísli | $polish(page.title)$" />
-        <meta name="twitter:title" content="Gísli | $polish(page.title)$" />
-
         $if(page.description)-$
-        <meta name="description" content="$polish(page.description)$" />
         <meta property="og:description" content="$polish(page.description)$" />
-        <meta name="twitter:description" content="$polish(page.description)$" />
+        <meta name="description" content="$polish(page.description)$" />
         $-endif$
-
         <meta name="twitter:card" content="summary" />
         <meta name="twitter:site" content="@gislik" />
-
         <meta property="og:site_name" content="Gísli | $page.title$" />
-        <meta property="og:url" content="/" />
+        <meta property="og:url" content="$page.root$$page.url$" />
 
         <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
         <link rel="stylesheet" href="/css/base.css" />
         <link rel="stylesheet" href="/css/custom.css" />
         <link rel="stylesheet" href="/css/syntax/kate.css" />
-        <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro&family=Rock+Salt&display=swap" rel="stylesheet">
         <link href="/css/fontawesome/fontawesome.css" rel="stylesheet">
         <link href="/css/fontawesome/brands.css" rel="stylesheet">
         <link href="/css/fontawesome/solid.css" rel="stylesheet">
@@ -65,7 +60,6 @@
                 <img src="/icon72x72.png" alt="profile picture">
             </a>
             <nav class="header">
-                <!-- <a href="/1/">Blog</a> -->
                 <a href="/about/">About</a>
                 <a href="/decks/">Decks</a>
             </nav>
@@ -74,28 +68,16 @@
         <main id="main" class="l-main">
         $body$
         </main>
-
      
-      <footer class="l-footer">
-          <p class="p-copyright">
-              Copyright <i class="fas fa-heart" style="color: red;"></i> Gísli Kristjánsson 2020
-          </p>
-      </footer>
+        <footer class="l-footer">
+            <p class="p-copyright">
+                Copyright <i class="fas fa-heart" style="color: red;"></i> Gísli Kristjánsson 2020
+            </p>
+        </footer>
 
-      <!-- Global site tag (gtag.js) - Google Analytics -->
-      $if(showdeadcode)$
-      <script async src="https://www.googletagmanager.com/gtag/js?id={{ config.extra.analytics }}"></script>
-      <script>
-          window.dataLayer = window.dataLayer || [];
-          function gtag(){dataLayer.push(arguments);}
-          gtag('js', new Date());
-
-          gtag('config', '{{ config.extra.analytics }}');
-      </script>
-      $endif$
-      <link rel="stylesheet" href="/katex/katex.min.css">
-      <script defer src="/katex/katex.min.js"></script>
-      <script type="text/javascript" script defer src="/katex/auto-render.min.js" onload="renderMathInElement(document.body);"></script>
+        <link rel="stylesheet" href="/katex/katex.min.css">
+        <script defer src="/katex/katex.min.js"></script>
+        <script type="text/javascript" script defer src="/katex/auto-render.min.js" onload="renderMathInElement(document.body);"></script>
     </body>
 </html>
             

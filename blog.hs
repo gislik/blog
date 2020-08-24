@@ -21,13 +21,6 @@ import            Text.Pandoc.Options
 import            Hakyll
 
 --------------------------------------------------------------------------------
--- TODO
---------------------------------------------------------------------------------
--- 1. Keep header on non-detail pages
--- 2. Snippets (youtube, google slides, ...)
--- 3. Series
-
---------------------------------------------------------------------------------
 -- SITE
 --------------------------------------------------------------------------------
 main :: IO ()
@@ -270,8 +263,9 @@ defaultCtx =
    pageTitleField "page.title"                   <>
    constField "page.description" blogDescription <>
    titleField "title"                            <>
-   urlField "url"                                <>
-   pathField "path"                              <>
+   constField "page.root" blogRoot               <>
+   urlField' "page.url"                          <>
+   pathField "page.path"                         <>
    polishField "polish"
 
 blogCtx :: PageNumber -> Paginate -> Tags -> Tags -> Context String
@@ -454,6 +448,10 @@ pathTitleField =
       emptyTitle x = return x
       capitalize []     = []
       capitalize (x:xs) = toUpper x : map toLower xs
+
+urlField' :: String -> Context String
+urlField' =
+  mapContext dropFileName . urlField
 
 categoryField' :: String -> Tags -> Context a 
 categoryField' =

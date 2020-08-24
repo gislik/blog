@@ -1,14 +1,14 @@
             $for(decks)$
             <article class="c-article p-list-article">
             <header>
-                <h2 class="c-title c-article__title"><a href="$url$">$title$</a></h2>
+                <h2 class="c-title c-article__title"><a href="$page.url$">$title$</a></h2>
                 <p class="c-article__meta">
                     $date$
                 </p>
             </header>
                 <section class="c-article__body">
                     $if(featureimage)$
-                    <a href="$url$">
+                    <a href="$page.url$">
                         <img src="$featureimage$" alt="">
                     </a>
                     $endif$
@@ -19,7 +19,7 @@
                     $endif$
                 </section>
                 $if(showdeadcode)$
-                <a href="$url$" class="c-article__btn p-list-article__btn">More</a>
+                <a href="$page.url$" class="c-article__btn p-list-article__btn">More</a>
                 $endif$
             </article>
             $endfor$
