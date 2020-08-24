@@ -3,6 +3,7 @@ title: My personal Hakyll cheatsheet
 tags: haskell
 withtoc: true
 summary: A cheatsheet for my future self. We cover using the Hakyll eDSL to write website rules, advanced configuration which enables interesting features such as auto-generation of table of contents and \( \LaTeX \) math support on this website as well as discussion on how to roll your own Hakyll constructs.
+twitter.image: /img/2020/hakyll-twitter-card.png
 ---
 
 # Hakyll :heart: Pandoc
