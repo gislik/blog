@@ -347,8 +347,8 @@ indexCompiler x =
    where
       dropIndex (TagOpen "a" attrs) = TagOpen "a" (dropIndex' <$> attrs)
       dropIndex tag                 = tag
-      dropIndex' ("href", url) = ("href", dropFileName url <> takeHash url)
-      dropIndex' z             = z
+      dropIndex' ("href", url) | not (isExternal url) = ("href", dropFileName url <> takeHash url)
+      dropIndex' z                                    = z
       takeHash = dropWhile (/= '#')
 
 sassCompiler :: Compiler (Item String)
