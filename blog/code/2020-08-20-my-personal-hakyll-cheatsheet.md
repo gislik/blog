@@ -51,7 +51,7 @@ create ["index.html"] $ do
 
 ## Templates and their contexts
 
-Optionally the compiler may load apply a template to the input and interpolate variables from a context. We do so by chaining multiple compilers together into a more feature rich compiler. The output of a previous compiler is interpolated into the \$body\$ variable of the template. Other variables are made available to the template by defining them in the context. Before templates can be loaded they need to be compiled using the `templateCompiler`. 
+Optionally the compiler may load a template to the input and interpolate variables from a context. We do so by chaining multiple compilers together into a more feature rich compiler. The output of a previous compiler is interpolated into the \$body\$ variable of the template. Other variables are made available to the template by defining them in the context. Before templates can be loaded they need to be compiled using the `templateCompiler`. 
 
 ~~~haskell
 -- static pages
