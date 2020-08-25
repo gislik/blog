@@ -439,10 +439,11 @@ blogDetailCtx categories tags =
    tagsField' "tags" tags                       <> -- tags to context
    field "pages.next.url" nextBlog              <>
    field "pages.previous.url" previousBlog      <>
-   defaultCtx                                   <> 
-   teaserField "summary" blogSnapshot           <> 
+   summaryField "summary"                       <>
+   teaserField  "summary" blogSnapshot          <> 
    previewField "summary" blogSnapshot          <> 
-   readingTimeField "reading.time" blogSnapshot
+   readingTimeField "reading.time" blogSnapshot <>
+   defaultCtx
 ~~~
 
 Tags can be rendered in a standard way using `renderTags`, as a tag cloud using `renderTagCloud` or in a custom way using `tagsFieldWith`.
