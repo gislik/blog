@@ -298,10 +298,11 @@ blogDetailCtx categories tags =
    tagsField' "tags" tags                       <>
    field "pages.next.url" nextBlog              <>
    field "pages.previous.url" previousBlog      <>
-   defaultCtx                                   <>  -- summary from metadata
-   teaserField "summary" blogSnapshot           <>  -- teaser is summary
+   summaryField "summary"                       <>  -- summary from metadata
+   teaserField  "summary" blogSnapshot          <>  -- teaser is summary
    previewField "summary" blogSnapshot          <>  -- first paragraph is summary
-   readingTimeField "reading.time" blogSnapshot
+   readingTimeField "reading.time" blogSnapshot <>
+   defaultCtx
 
 decksCtx :: Context String
 decksCtx =
@@ -478,6 +479,16 @@ tagsListField key tags =
       makeLink tag url _ _ _ = renderHtml $ do
          "#"
          H.a ! href (toValue url) $ toHtml tag
+
+summaryField :: String -> Context String
+summaryField key =
+  field key meta
+  where 
+    meta :: Item a -> Compiler String 
+    meta item = do
+      summary <- getMetadataField' (itemIdentifier item) key
+      return . renderHtml $ do
+        H.p (toHtml summary)
 
 previewField :: String -> Snapshot -> Context String
 previewField key snapshot  = 
