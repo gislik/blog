@@ -3,7 +3,7 @@ title: Understanding Ethereum by studying the source code 🧬
 tags: ethereum
 withtoc: true
 summary: >
-    For deep understanding it helps to get your hands dirty. With the whitepaper, the yellow paper and the source code for the Go implementation we dive into the inner workings of Ethereum. In this Saturday blog post, we cover among other things the state model, the peer-to-peer network, the EVM and the consensus algorithm. Lastly we discuss the Ethereum ice-age and why it exists. So prepare yourself a nice cup of coffee ☕️ and jump in!
+    For deep understanding it helps to get your hands dirty. Armed with the whitepaper, the yellow paper and the source code for the Go implementation we dive into the inner workings of Ethereum. In this Saturday blog post, we cover among other things the state model, the peer-to-peer network, the EVM and the consensus algorithm. Lastly we discuss the Ethereum ice-age and why it exists. So prepare yourself a nice cup of coffee ☕️ and jump in!
 ---
 
 # From papers 🧻 to code 
