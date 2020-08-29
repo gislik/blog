@@ -35,6 +35,8 @@ On June 17^th^ 2016, The DAO was hacked and 3.6 million ether ($50 Million) were
 
 Today Ethereum is alive and well with a large community of both developers and users. DeFi[^10] currently is the primary driver of usage and adoption and while still in its infancy, DeFi experiments are being conducted which will surely impact the future of financial services. The recent surge in usage has highlighted a major challenge for popular blockchains, namely scalability. Ethereum's throughput is only around 7 transactions per second globally and the recent surge in usage is filling up block space driving the price of transactions up. Ethereans are already working on Ethereum 2.0 which amongst other things addresses the problem by sharding the blockchain into 1024 blockchains with cross-chain communication between them. Other L2[^11] efforts are already being deployed to alleviate the pain in the meantime.
 
+[Gisli]{.handwritten}
+
 [^1]: Coin-specific blockchains are usually referred to as altcoins. Namecoin and Litecoin were some of the first altcoins to launch off of a fork of the Bitcoin codebase.
 [^2]: Mastercoin, rebranded as Omni in 2015, was an early implementation of the colored coin idea.
 [^3]: Bitcoin Script is a high-level stack based rules engine.
