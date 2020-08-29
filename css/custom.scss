@@ -61,29 +61,6 @@ a.profile-icon {
   margin-inline-end: 0px;
 }
 
-.toc {
-  background-color: aliceblue;
-  min-width: 15em;
-  margin-top: 2.8em;
-  margin-bottom: 1em;
-  margin-left: 1.2em;
-  margin-right: 0em;
-  float: right;
-  > .header {
-    font-size: 1.8rem;
-    margin: 0 0 1em 1em;
-  }
-  > ul {
-    line-height: 1.8em;
-    padding-left: 1em;
-    padding-right: 1em;
-  }
-    li {
-      font-size: 1.3rem;
-      list-style-type: none;
-  }
-}
-
 .p-list-article {
     h2 {
       font-size: 2em;
@@ -120,6 +97,10 @@ a.profile-icon {
     font-size: 1.5rem;
     text-align: center;
   }
+  li {
+    font-size: 1.5rem;
+    text-align: justify;
+  }
   > h1 {
     font-size: 2.0rem;
     margin-block-start: 1.33em;
@@ -147,6 +128,28 @@ a.profile-icon {
   .header-section-number {
     color: $link-color;
     margin-right: 1rem;
+  }
+  .toc {
+    background-color: aliceblue;
+    min-width: 15em;
+    margin-top: 2.8em;
+    margin-bottom: 1em;
+    margin-left: 1.2em;
+    margin-right: 0em;
+    float: right;
+    > .header {
+      font-size: 1.8rem;
+      margin: 0 0 1em 1em;
+    }
+    > ul {
+      line-height: 1.8em;
+      padding-left: 1em;
+      padding-right: 1em;
+    }
+      li {
+        font-size: 1.3rem;
+        list-style-type: none;
+    }
   }
 }
 
