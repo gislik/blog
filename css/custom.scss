@@ -198,13 +198,14 @@ pre.strikethrough {
   font-size: 1.5em;
 }
 
-
 @media (pointer:none), (pointer:coarse) {
-  div.toc {
-    width: 100%;
-    margin-top: 0;
-    margin-left: 0;
-    margin-right: 0;
-    margin-bottom: 2em;
+  .c-article__body, .p-article__body, .c-article__summary {
+    div.toc {
+      width: 100%;
+      margin-top: 0;
+      margin-left: 0;
+      margin-right: 0;
+      margin-bottom: 2em;
+    }
   }
 }
