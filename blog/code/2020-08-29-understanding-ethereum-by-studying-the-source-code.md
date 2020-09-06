@@ -521,7 +521,7 @@ func (c *Contract) UseGas(gas uint64) (ok bool) {
 
 Ethereum uses the [ECDSA signature](https://cryptobook.nakov.com/digital-signatures/ecdsa-sign-verify-messages) scheme for the secp256k1 elliptic curve. The `crypto` module provides two implementations for `crypto.Sign`, one relying on an [elliptic curve cryptography library](elliptic curve cryptography library ) written in pure Go and the other relying on [libsecp256k1](https://github.com/bitcoin-core/secp256k1) written C and called using cgo. ECDSA signatures are returned as a pair of integers \( (r, s) \), each in the range \( [1, 2^{256}-1] \), where \( r \) is the \( x \)-coordinate of a random point \( R = k * G \) and \( s = k^{-1} * (h + r * privKey) \) is a proof that the signer knows message \( h = hash(msg) \) and private key \( privKey \). With a signed transaction a node relays it to the peer-to-peer network as described above.
 
-It is important to know that the ECDSA signature scheme allows the public key to be recovered from the signed message together with the signature. The recovery process is based on some mathematical computations and returns 0, 1 or 2 possible points that are valid public keys, corresponding to the signature. To avoid this ambiguity, some ECDSA implementations add one additional bit v to the signature during the signing process and it takes the form \( (r, s, v) \). From this extended ECDSA signature and the signed message, the signer's public key can be restored with confidence. Ethereum uses the extended signatures for the signed transactions on the chain to save storage and bandwidth.
+It is important to know that the ECDSA signature scheme allows the public key to be recovered from the signed message together with the signature. The recovery process is based on some mathematical computations and returns 0, 1 or 2 possible points that are valid public keys, corresponding to the signature. To avoid this ambiguity, some ECDSA implementations add one additional bit \( v \) to the signature during the signing process and it takes the form \( (r, s, v) \). From this extended ECDSA signature and the signed message, the signer's public key can be restored with confidence. Ethereum uses the extended signatures for the signed transactions on the chain to save storage and bandwidth.
 
 [`core/types/transaction.go`](https://github.com/ethereum/go-ethereum/blob/v1.9.20/core/types/transaction.go#L248)
 
@@ -704,7 +704,7 @@ func makeDifficultyCalculator(bombDelay *big.Int) func(time uint64, parent *type
 }
 ~~~
 
-This concludes my journey into Ethereum and its Go implementation. There are a number of other interesting aspects which unfortunately I couldn't cover but I encourage you to take the leap and dive right into the beast 🧟. 
+This concludes my journey into Ethereum and its Go implementation. There are a number of other interesting aspects which unfortunately I couldn't cover but I encourage you to take the leap and dive right into the belly of the beast🧟 . 
 
 [Gisli]{.handwritten}
 
