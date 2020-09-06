@@ -29,7 +29,7 @@
 		$if(reveal)$
 		<script src="/reveal.js/reveal.js"></script>
 		<script src="/reveal.js/plugin/notes/notes.js"></script>
-		<script src="/reveal.js/plugin/markdown/markdown.js"></script>
+		<!-- <script src="/reveal.js/plugin/markdown/markdown.js"></script> -->
 		<script src="/reveal.js/plugin/highlight/highlight.js"></script>
 		<script>
 			// More info about initialization & config:
@@ -39,9 +39,13 @@
 				hash: true,
 
 				// Learn about plugins: https://revealjs.com/plugins/
-				plugins: [ RevealMarkdown, RevealHighlight, RevealNotes ]
+				// plugins: [ RevealMarkdown, RevealHighlight, RevealNotes ]
+				plugins: [ RevealHighlight, RevealNotes ]
 			});
 		</script>
 		$endif$
+        <link rel="stylesheet" href="/katex/katex.min.css">
+        <script defer src="/katex/katex.min.js"></script>
+        <script type="text/javascript" script defer src="/katex/auto-render.min.js" onload="renderMathInElement(document.body);"></script>
 	</body>
 </html>

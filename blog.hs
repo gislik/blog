@@ -114,7 +114,7 @@ main = do
       -- decks
       match "decks/*.md" $ do
          route   $ decksRoute
-         compile $ pandocCompiler
+         compile $ blogCompiler
             >>= saveSnapshot decksSnapshot
             >>= loadAndApplyTemplate "templates/decks-detail.html" decksDetailCtx
             >>= indexCompiler
