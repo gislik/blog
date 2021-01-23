@@ -1,8 +1,8 @@
 #!/bin/bash
 
 echo "Adding new content and removing old"
-git -C gislik.github.com add --all .
+git -C gislik.github.io add --all .
 echo "Comitting changes"
-git -C gislik.github.com commit -a -m "$$"
+git -C gislik.github.io commit -a -m "$$"
 echo "Pushing repository to GitHub"
-git -C gislik.github.com push origin master
+git -C gislik.github.io push origin master
