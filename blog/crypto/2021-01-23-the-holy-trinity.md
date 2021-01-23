@@ -1,7 +1,7 @@
 ---
 title: The holy trinity 
 summary: |
-  Blockchains solve the problem of double-spending and therefore allowing financial ledgers to be distributed among peers who maintain the invariants collectively without resorting to a entrusting the ledger to a centralized entity. At the same time technical limitations still remain, hindering greater adoption of the technology. We identify the biggest unsolved challenges and what it takes to crack the nut. 🥜
+  Blockchains solve the problem of double-spending and thereby allows financial ledgers to be distributed among peers who maintain the invariants collectively without resorting to a entrusting the ledger to a centralized entity. At the same time technical limitations still remain, hindering greater adoption of the technology. We identify the biggest unsolved challenges and what it takes to crack the nut. 🥜
 ---
 
 Not all ledgers are born equal. Ledgers recording financial value must uphold certain invariants for them to represent ownership in a coherent manner. An important invariant is e.g. that for every account debited an equal amount must be credited to another account or else we risk that either some value goes unaccounted for or that value is overstated. 
