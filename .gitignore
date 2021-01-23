@@ -8,7 +8,7 @@ cabal-dev
 site
 _cache
 _site
-gislik.github.com
+gislik.github.io
 .DS_Store
 .stack-work
 stack.yaml.lock
