@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en" prefix="og: http://ogp.me/ns#">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="referrer" content="no-referrer">
+
+        <!-- Enable responsiveness on mobile devices-->
+        <!-- <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" /> -->
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+        <title>Gisli | Bitcoin from a developer's perspective</title>
+
+        <!-- Google Tag Manager -->
+        <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+        new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+        })(window,document,'script','dataLayer','GTM-W95TH5W');</script>
+        <!-- End Google Tag Manager -->
+
+        <meta property="og:title" content="Gísli | Bitcoin from a developer's perspective" />
+        <meta property="og:description" content="My thoughts on blockchains and software" />
+        <meta name="description" content="My thoughts on blockchains and software" />
+        <meta name="twitter:card" content="summary" />
+        <meta name="twitter:site" content="@gislik" />
+        
+        <meta property="og:site_name" content="Gísli | Bitcoin from a developer's perspective" />
+        <meta property="og:url" content="https://gisli.hamstur.is/2014/08/bitcoin-from-a-developers-perspective/" />
+
+        <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+        <link rel="stylesheet" href="../../../css/base.css" />
+        <link rel="stylesheet" href="../../../css/custom.css" />
+        <link rel="stylesheet" href="../../../css/syntax/kate.css" />
+        <link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro&family=Rock+Salt&display=swap" rel="stylesheet">
+        <link href="../../../css/fontawesome/fontawesome.css" rel="stylesheet">
+        <link href="../../../css/fontawesome/brands.css" rel="stylesheet">
+        <link href="../../../css/fontawesome/solid.css" rel="stylesheet">
+
+        <link rel="icon" type="image/x-icon" href="../../../icon48x48.png" />
+        <link rel="apple-touch-icon" sizes="48x48" href="../../../icon48x48.png" />
+        <link rel="apple-touch-icon" sizes="72x72" href="../../../icon72x72.png" />
+        <link rel="apple-touch-icon" sizes="96x96" href="../../../icon96x96.png" />
+        <link rel="apple-touch-icon" sizes="144x144" href="../../../icon144x144.png" />
+        <link rel="apple-touch-icon" sizes="192x192" href="../../../icon192x192.png" />
+        <!-- <link rel="apple-touch-icon" sizes="256x256" href="" /> -->
+        <!-- <link rel="apple-touch-icon" sizes="384x384" href="" /> -->
+        <!-- <link rel="apple-touch-icon" sizes="512x512" href="" /> -->
+
+        <link rel="alternate" type="application/atom+xml" title="Bitcoin from a developer's perspective" href="../../../atom.xml">
+    </head>
+    <body>
+        <!-- Google Tag Manager (noscript) -->
+        <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-W95TH5W" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+        <!-- End Google Tag Manager (noscript) -->
+        <a href="./#main" class="skip-link p-screen-reader-text">Skip to content</a>
+        <header class="profile">
+            <a class="profile-icon" href="../../../">
+                <img src="../../../icon72x72.png" alt="profile picture">
+            </a>
+            <nav class="header">
+                <a href="../../../about/">About</a>
+                <a href="../../../decks/">Decks</a>
+            </nav>
+        </header>
+
+        <main id="main" class="l-main">
+        <article class="p-article">
+
+    <header>
+        <h2 class="c-title c-article__title">Bitcoin from a developer's perspective</h2>
+        <p class="c-article__meta">
+            <time datetime="August  3, 2014">August  3, 2014</time>
+        </p>
+        <p class="c-article__meta">
+            1 min read
+        </p>
+    </header>
+
+    <section id="js-article" class="c-article__body">
+        <p><a href="https://bitcoin.org/en/">Bitcoin</a> is an exciting new technology invented by the mysterious <a href="http://en.wikipedia.org/wiki/Satoshi_Nakamoto">Satoshi</a> in 2009 which has been gaining some serious traction in the last few months. Although there are many introductory blog posts about Bitcoin there aren’t necessarily many which tackle the subject from a developer’s perspective.</p>
+<p>I am a bit of a late-comer to the Bitcoin scene only to have started to pickup interest in late 2013 and then purely from a functional perspective which means I didn’t care so much about Bitcoin as a store-of-value but more as a transfer-of-value kind of mechanism. Since then I have been absorbing every piece of Bitcoin information I can get my hands on. Slowly I have started to realize that its true potential is far beyond the promise of being able to send money securely and cheaply from A to B. If this potential materializes I’m guessing that the monetary value of bitcoins will increase by a factor of 10 - 50 over the coming decade (from its current $600 value).</p>
+<p>To further explore the possibilities of Bitcoin I’m going to be experimenting with it by writing some <a href="http://www.haskell.org/haskellwiki/Haskell">Haskell</a> code and blogging about the experience. My choice of using Haskell will of course limit the number of readers but I hope to advance the Bitcoin ecosystem for Haskell a bit along the way. I would like to set the scene by defining some basic terminology in a paragraph or two.</p>
+<p>Bitcoin is a distributed peer-to-peer database which collects <a href="https://en.bitcoin.it/wiki/Transaction">transactions</a> into an ordered chain of blocks, called the <a href="https://en.bitcoin.it/wiki/Blockchain">blockchain</a>. Transactions are signed and verified using public key cryptography. I am going to assume basic knowledge of public key cryptography and only mention that the creators of Bitcoin chose <a href="http://en.wikipedia.org/wiki/Elliptic_curve_cryptography">elliptic curve algorithms</a> as the basis for deriving the public key from the private key instead of its more common counterpart, <a href="http://en.wikipedia.org/wiki/Digital_Signature_Algorithm">DSA</a>/<a href="http://en.wikipedia.org/wiki/RSA_(cryptosystem)">RSA</a>.</p>
+<p>In general there are three different kinds of peers running the Bitcoin network; <a href="https://en.bitcoin.it/wiki/Mining">miners</a>, <a href="https://en.bitcoin.it/wiki/Node">nodes</a> and <a href="https://en.bitcoin.it/wiki/Wallet">wallets</a>. To complicate matters peers can be a linear combination of those peer types, e.g. the original <a href="https://en.bitcoin.it/wiki/Bitcoind"><code>bitcoind</code></a> client is a full node and a wallet which can be run as a miner as well.</p>
+<p>Since the database is distributed where miners and nodes keep a full copy of the database there must be a way to agree on the contents of the database. In Bitcoin this is achieved by letting the miners vote (a.k.a. <a href="https://en.bitcoin.it/wiki/Proof_of_work">proof of work</a>) and the number of votes is proportional to the number of CPU cycles available to the miner. This means that the database can become temporarily inconsistent but as long as no single party controls the majority of the CPU power in the network the database will safely converge to a unified version.</p>
+<p>Nodes receive blocks and transactions from peers. Once proven cryptographically valid the node stores and relays the block or the transaction to its peers. The purpose is to improve the time taken to distribute data within the network, which usually happens within seconds.</p>
+<p>In <a href="../../../2014/08/bitcoin-wallets/">part 2</a> I will be taking a closer look at wallets, their purpose and different implementations.</p>
+    </section>
+
+    <section>
+        <p>
+            @<a href="../../../crypto/">crypto</a> 
+            #<a href="../../../tags/bitcoin/">bitcoin</a> 
+        </p>
+        <p>
+        </p>
+    </section>
+
+    <footer>
+        <nav class="c-pagination p-pagination">
+            <div class="c-pagination__ctrl">
+                <div class="c-pagination__newer">
+                    <a href="../../../2014/08/bitcoin-wallets/">Newer</a>
+                    
+                </div>
+                <div class="c-pagination__older">
+                    <a href="../../../2012/12/network-programming-in-haskell/">Older</a>
+                    
+                </div>
+            </div>
+        </nav>
+    </footer>
+
+</article>
+
+        </main>
+     
+        <footer class="l-footer">
+            <p class="p-copyright">
+                Copyright <i class="fas fa-heart" style="color: red;"></i> Gísli Kristjánsson 2020
+            </p>
+        </footer>
+
+        <link rel="stylesheet" href="../../../katex/katex.min.css">
+        <script defer src="../../../katex/katex.min.js"></script>
+        <script type="text/javascript" script defer src="../../../katex/auto-render.min.js" onload="renderMathInElement(document.body);"></script>
+    </body>
+</html>
+            

@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en" prefix="og: http://ogp.me/ns#">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="referrer" content="no-referrer">
+
+        <!-- Enable responsiveness on mobile devices-->
+        <!-- <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" /> -->
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+        <title>Gisli | A brief history of Ethereum</title>
+
+        <!-- Google Tag Manager -->
+        <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+        new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+        })(window,document,'script','dataLayer','GTM-W95TH5W');</script>
+        <!-- End Google Tag Manager -->
+
+        <meta property="og:title" content="Gísli | A brief history of Ethereum" />
+        <meta property="og:description" content="My thoughts on blockchains and software" />
+        <meta name="description" content="My thoughts on blockchains and software" />
+        <meta name="twitter:card" content="summary" />
+        <meta name="twitter:site" content="@gislik" />
+        
+        <meta property="og:site_name" content="Gísli | A brief history of Ethereum" />
+        <meta property="og:url" content="https://gisli.hamstur.is/2020/08/a-bref-history-of-ethereum/" />
+
+        <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+        <link rel="stylesheet" href="../../../css/base.css" />
+        <link rel="stylesheet" href="../../../css/custom.css" />
+        <link rel="stylesheet" href="../../../css/syntax/kate.css" />
+        <link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro&family=Rock+Salt&display=swap" rel="stylesheet">
+        <link href="../../../css/fontawesome/fontawesome.css" rel="stylesheet">
+        <link href="../../../css/fontawesome/brands.css" rel="stylesheet">
+        <link href="../../../css/fontawesome/solid.css" rel="stylesheet">
+
+        <link rel="icon" type="image/x-icon" href="../../../icon48x48.png" />
+        <link rel="apple-touch-icon" sizes="48x48" href="../../../icon48x48.png" />
+        <link rel="apple-touch-icon" sizes="72x72" href="../../../icon72x72.png" />
+        <link rel="apple-touch-icon" sizes="96x96" href="../../../icon96x96.png" />
+        <link rel="apple-touch-icon" sizes="144x144" href="../../../icon144x144.png" />
+        <link rel="apple-touch-icon" sizes="192x192" href="../../../icon192x192.png" />
+        <!-- <link rel="apple-touch-icon" sizes="256x256" href="" /> -->
+        <!-- <link rel="apple-touch-icon" sizes="384x384" href="" /> -->
+        <!-- <link rel="apple-touch-icon" sizes="512x512" href="" /> -->
+
+        <link rel="alternate" type="application/atom+xml" title="A brief history of Ethereum" href="../../../atom.xml">
+    </head>
+    <body>
+        <!-- Google Tag Manager (noscript) -->
+        <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-W95TH5W" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+        <!-- End Google Tag Manager (noscript) -->
+        <a href="./#main" class="skip-link p-screen-reader-text">Skip to content</a>
+        <header class="profile">
+            <a class="profile-icon" href="../../../">
+                <img src="../../../icon72x72.png" alt="profile picture">
+            </a>
+            <nav class="header">
+                <a href="../../../about/">About</a>
+                <a href="../../../decks/">Decks</a>
+            </nav>
+        </header>
+
+        <main id="main" class="l-main">
+        <article class="p-article">
+
+    <header>
+        <h2 class="c-title c-article__title">A brief history of Ethereum</h2>
+        <p class="c-article__meta">
+            <time datetime="August 24, 2020">August 24, 2020</time>
+        </p>
+        <p class="c-article__meta">
+            5 min read
+        </p>
+    </header>
+
+    <section id="js-article" class="c-article__body">
+        <p>Soon after Bitcoin launched ideas around tracking other assets started to emerge. The initial attempts included efforts around forking the Bitcoin codebase to create coin-specific blockchains<a href="./#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>. This was a tedious process often taking months or years of development depending on how much the implementation deviated from Bitcoin. Later attempts include colored coins<a href="./#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a> where the idea was that certain bitcoins would be repurposed to carry a second meaning. Colored coins would theoretically reduce development time and rely in part on the security of Bitcoin as opposed to competing for the security of its network with Bitcoin.</p>
+<h1 id="the-early-innings">The early innings</h1>
+<p>The fundamental insight which the creators of Ethereum had was that Bitcoin was inherently a replicated state machine with <em>a fixed set</em> of transformation rules<a href="./#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a> (<span class="math inline"><em>Σ</em></span>). The network participants came to consensus by validating each transformation (<span class="math inline"><em>δ</em> : <em>S</em>  × <em>Σ</em> → <em>S</em></span>) in sequence until they arrived at the current state (<span class="math inline"><em>S</em></span>). Ethereum’s core contribution, originally laid out in the <a href="https://ethereum.org/en/whitepaper/">whitepaper</a>, was to define low-level operations for a virtual machine which formed the rules for a valid computation from one state to another. The functionality of such a hypothetical blockchain would be extendible by uploading a bytecode for the virtual machine in a contract creation transaction. Once the bytecode had been added to the replicated state it could be invoked in a contract call transaction instructing the miners to compute a new state by executing the bytestring on the current state. Such extensions would later be branded as smart contracts.</p>
+<blockquote>
+<p><em>At the start of the sale and for fourteen days the price was set so that one bitcoin bought 2,000 ether. At the end of the 14-day period the amount would decline linearly to a final rate of 1,337 ether, which meant that one ether was worth 0.0007479 bitcoin or about 30 cents at bitcoin prices in September 2014.</em></p>
+</blockquote>
+<p>To fund the development of Ethereum a pre-sale was conducted where bitcoin holders were invited to exchange their bitcoins for a private key on Ethereum. The initial account state of pre-allocated ether<a href="./#fn4" class="footnote-ref" id="fnref4" role="doc-noteref"><sup>4</sup></a> would be derived from the amount of bitcoins raised and the private key controlled an address containing an amount of ether proportional to the investor’s share in the pre-sale. The original purpose of ether was to pay for computation on the Ethereum network akin to pre-paid credits with a cloud vendor – giving ether its perceived value (collateral, staking tokens, etc.). During the pre-sale 60 million ether were auctioned off for the equivalent of $18.3 million worth of bitcoins. After a successful deployment of the <em>Olympic</em> testnet, the <em>Frontier</em> mainnet was launched on July 30<sup>th</sup> 2015.</p>
+<h1 id="the-smart-contract-platform">The smart contract platform</h1>
+<p>A few years earlier independent developer studio Zynga had released a number of online games on the Facebook platform. After launching in 2009, FarmVille became the most popular game on Facebook’s platform generating hundreds of millions of dollars in revenue. Zynga, attributing much of its early success in marketing and distributing their games to the Facebook platform, started to worry about the risks stemming from Facebook’s ability to change the rules post-factum. This kind of risk, later referred to as platform risk, materialized as Facebook started to pull the rug out from under Zynga’s feet. Ethereum started to attract the attention of regular developers who suddenly had an alternative to the centralized platforms to build on where the rules were encoded from the get-go into the protocol and enforced collectively by a decentralized group of maintainers of the network. As with any public blockchain anyone could add to the security of Ethereum and since any violation of the network rules would have a negative effect on the price of ether, maintainers were incentivized to enforce the rules correctly.</p>
+<blockquote>
+<p><em>A large portion of our business is dependent upon, and our bookings and revenues are derived from, the Facebook platform, and Facebook in many cases has the unilateral ability to interpret its policies and terms and conditions for applications and developers.</em><a href="./#fn5" class="footnote-ref" id="fnref5" role="doc-noteref"><sup>5</sup></a></p>
+</blockquote>
+<p>Tokens were the first class of smart contracts to gain mass adoption. They were a new take on the old idea of altcoins and colored coins. Tokens could be launched in days or weeks reducing development efforts by many orders of magnitude and relied purely on Ethereum for its security. Originally envisioned to track the ownership and transfers of other financial instruments tokens became an asset class by itself in the ICO<a href="./#fn6" class="footnote-ref" id="fnref6" role="doc-noteref"><sup>6</sup></a> mania of 2017 where teams would collect hundreds of million of dollars worth of ether in a few minutes on the back of a whitepaper outlining the scope and design of the project. The tokens were neither equity nor debt in the capital structure of a company but in many cases were designed to have a closer relationship with the project’s underlying protocol. This included access to it once it was released similar to a prepaid membership token, participation in the governance of the project, or a mechanism to collect fees generated by the protocol. Many of the projects turned out to be blatant scams while others would spend the next couple of years silently researching and building a protocol, a dapp and a community around them slowly accruing value to the tokens to become among the top 20 coins by market cap.</p>
+<h1 id="a-fork-in-the-road">A fork in the road</h1>
+<p>Theoretically public blockchains can be viewed as a court system with deterministic rulings. Parties can enter into agreements written in code and either cooperatively honor their obligations or submit the terms of the contract to the blockchain which will determine the outcome by executing it — often referred to as <em>Code is Law</em>. A DAO<a href="./#fn7" class="footnote-ref" id="fnref7" role="doc-noteref"><sup>7</sup></a>, implemented as a smart contract, can own funds natively stored on the blockchain and its members, through a governance token, can vote on how how to deploy them. One of the earlier attempts, <em>The DAO</em>, would collect ether from its members in exchange for a governance token. Its objective was to provide a new decentralized business model for organizing both commercial and non-profit enterprises.</p>
+<p>On June 17<sup>th</sup> 2016, The DAO was hacked and 3.6 million ether ($50 Million) were stolen using the first reentrancy attack enabled by a bug in the contract which authorized a third-party “attacker” to invoke its code in an unintended manner and drain the funds of the DAO over a period of days. There was a great community debate whether the attacker was in fact stealing the funds or not since all this third-party did was to invoke clauses of the code which had in fact been written into the contract. Ultimately a decision was made to hardfork<a href="./#fn8" class="footnote-ref" id="fnref8" role="doc-noteref"><sup>8</sup></a> Ethereum to change the rules so that the stolen funds were returned to a new address which owners could withdraw their ether from — splitting Ethereum into two blockchains with a common history but separate and incompatible futures<a href="./#fn9" class="footnote-ref" id="fnref9" role="doc-noteref"><sup>9</sup></a>. An interesting learning from the DAO hack was that if <em>Code is Law</em> then <em>Community is Supreme Court</em> must be implied. Secondly, the attack, the discussion and ultimately the solution happened in public and even though funds were confiscated from the attacker’s addresses by the community, no state changes were rolled back, preserving the full history. Thirdly, although the Ethereum community was split around the decision both groups would have their way albeit on a different blockchains. This would simply be impossible in other governance contexts without resulting in a war. Blockchain hardforks have since been understood to be a feature – not a bug.</p>
+<h1 id="the-journey-forward">The journey forward</h1>
+<p>Today Ethereum is alive and well with a large community of both developers and users. DeFi<a href="./#fn10" class="footnote-ref" id="fnref10" role="doc-noteref"><sup>10</sup></a> currently is the primary driver of usage and adoption and while still in its infancy, DeFi experiments are being conducted which will surely impact the future of financial services. The recent surge in usage has highlighted a major challenge for popular blockchains, namely scalability. Ethereum’s throughput is only around 7 transactions per second globally and the recent surge in usage is filling up block space driving the price of transactions up. Ethereans are already working on Ethereum 2.0 which amongst other things addresses the problem by sharding the blockchain into 1024 blockchains with cross-chain communication between them. Other L2<a href="./#fn11" class="footnote-ref" id="fnref11" role="doc-noteref"><sup>11</sup></a> efforts are already being deployed to alleviate the pain in the meantime.</p>
+<p><span class="handwritten">Gisli</span></p>
+<section class="footnotes" role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn1" role="doc-endnote"><p>Coin-specific blockchains are usually referred to as altcoins. Namecoin and Litecoin were some of the first altcoins to launch off of a fork of the Bitcoin codebase.<a href="./#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2" role="doc-endnote"><p>Mastercoin, rebranded as Omni in 2015, was an early implementation of the colored coin idea.<a href="./#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn3" role="doc-endnote"><p>Bitcoin Script is a high-level stack based rules engine.<a href="./#fnref3" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn4" role="doc-endnote"><p>Ether is the native cryptocurrency of Ethereum<a href="./#fnref4" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn5" role="doc-endnote"><p>Zynga: <a href="https://investor.zynga.com/static-files/4e78216b-6e1c-42ed-a3ed-f9d7b0752b97">Quarterly report which provides a continuing view of a company’s financial position</a><a href="./#fnref5" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn6" role="doc-endnote"><p>Initial Coin Offering (ICO) is a spin on it’s real-world Initial Public Offering (IPO)<a href="./#fnref6" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn7" role="doc-endnote"><p>In the same way blockchains are decentralized state machines, Decentralized Autonomous Organisations (DAO) are decentralized companies.<a href="./#fnref7" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn8" role="doc-endnote"><p>Hardfork are backwards-breaking changes to the protocol. The <a href="https://github.com/ethereum/go-ethereum/pull/2800">DOA hardfork</a> on GitHub.<a href="./#fnref8" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn9" role="doc-endnote"><p>Ethereum Classic.<a href="./#fnref9" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn10" role="doc-endnote"><p>Decentralized Finance (DeFi) where the counterparty is a smart contract and users transact in a permissionless manner.<a href="./#fnref10" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn11" role="doc-endnote"><p>Layer two (L2) solutions are systems which operate independently of the base layer (Ethereum) but derive their security from it.<a href="./#fnref11" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section>
+    </section>
+
+    <section>
+        <p>
+            @<a href="../../../crypto/">crypto</a> 
+            #<a href="../../../tags/ethereum/">ethereum</a> 
+        </p>
+        <p>
+        </p>
+    </section>
+
+    <footer>
+        <nav class="c-pagination p-pagination">
+            <div class="c-pagination__ctrl">
+                <div class="c-pagination__newer">
+                    <a href="../../../2020/08/understanding-ethereum-by-studying-the-source-code/">Newer</a>
+                    
+                </div>
+                <div class="c-pagination__older">
+                    <a href="../../../2020/08/my-personal-hakyll-cheatsheet/">Older</a>
+                    
+                </div>
+            </div>
+        </nav>
+    </footer>
+
+</article>
+
+        </main>
+     
+        <footer class="l-footer">
+            <p class="p-copyright">
+                Copyright <i class="fas fa-heart" style="color: red;"></i> Gísli Kristjánsson 2020
+            </p>
+        </footer>
+
+        <link rel="stylesheet" href="../../../katex/katex.min.css">
+        <script defer src="../../../katex/katex.min.js"></script>
+        <script type="text/javascript" script defer src="../../../katex/auto-render.min.js" onload="renderMathInElement(document.body);"></script>
+    </body>
+</html>
+            

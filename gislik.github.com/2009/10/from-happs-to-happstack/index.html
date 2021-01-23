@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en" prefix="og: http://ogp.me/ns#">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="referrer" content="no-referrer">
+
+        <!-- Enable responsiveness on mobile devices-->
+        <!-- <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" /> -->
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+        <title>Gisli | From HAppS to Happstack</title>
+
+        <!-- Google Tag Manager -->
+        <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+        new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+        })(window,document,'script','dataLayer','GTM-W95TH5W');</script>
+        <!-- End Google Tag Manager -->
+
+        <meta property="og:title" content="Gísli | From HAppS to Happstack" />
+        <meta property="og:description" content="My thoughts on blockchains and software" />
+        <meta name="description" content="My thoughts on blockchains and software" />
+        <meta name="twitter:card" content="summary" />
+        <meta name="twitter:site" content="@gislik" />
+        
+        <meta property="og:site_name" content="Gísli | From HAppS to Happstack" />
+        <meta property="og:url" content="https://gisli.hamstur.is/2009/10/from-happs-to-happstack/" />
+
+        <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+        <link rel="stylesheet" href="../../../css/base.css" />
+        <link rel="stylesheet" href="../../../css/custom.css" />
+        <link rel="stylesheet" href="../../../css/syntax/kate.css" />
+        <link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro&family=Rock+Salt&display=swap" rel="stylesheet">
+        <link href="../../../css/fontawesome/fontawesome.css" rel="stylesheet">
+        <link href="../../../css/fontawesome/brands.css" rel="stylesheet">
+        <link href="../../../css/fontawesome/solid.css" rel="stylesheet">
+
+        <link rel="icon" type="image/x-icon" href="../../../icon48x48.png" />
+        <link rel="apple-touch-icon" sizes="48x48" href="../../../icon48x48.png" />
+        <link rel="apple-touch-icon" sizes="72x72" href="../../../icon72x72.png" />
+        <link rel="apple-touch-icon" sizes="96x96" href="../../../icon96x96.png" />
+        <link rel="apple-touch-icon" sizes="144x144" href="../../../icon144x144.png" />
+        <link rel="apple-touch-icon" sizes="192x192" href="../../../icon192x192.png" />
+        <!-- <link rel="apple-touch-icon" sizes="256x256" href="" /> -->
+        <!-- <link rel="apple-touch-icon" sizes="384x384" href="" /> -->
+        <!-- <link rel="apple-touch-icon" sizes="512x512" href="" /> -->
+
+        <link rel="alternate" type="application/atom+xml" title="From HAppS to Happstack" href="../../../atom.xml">
+    </head>
+    <body>
+        <!-- Google Tag Manager (noscript) -->
+        <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-W95TH5W" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+        <!-- End Google Tag Manager (noscript) -->
+        <a href="./#main" class="skip-link p-screen-reader-text">Skip to content</a>
+        <header class="profile">
+            <a class="profile-icon" href="../../../">
+                <img src="../../../icon72x72.png" alt="profile picture">
+            </a>
+            <nav class="header">
+                <a href="../../../about/">About</a>
+                <a href="../../../decks/">Decks</a>
+            </nav>
+        </header>
+
+        <main id="main" class="l-main">
+        <article class="p-article">
+
+    <header>
+        <h2 class="c-title c-article__title">From HAppS to Happstack</h2>
+        <p class="c-article__meta">
+            <time datetime="October 13, 2009">October 13, 2009</time>
+        </p>
+        <p class="c-article__meta">
+            1 min read
+        </p>
+    </header>
+
+    <section id="js-article" class="c-article__body">
+        <p>
+I have been dreading porting my Blog application from <em>HAppS</em> to <a href="./"><em>Happstack</em></a> for a long time now. It is however apparent that <em>HAppS</em> is dying and <em>Happstack</em> (a fork of <em>HAppS</em> designed to take things further) was the only way to roll.
+</p>
+<blockquote>
+<p>
+… a refreshingly innovative web application server written in Haskell. Leveraging the MACID state system, Happstack offers robust and scalable data access without the headache of managing a traditional RDBMS such as MySQL.
+</p>
+</blockquote>
+<p>
+The <a href="http://www.darcsweb.com:5003/r/mae/happstack-stable/snapshot/current/content/pretty/happstack/RELEASE_NOTES">RELEASE_NOTES</a> file had some guidelines for porting existing applications to <em>Happstack</em>. In my case it turned out to be really easy:
+</p>
+<ol>
+<li>
+Install Happstack<br />
+
+<pre>sudo cabal install happstack</pre>
+</li>
+<li>
+Change HAppS to Happstack in all .hs-files<br />
+
+<pre>find . -type f -name '*.hs' -exec sed -i.bak 's/HAppS/Happstack/g' {} \;</pre>
+</li>
+<li>
+Change unServerPartT to runServerPartT<br />
+
+<pre>
+find . -type f -name '*.hs' -exec sed -i.bak 's/unServerPartT/runServerPartT/g' {} \;
+  </pre>
+</li>
+<li>
+Change all instances of <code>ServerPartT m a</code> to <code>ServerPartT</code> with <code>msum</code>
+</li>
+<li>
+Compile my code again
+</li>
+</ol>
+<p>
+Well this sounds almost too easy. And it is. I alway got the error <code>Unsupported socket</code> - both on my Mac (development machine) and on my Linux box (the production machine). On <a href="http://groups.google.com/group/HAppS/msg/0c9a0d0fd7c6aff0">Google Groups</a> I found someone saying that it’s a problem with how <em>Haskell’s Templating System</em> handles  <em>IPv6. </em>The solution was to change <code>Happstack.Server.HTTP.Socket.acceptLite</code> to:
+</p>
+<div>
+
+
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="./#cb1-1"></a><span class="co">-- | alternative implementation of accept to work around EAI_AGAIN errors </span></span>
+<span id="cb1-2"><a href="./#cb1-2"></a><span class="ot">acceptLite ::</span> <span class="dt">S.Socket</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> (<span class="dt">Handle</span>, <span class="dt">S.HostName</span>, <span class="dt">S.PortNumber</span>) </span>
+<span id="cb1-3"><a href="./#cb1-3"></a>acceptLite sock <span class="ot">=</span> <span class="kw">do</span> </span>
+<span id="cb1-4"><a href="./#cb1-4"></a>  (sock', addr) <span class="ot">&lt;-</span> S.accept sock </span>
+<span id="cb1-5"><a href="./#cb1-5"></a>  h <span class="ot">&lt;-</span> S.socketToHandle sock' <span class="dt">ReadWriteMode</span> </span>
+<span id="cb1-6"><a href="./#cb1-6"></a>  (<span class="dt">N.PortNumber</span> p) <span class="ot">&lt;-</span> N.socketPort sock' </span>
+<span id="cb1-7"><a href="./#cb1-7"></a></span>
+<span id="cb1-8"><a href="./#cb1-8"></a>  <span class="kw">let</span> peer <span class="ot">=</span> <span class="kw">case</span> addr <span class="kw">of</span> </span>
+<span id="cb1-9"><a href="./#cb1-9"></a>               (<span class="dt">S.SockAddrInet</span> _ ha)      showHostAddress ha </span>
+<span id="cb1-10"><a href="./#cb1-10"></a>               (<span class="dt">S.SockAddrInet6</span> _ _ ha _) showHostAddress6 ha </span>
+<span id="cb1-11"><a href="./#cb1-11"></a>               _                          <span class="fu">error</span> <span class="st">&quot;Unsupported socket&quot;</span></span>
+<span id="cb1-12"><a href="./#cb1-12"></a>  <span class="fu">return</span> (h, peer, p) </span></code></pre></div>
+<p>
+Actually I used the time to cabalize my code. Outlining the dependencies means that <em><a href="http://www.haskell.org/cabal">Cabal</a></em> takes care of downloading all the necessary packages. To date my cabal file looks like this:
+</p>
+<pre><code>name:                gisliblog&lt;br/&gt;
+version:             0.0
+synopsis:            Personal website
+description:         
+category:            Web
+license:             BSD3
+license-file:        LICENSE
+author:              G&amp;iacute;sli Kristj&amp;aacute;nsson
+maintainer:          gislik hamstur.is
+build-depends:       base,feed,nano-md5,hscolour,json,curl,HStringTemplate,happstack
+build-type:          Simple
+hs-source-dirs:      src
+executable:          gisli.hamstur.is
+main-is:             src/Main.hs
+ghc-options:         -isrc        </code></pre>
+<p>
+Also having everything in a <a href="http://git-scm.com/">git</a> repository meant that I could port the code in a special branch and merge the branches when the code compiled successfully. The next steps are to port my brothers photo site to <em>Happstack</em> and then look into taking the advantage of the new API which has been simplified in many ways. For example
+</p>
+<p>
+This:
+</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="./#cb3-1"></a><span class="ot">uriRest ::</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> (<span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">ServerPartT</span> m a) <span class="ot">-&gt;</span> <span class="dt">ServerPartT</span> m a</span>
+<span id="cb3-2"><a href="./#cb3-2"></a>uriRest handle <span class="ot">=</span> withRequest <span class="op">$</span> \rq <span class="ot">-&gt;</span> unServerPartT (handle (rqURL rq)) rq</span></code></pre></div>
+<p>
+Becomes this:
+</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="./#cb4-1"></a><span class="ot">    uriRest ::</span> (<span class="dt">ServerMonad</span> m, <span class="dt">Monad</span> m) <span class="ot">=&gt;</span> (<span class="dt">String</span> <span class="ot">-&gt;</span> m a) <span class="ot">-&gt;</span> m a</span>
+<span id="cb4-2"><a href="./#cb4-2"></a>    uriRest handle <span class="ot">=</span> askRq <span class="op">&gt;&gt;=</span> handle <span class="op">.</span> rqURL</span></code></pre></div>
+<p>
+That’s it for now.
+</p>
+<p>P.S. On a different note I just placed an order for the <a href="../../../robotics/">Arduino Duemilanove</a> microcontroller board. It should be arriving this week. I’m all excited so the next blog could be about that.</p>
+    </section>
+
+    <section>
+        <p>
+            @<a href="../../../code/">code</a> 
+            #<a href="../../../tags/haskell/">haskell</a> 
+        </p>
+        <p>
+        </p>
+    </section>
+
+    <footer>
+        <nav class="c-pagination p-pagination">
+            <div class="c-pagination__ctrl">
+                <div class="c-pagination__newer">
+                    <a href="../../../2009/12/line-following-robot/">Newer</a>
+                    
+                </div>
+                <div class="c-pagination__older">
+                    <a href="../../../2009/09/rise-of-the-mechatron/">Older</a>
+                    
+                </div>
+            </div>
+        </nav>
+    </footer>
+
+</article>
+
+        </main>
+     
+        <footer class="l-footer">
+            <p class="p-copyright">
+                Copyright <i class="fas fa-heart" style="color: red;"></i> Gísli Kristjánsson 2020
+            </p>
+        </footer>
+
+        <link rel="stylesheet" href="../../../katex/katex.min.css">
+        <script defer src="../../../katex/katex.min.js"></script>
+        <script type="text/javascript" script defer src="../../../katex/auto-render.min.js" onload="renderMathInElement(document.body);"></script>
+    </body>
+</html>
+            

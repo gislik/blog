@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en" prefix="og: http://ogp.me/ns#">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="referrer" content="no-referrer">
+
+        <!-- Enable responsiveness on mobile devices-->
+        <!-- <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" /> -->
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+        <title>Gisli | Network programming in Haskell</title>
+
+        <!-- Google Tag Manager -->
+        <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+        new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+        })(window,document,'script','dataLayer','GTM-W95TH5W');</script>
+        <!-- End Google Tag Manager -->
+
+        <meta property="og:title" content="Gísli | Network programming in Haskell" />
+        <meta property="og:description" content="My thoughts on blockchains and software" />
+        <meta name="description" content="My thoughts on blockchains and software" />
+        <meta name="twitter:card" content="summary" />
+        <meta name="twitter:site" content="@gislik" />
+        
+        <meta property="og:site_name" content="Gísli | Network programming in Haskell" />
+        <meta property="og:url" content="https://gisli.hamstur.is/2012/12/network-programming-in-haskell/" />
+
+        <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+        <link rel="stylesheet" href="../../../css/base.css" />
+        <link rel="stylesheet" href="../../../css/custom.css" />
+        <link rel="stylesheet" href="../../../css/syntax/kate.css" />
+        <link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro&family=Rock+Salt&display=swap" rel="stylesheet">
+        <link href="../../../css/fontawesome/fontawesome.css" rel="stylesheet">
+        <link href="../../../css/fontawesome/brands.css" rel="stylesheet">
+        <link href="../../../css/fontawesome/solid.css" rel="stylesheet">
+
+        <link rel="icon" type="image/x-icon" href="../../../icon48x48.png" />
+        <link rel="apple-touch-icon" sizes="48x48" href="../../../icon48x48.png" />
+        <link rel="apple-touch-icon" sizes="72x72" href="../../../icon72x72.png" />
+        <link rel="apple-touch-icon" sizes="96x96" href="../../../icon96x96.png" />
+        <link rel="apple-touch-icon" sizes="144x144" href="../../../icon144x144.png" />
+        <link rel="apple-touch-icon" sizes="192x192" href="../../../icon192x192.png" />
+        <!-- <link rel="apple-touch-icon" sizes="256x256" href="" /> -->
+        <!-- <link rel="apple-touch-icon" sizes="384x384" href="" /> -->
+        <!-- <link rel="apple-touch-icon" sizes="512x512" href="" /> -->
+
+        <link rel="alternate" type="application/atom+xml" title="Network programming in Haskell" href="../../../atom.xml">
+    </head>
+    <body>
+        <!-- Google Tag Manager (noscript) -->
+        <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-W95TH5W" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+        <!-- End Google Tag Manager (noscript) -->
+        <a href="./#main" class="skip-link p-screen-reader-text">Skip to content</a>
+        <header class="profile">
+            <a class="profile-icon" href="../../../">
+                <img src="../../../icon72x72.png" alt="profile picture">
+            </a>
+            <nav class="header">
+                <a href="../../../about/">About</a>
+                <a href="../../../decks/">Decks</a>
+            </nav>
+        </header>
+
+        <main id="main" class="l-main">
+        <article class="p-article">
+
+    <header>
+        <h2 class="c-title c-article__title">Network programming in Haskell</h2>
+        <p class="c-article__meta">
+            <time datetime="December 14, 2012">December 14, 2012</time>
+        </p>
+        <p class="c-article__meta">
+            3 min read
+        </p>
+    </header>
+
+    <section id="js-article" class="c-article__body">
+        <p>At work we use <a href="http://clojure.org">Clojure</a> as our primary implementation language. I wrote a <a href="http://appvise.me/2011/03/why-we-are-choosing-clojure-as-our-main-programming-language/">blog post</a> about the decision which got a lot of attention from the <a href="http://news.ycombinator.com/item?id=2350381">Hacker News</a> community. While we are extremely happy with our decision we have started to deploy some <a href="http://www.haskell.org/">Haskell</a> code on some low memory VPS we deploy.</p>
+<p>Some of the machines we deploy are 256M and 512M instances and with multiple instances of the JVM the machines start swapping to disk sooner or later. The other day we needed a simple way to forward all HTTP traffic received by our DNS servers to our website. It seemed like the perfect project to introduce Haskell since the code is independent of everything else and extremely simple; just output a <a href="http://en.wikipedia.org/wiki/List_of_HTTP_status_codes#3xx_Redirection">HTTP 301 redirect</a> response no matter what was received on the socket.</p>
+<p>The resulting code is as close to a networking skeleton written in Haskell which I hope others will benefit from when starting a Haskell project involving network communication. <!--more--></p>
+<p>The following is the complete code and below I will step through some of the more interesting parts:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="./#cb1-1"></a><span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span></span>
+<span id="cb1-2"><a href="./#cb1-2"></a></span>
+<span id="cb1-3"><a href="./#cb1-3"></a><span class="co">{- A simple HTTP rebounder which sends a HTTP 301 response regardless of the request:</span></span>
+<span id="cb1-4"><a href="./#cb1-4"></a></span>
+<span id="cb1-5"><a href="./#cb1-5"></a><span class="co">HTTP/1.1 301 Moved Permanently</span></span>
+<span id="cb1-6"><a href="./#cb1-6"></a><span class="co">Location: &lt;url&gt;</span></span>
+<span id="cb1-7"><a href="./#cb1-7"></a><span class="co">Content-Length: 0</span></span>
+<span id="cb1-8"><a href="./#cb1-8"></a><span class="co"> </span></span>
+<span id="cb1-9"><a href="./#cb1-9"></a><span class="co">-}</span> </span>
+<span id="cb1-10"><a href="./#cb1-10"></a></span>
+<span id="cb1-11"><a href="./#cb1-11"></a><span class="kw">import</span> <span class="dt">Network</span>              (<span class="dt">PortID</span>(<span class="dt">PortNumber</span>), withSocketsDo, listenOn, accept)</span>
+<span id="cb1-12"><a href="./#cb1-12"></a><span class="kw">import</span> <span class="dt">Network.Socket</span>       (<span class="dt">Socket</span>, close)</span>
+<span id="cb1-13"><a href="./#cb1-13"></a><span class="kw">import</span> <span class="dt">Control.Concurrent</span>   (forkIO)</span>
+<span id="cb1-14"><a href="./#cb1-14"></a><span class="kw">import</span> <span class="dt">Control.Applicative</span>  ((&lt;$&gt;))</span>
+<span id="cb1-15"><a href="./#cb1-15"></a><span class="kw">import</span> <span class="dt">Control.Exception</span>    (bracket)</span>
+<span id="cb1-16"><a href="./#cb1-16"></a><span class="kw">import</span> <span class="dt">System.Posix</span>         (<span class="dt">Handler</span>(<span class="dt">Ignore</span>), installHandler, sigPIPE)</span>
+<span id="cb1-17"><a href="./#cb1-17"></a><span class="kw">import</span> <span class="dt">System.Environment</span>   (getArgs)</span>
+<span id="cb1-18"><a href="./#cb1-18"></a><span class="kw">import</span> <span class="dt">Data.Maybe</span>           (maybe, listToMaybe)</span>
+<span id="cb1-19"><a href="./#cb1-19"></a><span class="kw">import</span> <span class="dt">System.IO</span>            (<span class="dt">Handle</span>, hPutStrLn, hFlush, hClose)</span>
+<span id="cb1-20"><a href="./#cb1-20"></a></span>
+<span id="cb1-21"><a href="./#cb1-21"></a><span class="co">-- configuration</span></span>
+<span id="cb1-22"><a href="./#cb1-22"></a>defaultPort <span class="ot">=</span> <span class="dv">8080</span></span>
+<span id="cb1-23"><a href="./#cb1-23"></a>defaultUrl  <span class="ot">=</span> <span class="st">&quot;http://example.com/&quot;</span></span>
+<span id="cb1-24"><a href="./#cb1-24"></a></span>
+<span id="cb1-25"><a href="./#cb1-25"></a><span class="co">-- main</span></span>
+<span id="cb1-26"><a href="./#cb1-26"></a><span class="ot">main ::</span> <span class="dt">IO</span> ()</span>
+<span id="cb1-27"><a href="./#cb1-27"></a>main <span class="ot">=</span> withSocketsDo <span class="op">$</span> <span class="kw">do</span></span>
+<span id="cb1-28"><a href="./#cb1-28"></a>installHandler sigPIPE <span class="dt">Ignore</span> <span class="dt">Nothing</span></span>
+<span id="cb1-29"><a href="./#cb1-29"></a>url <span class="ot">&lt;-</span> <span class="fu">maybe</span> defaultUrl <span class="fu">id</span> <span class="op">&lt;$&gt;</span> listToMaybe <span class="op">&lt;$&gt;</span> getArgs</span>
+<span id="cb1-30"><a href="./#cb1-30"></a>bracket </span>
+<span id="cb1-31"><a href="./#cb1-31"></a>    (listenOn <span class="op">$</span> <span class="dt">PortNumber</span> defaultPort)</span>
+<span id="cb1-32"><a href="./#cb1-32"></a>    (close)</span>
+<span id="cb1-33"><a href="./#cb1-33"></a>    (<span class="fu">flip</span> acceptConnection <span class="op">$</span> redirectConnection url)</span>
+<span id="cb1-34"><a href="./#cb1-34"></a></span>
+<span id="cb1-35"><a href="./#cb1-35"></a><span class="ot">redirectConnection ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Handle</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</span>
+<span id="cb1-36"><a href="./#cb1-36"></a>redirectConnection url h <span class="ot">=</span> hPutStrLn h (constructResponse url) <span class="op">&gt;&gt;</span> hFlush h <span class="op">&gt;&gt;</span> hClose h</span>
+<span id="cb1-37"><a href="./#cb1-37"></a></span>
+<span id="cb1-38"><a href="./#cb1-38"></a><span class="co">-- helpers</span></span>
+<span id="cb1-39"><a href="./#cb1-39"></a><span class="ot">constructResponse ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span></span>
+<span id="cb1-40"><a href="./#cb1-40"></a>constructResponse url <span class="ot">=</span> <span class="fu">unlines</span> [<span class="st">&quot;HTTP/1.1 301 Moved Permanently&quot;</span></span>
+<span id="cb1-41"><a href="./#cb1-41"></a>                                ,<span class="st">&quot;Location: &quot;</span> <span class="op">++</span> url</span>
+<span id="cb1-42"><a href="./#cb1-42"></a>                                ,<span class="st">&quot;Content-Length: 0&quot;</span>]</span>
+<span id="cb1-43"><a href="./#cb1-43"></a></span>
+<span id="cb1-44"><a href="./#cb1-44"></a><span class="ot">acceptConnection ::</span> <span class="dt">Socket</span> <span class="ot">-&gt;</span> (<span class="dt">Handle</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()) <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</span>
+<span id="cb1-45"><a href="./#cb1-45"></a>acceptConnection socket handler <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb1-46"><a href="./#cb1-46"></a>(h,_,_) <span class="ot">&lt;-</span> accept socket</span>
+<span id="cb1-47"><a href="./#cb1-47"></a>    forkIO (handler h)</span>
+<span id="cb1-48"><a href="./#cb1-48"></a>    acceptConnection socket handler</span></code></pre></div>
+<p>If you care about your code being able to run on Windows care must be taken to initialize the Windows network stack.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="./#cb2-1"></a>    main <span class="ot">=</span> withSocketsDo <span class="op">$</span> <span class="kw">do</span></span></code></pre></div>
+<p>And POSIX based systems will send the <a href="http://en.wikipedia.org/wiki/SIGPIPE#SIGPIPE">SIGPIPE</a> signal when trying to write to a closed socket. The default behaviour when a SIGPIPE is received is to terminate the program silently, which can be somewhat confusing if you haven’t encountered this before. Although it is highly unlikely to happen in such a simple network server I am including it for future reference.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="./#cb3-1"></a>    installHandler sigPIPE <span class="dt">Ignore</span> <span class="dt">Nothing</span></span></code></pre></div>
+<p>The <a href="http://hackage.haskell.org/packages/archive/base/latest/doc/html/Control-Exception-Base.html#v:bracket">bracket</a> function is suitable when a computation needs to acquire a resource and release it after the computation.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="./#cb4-1"></a>    bracket </span>
+<span id="cb4-2"><a href="./#cb4-2"></a>        (listenOn <span class="op">$</span> <span class="dt">PortNumber</span> defaultPort)	<span class="co">-- acquire</span></span>
+<span id="cb4-3"><a href="./#cb4-3"></a>        (close)					<span class="co">-- release</span></span>
+<span id="cb4-4"><a href="./#cb4-4"></a>        (<span class="fu">flip</span> acceptConnection <span class="op">$</span> redirectConnection url)</span></code></pre></div>
+<p>The <code>acceptConnection</code> function begins by performing an IO action by calling <a href="http://hackage.haskell.org/packages/archive/network/latest/doc/html/Network.html#v:accept">accept</a> which blocks the execution until a client connects to the socket at which time the action will return a 3-tuple containing a (<a href="http://hackage.haskell.org/packages/archive/base/4.6.0.0/doc/html/GHC-IO-Handle.html#t:Handle">Handle</a>, <a href="http://hackage.haskell.org/packages/archive/network/latest/doc/html/Network.html#t:HostName">HostName</a>, <a href="http://hackage.haskell.org/packages/archive/network/latest/doc/html/Network.html#t:PortNumber">PortNumber</a>). In this simple case we neither need the host name nor the port number of the client so we will prevent them from being captured by using the underscore (_).</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="./#cb5-1"></a>acceptConnection socket handler <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb5-2"><a href="./#cb5-2"></a>(h,_,_) <span class="ot">&lt;-</span> accept socket</span>
+<span id="cb5-3"><a href="./#cb5-3"></a>    forkIO (handler h)</span>
+<span id="cb5-4"><a href="./#cb5-4"></a>    acceptConnection socket handler</span></code></pre></div>
+<p>One thing to note about the handle <code>h</code> returned from <code>accept</code> is block-buffered by default. For an interactive application you may want to set the buffering mode on the <code>Handle</code> to <a href="http://hackage.haskell.org/packages/archive/base/4.6.0.0/doc/html/GHC-IO-Handle.html#v:LineBuffering">LineBuffering</a> or <a href="http://hackage.haskell.org/packages/archive/base/4.6.0.0/doc/html/GHC-IO-Handle.html#v:NoBuffering">NoBuffering</a>, like so:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="./#cb6-1"></a>    hSetBuffering h <span class="dt">LineBuffering</span></span></code></pre></div>
+<p>The request is handled in a new thread for concurrency. It’s worth mentioning that Haskell forks so-called <a href="http://en.wikipedia.org/wiki/Green_threads">green threads</a> which are much lighter than normal OS threads and forking <a href="http://stackoverflow.com/questions/5847642/haskell-lightweight-threads-overhead-and-use-on-multicores">hundreds of thousands</a> or even <a href="http://stackoverflow.com/questions/1900165/how-long-does-it-take-to-create-1-million-threads-in-haskell">millions</a> is very doable. This way we don’t need to be concerned with <a href="http://en.wikipedia.org/wiki/Thread_pool_pattern">thread pools</a> even for highly concurrent servers.</p>
+<p>With recursion at the last line of <code>acceptConnection</code> we make sure the server continues to serve new clients after serving the first one.</p>
+<p>I always find it best to compile multi-threaded Haskell code with the (<code>-threaded</code>) command parameter which makes sure that if my code is linked to a C code with foreign function interface you don’t lose concurrency.</p>
+<pre><code>$ ghc -O2 -threaded --make network-server</code></pre>
+<p>By using Haskell you get multi-core support for free, so if you want to distribute the request handling over the cores in your machine you simply execute the server like so. Substitute <code>x</code> in <code>-Nx</code> with the number of cores you want to use.</p>
+<pre><code>$ ./network-server +RTS -Nx</code></pre>
+<p>As can be seen from the above Haskell is a worthy tool in the concurrent developer’s toolbox and like Clojure it features many paradigms like <a href="http://www.haskell.org/haskellwiki/Software_transactional_memory">Software Transactional Memory</a> which help the programmer in the battle with multi-threaded, concurrent programs.</p>
+    </section>
+
+    <section>
+        <p>
+            @<a href="../../../code/">code</a> 
+            #<a href="../../../tags/haskell/">haskell</a> 
+        </p>
+        <p>
+        </p>
+    </section>
+
+    <footer>
+        <nav class="c-pagination p-pagination">
+            <div class="c-pagination__ctrl">
+                <div class="c-pagination__newer">
+                    <a href="../../../2014/08/bitcoin-from-a-developers-perspective/">Newer</a>
+                    
+                </div>
+                <div class="c-pagination__older">
+                    <a href="../../../2010/02/optical-mouse-scanner-location-awareness/">Older</a>
+                    
+                </div>
+            </div>
+        </nav>
+    </footer>
+
+</article>
+
+        </main>
+     
+        <footer class="l-footer">
+            <p class="p-copyright">
+                Copyright <i class="fas fa-heart" style="color: red;"></i> Gísli Kristjánsson 2020
+            </p>
+        </footer>
+
+        <link rel="stylesheet" href="../../../katex/katex.min.css">
+        <script defer src="../../../katex/katex.min.js"></script>
+        <script type="text/javascript" script defer src="../../../katex/auto-render.min.js" onload="renderMathInElement(document.body);"></script>
+    </body>
+</html>
+            
