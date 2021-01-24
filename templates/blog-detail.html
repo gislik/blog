@@ -1,23 +1,23 @@
 <article class="p-article">
 
     <header>
-        <h2 class="c-title c-article__title">$title$</h2>
+        <h2 class="c-title c-article__title">$blog.title$</h2>
         <p class="c-article__meta">
-            <time datetime="$date$">$date$</time>
+            <time datetime="$blog.date$">$blog.date$</time>
         </p>
         <p class="c-article__meta">
-            $reading.time$ min read
+            $blog.reading.time$ min read
         </p>
     </header>
 
     <section id="js-article" class="c-article__body">
-        $polish(body)$
+        $polish(page.body)$
     </section>
 
     <section>
         <p>
-            $if(category)-$ $category$ $endif$
-            $if(tags)-$ $tags$ $endif$
+            $if(blog.category)-$ $blog.category$ $endif$
+            $if(blog.tags)-$ $blog.tags$ $endif$
         </p>
         <p>
         </p>
@@ -27,13 +27,13 @@
         <nav class="c-pagination p-pagination">
             <div class="c-pagination__ctrl">
                 <div class="c-pagination__newer">
-                    $if(pages.previous.url)-$
-                    <a href="$pages.previous.url$">Newer</a>
+                    $if(blog.previous.url)-$
+                    <a href="$blog.previous.url$">Newer</a>
                     $endif$
                 </div>
                 <div class="c-pagination__older">
-                    $if(pages.next.url)-$
-                    <a href="$pages.next.url$">Older</a>
+                    $if(blog.next.url)-$
+                    <a href="$blog.next.url$">Older</a>
                     $endif$
                 </div>
             </div>

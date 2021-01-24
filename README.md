@@ -29,12 +29,13 @@ Stack will pull in all the dependencies specified in the [cabal](blog.cabal) fil
 
 ## Writing content
 
-Pages and blogs are written in static Markdown like the [About](about.md) page. Metadata can be placed in the front matter formatted as [YAML](https://yaml.org/). The metadata can be made available both to the compiler and to the template.
+Pages and blogs are written in static Markdown like the [About](about.md) page. Metadata can be placed in the front matter formatted as [YAML](https://yaml.org/). The metadata can be made available both to the compiler and to the template. Page titles are either set explicity in the front matter or derived from the file name.
 
 ~~~markdown
 ---
 title: This is the blog title
 tags: tag1, tag2
+image: /img/image.png
 summary: |
   Introduction to the blog content
 ---
@@ -42,9 +43,11 @@ summary: |
 This is the blog body
 ~~~
 
-Pages in the `blog` are considered to be blog posts which have additional features like pagination, categories and tags. Blog posts are ordered newest to oldest and each post's date is extracted from the `date` field, the `published` field or from the a prefix of the filename. Tags are generated from the `tags` field in the metadata but categories are derived from the parent folder's name.
+Pages in the `blog` directory are considered to be blog posts which have additional features like pagination, categories and tags. Blog posts are ordered newest to oldest and each post's date is extracted from the `date` field, the `published` field or from the a prefix of the filename. Tags are generated from the `tags` field in the metadata but categories are derived from the parent folder's name. When an `image` is specified it is used in Twitter summary cards.
 
-Some parts of the site are generated without an existing source using Hakyll combinators like the index page which lists a few of the latest blog. 
+Summary is either set explicitly in the front matter, read from the content and upto the `<!--more-->` comment or derived from the first sentence. Summaryr set in the front matter is used as the description for Twitter summary cards.
+
+Some parts of the site are generated without an existing source using Hakyll combinators like the index page which lists a few of the latest blog.
 
 ~~~haskell
 create ["index.html"] $ do
@@ -89,36 +92,39 @@ Rest of the deck
 
 ## Editing templates
 
-Templates are found in the `templates` directory. The base layout is defined in `default.html` and its $body$ variable is replaced by the previous step in the build pipeline. Other variables include:
+Templates are found in the `templates` directory. The base layout is defined in `default.html` and its `$page.body$` variable is replaced by the previous step in the build pipeline. Variables include:
 
-- `url` for the destination URL of the page
-- `path` for the original filepath of the page
-- `foo` where foo is specified in the metadata
-- `title` for the blog title
+- `page.body` for the content body
+- `page.url` for the destination URL of the page
+- `page.path` for the original filepath of the page
+- `page.foo` where foo is specified in the metadata
 - `page.title` for the page title
 - `polish(text)` to exchange certain words in the text for an emoji
 
 Blog lists has a `blogs` variable which can be iterated over and these additional variables:
 
-- `pages.first.number`   
-- `pages.first.url`      
-- `pages.next.number`    
-- `pages.next.url`       
-- `pages.previous.number`
-- `pages.previous.url`   
-- `pages.last.number`    
-- `pages.last.url`       
-- `pages.current.number` 
-- `pages.count`          
+-`pages.first.number`
+-`pages.first.url`
+-`pages.next.number`
+-`pages.next.url`
+-`pages.previous.number`
+-`pages.previous.url`
+-`pages.last.number`
+-`pages.last.url`
+-`pages.current.number`
+-`pages.count`
 
 Single blog posts have these additions:
 
-- `category`
-- `tags`
-- `dages.next.url`
-- `pages.previous.url`
-- `summary`
-- `reading.time`
+- `blog.title`
+- `blog.date`
+- `blog.category`
+- `blog.tags`
+- `blog.image`
+- `blog.next.url`
+- `blog.previous.url`
+- `blog.summary`
+- `blog.reading.time`
 
 Deck lists has a `decks` variable which is a list field and can be iterated over.
 

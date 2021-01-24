@@ -18,18 +18,24 @@
         })(window,document,'script','dataLayer','GTM-W95TH5W');</script>
         <!-- End Google Tag Manager -->
 
+        <meta property="og:url" content="$page.root$$page.url$" />
+        <meta property="og:site_name" content="Gísli | $page.title$" />
         <meta property="og:title" content="Gísli | $polish(page.title)$" />
+        $if(summary)-$
+        <meta property="og:description" content="<![CDATA[$polish(summary)$]]>" />
+        <meta name="description" content="<![CDATA[$polish(summary)$]]>" />
+        $-else-$
         $if(page.description)-$
         <meta property="og:description" content="$polish(page.description)$" />
         <meta name="description" content="$polish(page.description)$" />
         $-endif$
+        $-endif$
         <meta name="twitter:card" content="summary" />
         <meta name="twitter:site" content="@gislik" />
-        $if(twitter.image)-$
-        <meta name="twitter:image" content="$page.root$$twitter.image$" />
+        $if(image)-$
+        <meta name="twitter:image" content="$page.root$$image$" />
+        <meta property="og:image" content="$page.root$$image$" />
         $-endif$
-        <meta property="og:site_name" content="Gísli | $page.title$" />
-        <meta property="og:url" content="$page.root$$page.url$" />
 
         <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
         <link rel="stylesheet" href="/css/base.css" />
@@ -69,7 +75,7 @@
         </header>
 
         <main id="main" class="l-main">
-        $body$
+        $page.body$
         </main>
      
         <footer class="l-footer">

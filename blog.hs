@@ -248,7 +248,7 @@ blogWriterOptions =
 -- CONTEXTS
 --------------------------------------------------------------------------------
 pageTitleField :: String -> Context String
-pageTitleField key = 
+pageTitleField key =
    aliasContext alias metadataField <> -- use page title from metadata
    pathTitleField key               <> -- or read from the path
    constField key "Crypto and Code"    -- alternatively use this
@@ -257,25 +257,24 @@ pageTitleField key =
       alias x            = x
 
 defaultCtx :: Context String
-defaultCtx = 
-   bodyField "body"                              <>
-   metadataField                                 <>
-   pageTitleField "page.title"                   <>
-   constField "page.description" blogDescription <>
-   titleField "title"                            <>
-   constField "page.root" blogRoot               <>
-   urlField' "page.url"                          <>
-   pathField "page.path"                         <>
-   polishField "polish"
+defaultCtx =
+   bodyField "page.body"                          <>
+   pageTitleField "page.title"                    <>
+   constField "page.description" blogDescription  <>
+   constField "page.root" blogRoot                <>
+   urlField' "page.url"                           <>
+   pathField "page.path"                          <>
+   polishField "polish"                           <>
+   metadataField
 
 blogCtx :: PageNumber -> Paginate -> Tags -> Tags -> Context String
 blogCtx i pages categories tags = 
-      listField "blogs" (blogDetailCtx categories tags) (loadBlogs pattern) <>
-      categoryListField "categories" categories                             <>
-      tagsListField "tags" tags                                             <>
-      pagesField i                                                          <>
-      defaultCtx
-  where
+   listField "blogs" (blogDetailCtx categories tags) (loadBlogs pattern) <>
+   categoryListField "categories" categories                             <>
+   tagsListField "tags" tags                                             <>
+   pagesField i                                                          <>
+   defaultCtx
+   where
       pattern = fromList . fromMaybe [] . M.lookup i . paginateMap $ pages
       pagesField = aliasContext alias . paginateContext pages
       alias "pages.first.number"    = "firstPageNum"
@@ -292,16 +291,15 @@ blogCtx i pages categories tags =
 
 blogDetailCtx :: Tags -> Tags -> Context String
 blogDetailCtx categories tags = 
-   dateField "date" "%B %e, %Y"                 <>
-   mapContext dropFileName (urlField "url")     <>
-   categoryField' "category" categories         <>
-   tagsField' "tags" tags                       <>
-   field "pages.next.url" nextBlog              <>
-   field "pages.previous.url" previousBlog      <>
-   summaryField "summary"                       <>  -- summary from metadata
-   teaserField  "summary" blogSnapshot          <>  -- teaser is summary
-   previewField "summary" blogSnapshot          <>  -- first paragraph is summary
-   readingTimeField "reading.time" blogSnapshot <>
+   pageTitleField "blog.title"                        <>
+   dateField "blog.date" "%B %e, %Y"                  <>
+   urlField' "blog.url"                               <>
+   categoryField' "blog.category" categories          <>
+   tagsField' "blog.tags" tags                        <>
+   field "blog.next.url" nextBlog                     <>
+   field "blog.previous.url" previousBlog             <>
+   summaryField "blog.summary"                        <>
+   readingTimeField "blog.reading.time" blogSnapshot  <>
    defaultCtx
 
 decksCtx :: Context String
@@ -311,18 +309,18 @@ decksCtx =
 
 decksDetailCtx :: Context String
 decksDetailCtx = 
-   dateField "date" "%B %e, %Y"             <>
-   mapContext dropFileName (urlField "url") <>
-   defaultCtx                               <>
+   dateField "date" "%B %e, %Y" <>
+   urlField' "url"              <>
+   defaultCtx                   <>
    constField "theme" "black"
 
 atomCtx :: Context String
-atomCtx = 
-      mapContext cdata (titleField "title")   <>
-      aliasContext alias metadataField        <>  -- description from metadata
-      teaserField "description" blogSnapshot  <>  -- teaser is description
-      previewField "description" blogSnapshot <>  -- first paragraph is description
-      urlField "url"
+atomCtx =
+   mapContext cdata (pageTitleField "title")   <>
+   aliasContext alias metadataField        <>  -- description from metadata
+   teaserField "description" blogSnapshot  <>  -- teaser is description
+   previewField "description" blogSnapshot <>  -- first paragraph is description
+   urlField' "url"
    where
       alias "description" = "summary"
       alias x             = x
@@ -406,7 +404,7 @@ rootRoute =
 pageRoute :: Routes
 pageRoute = 
    removeExtension `composeRoutes` addIndex
-   where 
+   where
       removeExtension = setExtension mempty
       addIndex = postfixRoute "index.html"
       postfixRoute postfix = customRoute $ (</> postfix) . toFilePath
@@ -417,7 +415,7 @@ blogRoute =
    metadataRoute dateRoute                 `composeRoutes`
    dropDateRoute                           `composeRoutes`
    pageRoute
-   where 
+   where
       dateRoute metadata = customRoute $ \id' -> joinPath [dateFolder id' metadata, toFilePath id']
       dateFolder id' = maybe mempty (formatTime defaultTimeLocale "%Y/%m") . tryParseDate id'
       dropDateRoute = gsubRoute "[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}-" (const mempty)
@@ -425,7 +423,7 @@ blogRoute =
 decksRoute :: Routes
 decksRoute = 
    blogRoute `composeRoutes` prefixRoute "decks"
-   where 
+   where
       prefixRoute prefix = customRoute $ (prefix </>) . toFilePath
 
 decksAssetsRoute :: Routes
@@ -482,16 +480,20 @@ tagsListField key tags =
 
 summaryField :: String -> Context String
 summaryField key =
-  field key meta
-  where 
-    meta :: Item a -> Compiler String 
-    meta item = do
-      summary <- getMetadataField' (itemIdentifier item) key
-      return . renderHtml $ do
-        H.p (toHtml summary)
+   field key meta                 <>  -- summary from metadata
+   teaserField key blogSnapshot   <>  -- teaser is summary
+   previewField key blogSnapshot      -- first paragraph is summary
+   where
+      meta :: Item a -> Compiler String 
+      meta item = do
+         summary <- getMetadataField' (itemIdentifier item) "summary"
+         return . renderHtml $ do
+            H.p (toHtml summary)
+      alias x | x == key  = "summary"
+      alias x             = x
 
 previewField :: String -> Snapshot -> Context String
-previewField key snapshot  = 
+previewField key snapshot  =
    field key trim'
    where
       trim' item = do
@@ -505,7 +507,7 @@ previewField key snapshot  =
       cnt tag                 = (tag, 0)
 
 readingTimeField :: String -> Snapshot -> Context String
-readingTimeField key snapshot = 
+readingTimeField key snapshot =
    field key calculate
    where
       calculate item = do
@@ -519,16 +521,16 @@ readingTimeField key snapshot =
 -- aliasContext maps a new key to another key. If the other key
 -- is not defined or returns empty the alias returns empty.
 aliasContext :: (String -> String) -> Context a -> Context a
-aliasContext f (Context c) = 
+aliasContext f (Context c) =
    Context $ \k a i -> c (f k) a i <|> c' k
-   where 
+   where
       c' k = noResult $ unwords ["Tried to alias", k, "as", f k, "which doesn't exist"]
 
 polishField :: String -> Context String
 polishField name =
-   functionField name $ \args _ -> 
+   functionField name $ \args _ ->
       return $ withTags text' (unwords args)
-   where 
+   where
       text' (TagText s) = TagText (concat $ map f (split isSpace s))
       text' t           = t
       f ""                   = ""
@@ -549,19 +551,19 @@ polishField name =
 
 -- metadata
 includeTagM :: MonadMetadata m => String -> [Identifier] -> m [Identifier]
-includeTagM tag = 
+includeTagM tag =
    filterTagsM (return . elem tag)
 
 filterTagsM :: MonadMetadata m => ([String] -> m Bool) -> [Identifier] -> m [Identifier]
-filterTagsM p = 
+filterTagsM p =
    filterM (p <=< getTags)
 
 -- pagination
 buildPages :: (MonadMetadata m, MonadFail m) => Pattern -> (PageNumber -> Identifier) -> m Paginate
-buildPages pattern makeId = 
+buildPages pattern makeId =
    buildPaginateWith
-      (return . paginateEvery blogPerPage <=< sortRecentFirst) 
-      pattern 
+      (return . paginateEvery blogPerPage <=< sortRecentFirst)
+      pattern
       makeId
 
 -- html
@@ -574,7 +576,7 @@ renderLink pre text (Just url) =
 
 -- dates
 tryParseDate :: Identifier -> Metadata -> Maybe UTCTime
-tryParseDate = 
+tryParseDate =
    tryParseDateWithLocale defaultTimeLocale
 
 tryParseDateWithLocale :: TimeLocale -> Identifier -> Metadata -> Maybe UTCTime
@@ -586,9 +588,9 @@ tryParseDateWithLocale locale id' metadata = do
       [tryField "date"      fmt | fmt <- formats] ++
       [parseTime' "%Y-%m-%d" $ intercalate "-" $ take 3 $ splitAll "-" fn]
    where
-      empty'     = fail $ "Hakyll.Web.Template.Context.getItemUTC: " 
+      empty'     = fail $ "Hakyll.Web.Template.Context.getItemUTC: "
                         ++ "could not parse time for " ++ show id'
-      parseTime' = parseTimeM True locale 
+      parseTime' = parseTimeM True locale
       formats    =
          [ "%a, %d %b %Y %H:%M:%S %Z"
          , "%Y-%m-%dT%H:%M:%S%Z"

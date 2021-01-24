@@ -1,5 +1,6 @@
 ---
-title: The holy trinity 
+title: The Holy Trinity
+image: /img/2021/venn-diagram.png
 summary: |
   Blockchains solve the problem of double-spending and thereby allows financial ledgers to be distributed among peers who maintain the invariants collectively without resorting to entrusting a centralized entity with the ledger. At the same time technical limitations still remain, hindering greater adoption of the technology. We identify the biggest unsolved challenges and what is being done to crack the nut. 🥜
 ---
