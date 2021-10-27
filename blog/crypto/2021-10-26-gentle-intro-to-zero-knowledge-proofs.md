@@ -1,6 +1,6 @@
 ---
 title: A super gentle introduction to zero-knowledge proofs 🍄
-tags: zpk
+tags: zkp
 image: /img/2021/mushroom.png
 summary: |
   Once considered unrealistic moon math, zero-knowledge proofs, may hold the answer to some of the most pressing blockchain questions, like how will they scale and what about privacy? At the same time the zero-knowledge proofs are extremely ill-understood and inaccessible to most people. The aim is to develop an intuition for them, explain in simple terms how they can be used in the context of blockchains, and get you excited about their seemingly endless utility.
