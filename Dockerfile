@@ -1,4 +1,4 @@
-FROM commercialhaskell/stackage:lts14
+FROM commercialhaskell/stackage:lts14 AS builder
 
 WORKDIR /app
 
@@ -11,6 +11,14 @@ COPY stack.yaml.lock .
 COPY LICENSE . 
 RUN stack install --local-bin-path /app
 
+FROM alpine:latest
+
+WORKDIR /app
+
+COPY --from=builder /app/blog .
+COPY --from=builder /app/sass .
+
 ENV PATH=/app:/usr/sbin:/usr/bin:/sbin:/bin
 ENTRYPOINT ["/app/blog"]
 CMD ["build"]
+
