@@ -10,7 +10,11 @@ COPY stack.yaml .
 COPY stack.yaml.lock . 
 COPY LICENSE . 
 
-RUN stack install --local-bin-path /build
+RUN stack install \
+  --local-bin-path /build \
+  --flag hakyll:-previewServer \
+  --flag hakyll:-watchServer \
+  --flag hakyll:-checkExternal
 
 FROM dart:stable AS dart
 
