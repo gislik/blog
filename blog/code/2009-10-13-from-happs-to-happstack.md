@@ -10,7 +10,7 @@ tags: haskell
 <p>I have been dreading porting my Blog application from <em>HAppS</em> to <a href="happstack.com"><em>Happstack</em></a> for a long time now. It is however apparent that <em>HAppS</em> is dying and <em>Happstack</em> (a fork of <em>HAppS</em> designed to take things further) was the only way to roll.</p>
 <blockquote>
   <p>... a refreshingly innovative web application server written in Haskell. Leveraging the MACID state system, Happstack offers robust and scalable data access without the headache of managing a traditional RDBMS such as MySQL.</p></blockquote>
-<p>The <a href="http://www.darcsweb.com:5003/r/mae/happstack-stable/snapshot/current/content/pretty/happstack/RELEASE_NOTES">RELEASE_NOTES</a> file had some guidelines for porting existing applications to <em>Happstack</em>. In my case it turned out to be really easy:</p>
+<p>The RELEASE_NOTES file had some guidelines for porting existing applications to <em>Happstack</em>. In my case it turned out to be really easy:</p>
 <ol>
 <li>Install Happstack  
 <pre>sudo cabal install happstack</pre>

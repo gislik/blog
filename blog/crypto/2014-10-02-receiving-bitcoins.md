@@ -16,7 +16,7 @@ Some of you might be aware of the "other" Bitcoin blockchain &mdash; *testnet3* 
 To receive testnet coins we can either mine them or withdraw some from a faucet. Although the difficulty of mining on testnet is orders of magnitudes lower than on mainnet it still takes too long for our needs. A faucet is simply a website run by a Bitcoin volunteer, who has mined some coins, where we can ask to be sent some coins to our wallets.
 
 
-Maybe not so surprisingly [Xenog](https://github.com/xenog), one of the developers of Haskoin, is such a volunteer and using his [faucet](http://faucet.xeno-genesis.com/) we can acquire some coins. I requested 0.3 coins which I [received](http://tbtc.blockr.io/tx/info/3c14a1c339d83c949c9d0c17e47aca03f99f9b48147ec246b7232a2924a2a427) moments later to my wallet.
+Maybe not so surprisingly [Xenog](https://github.com/xenog), one of the developers of Haskoin, is such a volunteer and using his [faucet](http://faucet.xeno-genesis.com/) we can acquire some coins. I requested 0.3 coins which I [received](https://www.blockchain.com/btc-testnet/tx/3c14a1c339d83c949c9d0c17e47aca03f99f9b48147ec246b7232a2924a2a427) moments later to my wallet.
 
 <div style="clear: both"></div>
 
@@ -104,7 +104,7 @@ Let's try to fill our simple wallet with some coins. To do so we will broadcast 
 </center>
 
 <br />
-This transaction can be analyzed on the testnet3 blockchain using a [blockchain explorer](http://tbtc.blockr.io/tx/info/5656f86df2b2ce177d6bffb2cfda35ef7c91bf98661e27dbb0d431325f2e55ad). The transaction has two outputs spending `0.002` to `mpxf3U...` (the address generated above using Haskoin) and `0.2968` to `msN7AF...`. Since transactions can only spend the full amount (`0.2989`) of a previously [unspent transaction output](https://bitcoin.org/en/developer-guide#term-output) the Bitcoin-Qt wallet must generate a new address spending the rest of the amount back to itself. 
+This transaction can be analyzed on the testnet3 blockchain using a [blockchain explorer](https://www.blockchain.com/btc-testnet/tx/5656f86df2b2ce177d6bffb2cfda35ef7c91bf98661e27dbb0d431325f2e55ad). The transaction has two outputs spending `0.002` to `mpxf3U...` (the address generated above using Haskoin) and `0.2968` to `msN7AF...`. Since transactions can only spend the full amount (`0.2989`) of a previously [unspent transaction output](https://bitcoin.org/en/developer-guide#term-output) the Bitcoin-Qt wallet must generate a new address spending the rest of the amount back to itself. 
 
 <img class="img-polaroid img-rounded" src="/img/bitcoin-blockr-testnet.png" />
 
@@ -116,7 +116,7 @@ The `0.0001` is the network fee which a miner collects who successfully adds a b
 
 Most blockchain explorers present the previous UTXO as an address like `muAqCS...`. This is probably done to simplify things as it gives the illusion that money is being sent from one address (resembling a traditional bank account) to another. In reality a transaction references UTXOs in different transactions. 
 
-Although this information is hidden when using [blockr.io](http://blockr.io) it can be seen by using [blockexplorer.com](http://blockexplorer.com/testnet/tx/5656f86df2b2ce177d6bffb2cfda35ef7c91bf98661e27dbb0d431325f2e55ad). The transaction references the first output (zero-th index) from [`f0b04f...`](http://blockexplorer.com/testnet/tx/f0b04f7d674eb0ebbbbe295fc4b1131aa8534643524bd09cfcb6e508d25e9d0b#o0). To spend the `0.2989` which the Bitcoin-Qt wallet received at `muAqCS...` it must only fulfill the conditions of the pubkey script (_scriptPubKey_) for the UTXO, which is:
+Although this information is hidden when using blockr.io it can be seen by using [blockexplorer.com](http://blockexplorer.com/testnet/tx/5656f86df2b2ce177d6bffb2cfda35ef7c91bf98661e27dbb0d431325f2e55ad). The transaction references the first output (zero-th index) from [`f0b04f...`](http://blockexplorer.com/testnet/tx/f0b04f7d674eb0ebbbbe295fc4b1131aa8534643524bd09cfcb6e508d25e9d0b#o0). To spend the `0.2989` which the Bitcoin-Qt wallet received at `muAqCS...` it must only fulfill the conditions of the pubkey script (_scriptPubKey_) for the UTXO, which is:
 
     OP_DUP OP_HASH160 95c3848663509dcb35e5ec95653df88edae40482 OP_EQUALVERIFY OP_CHECKSIG
 
