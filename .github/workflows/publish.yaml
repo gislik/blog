@@ -15,13 +15,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout 🛎
+      - name: Checkout ✔️
         uses: actions/checkout@v2
 
       - name: Build 🚀
-        uses: gislik/blog
+        run: scripts/docker.sh build
 
-      - name: Publish
+      - name: Publish 📰
         uses: peaceiris/actions-gh-pages@v3
         with:
           deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
