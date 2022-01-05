@@ -7,7 +7,7 @@ summary: A cheatsheet for my future self. We cover using the Hakyll eDSL to writ
 ---
 
 # Hakyll :heart: Pandoc
-Since I don't write Haskell code professionally anymore it takes me longer to get into the right rhythm. This post is intended for my future self more or less and should serve as a cheatsheet for Hakyll development. I've already written a high level overview of how to edit content and build the website in this [README](https://github.com/gislik/gisli.hamstur.is/blob/master/README.md). Here I want to go deeper into how to construct new compilers and how to apply them in a context to templates. 
+Since I don't write Haskell code professionally anymore it takes me longer to get into the right rhythm. This post is intended for my future self more or less and should serve as a cheatsheet for Hakyll development. I've already written a high level overview of how to edit content and build the website in this [README](https://github.com/gislik/blog/blob/master/README.md). Here I want to go deeper into how to construct new compilers and how to apply them in a context to templates. 
 
 Under the hood Hakyll integrates natively with [Pandoc](http://johnmacfarlane.net/pandoc/) -- the swiss-army knife of file converters. Pandoc is also written in Haskell and can convert files between a wide variety of file formats and can be extended with custom [Lua](http://www.lua.org/) filters. All this has some configuration complexities associated with it and below I also discuss the various configurations and extensions used to enable the auto-generation of table of contents and $\LaTeX$ math support on this website.  
 
