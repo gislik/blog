@@ -1,9 +1,11 @@
 {-# LANGUAGE OverloadedStrings, TupleSections #-}
 import            Data.Maybe                      (fromMaybe, listToMaybe)
+import            Data.Either                     (fromRight)
 import            Data.Monoid                     ((<>), mconcat)
 import            Data.Functor                    ((<$>), fmap)
 import            Data.Char                       (isSpace, toLower, toUpper)
 import            Data.List                       (intercalate, intersperse, foldl', isPrefixOf)
+import            Data.Text                       (pack)
 import            Data.Time.Clock                 (UTCTime(..))
 import            Control.Applicative             ((<|>), Alternative(..))
 import            Control.Monad                   (msum, filterM, (<=<), liftM, filterM)
@@ -18,6 +20,8 @@ import qualified  Data.Map                        as M
 import qualified  Text.Blaze.Html5                as H
 import            System.FilePath
 import            Text.Pandoc.Options
+import            Text.Pandoc.Templates 
+import            Text.Pandoc.Class 
 import            Hakyll
 
 --------------------------------------------------------------------------------
@@ -237,11 +241,15 @@ blogWriterOptions =
          let
             toc = "$toc$" :: String
             body = "$body$" :: String
+            html = pack . renderHtml $ do
+                     H.div ! class_ "toc" $ do
+                        toHtml toc
+                     toHtml body
+            template  =  fromRight mempty <$> compileTemplate "" html
+            runPureWithDefaultPartials = runPure . runWithDefaultPartials
+            eitherToMaybe = either (const Nothing) Just
          in
-            Just . renderHtml $ do
-               H.div ! class_ "toc" $ do
-                  toHtml toc
-               toHtml body
+            eitherToMaybe (runPureWithDefaultPartials template)
       }
 
 --------------------------------------------------------------------------------
