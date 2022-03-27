@@ -1,4 +1,4 @@
-FROM fpco/stack-build AS haskell
+FROM haskell:8.10.7 AS haskell
 
 # ENV STACK_ROOT /home/stackage/.stack
 
