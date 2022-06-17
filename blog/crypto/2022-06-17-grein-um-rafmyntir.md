@@ -1,7 +1,7 @@
 ---
 title: Grein um rafmyntir sem minnist ekki einu orði á verð þeirra 🤔
 tags: icelandic
-image: /img/2021/mushroom.png
+image: /img/2022/ethereum.png
 summary: |
     Grein í Stigul.
 ---
