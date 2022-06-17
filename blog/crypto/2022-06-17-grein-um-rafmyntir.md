@@ -3,7 +3,7 @@ title: Grein um rafmyntir sem minnist ekki einu orði á verð þeirra 🤔
 tags: icelandic
 image: /img/2022/ethereum.png
 summary: |
-    Grein í Stigul.
+    This article was written for Verpill, a Magazine in Icelandic, published annually by Stigull, the Student Club for Mathematicians and Physicists at the University of Iceland. The article covers the origins of blockchains, how they solve the double-spending problem in a novel way and what opportunities they offer in addition to some of their near-term challenges. Monerium is briefly mentioned and how it intends to merry blockchains, fiat currencies and traditional payment systems.
 ---
 
 Fyrsta rafmyntin (e. Cryptocurrency) leit dagsins ljós árið 2009. Bitcoin var lausn á vandamáli sem stærðfræðingar, hugbúnaðar- og vísindafólk hafði glímt við í áratugi.  Á svipuðum tíma og fyrstu tölvurnar voru tengdar saman vöknuðu spurningar um hvort hægt væri að búa til rafrænar myntir. Ólíkt rafrænum upplýsingum, sem hægt er að miðla á milli ólíkra þáttakenda í tölvuneti með því að fjölfalda gögnin, er nauðsynlegt að _ekki_ sé hægt að fjölfalda rafrænar myntir við millifærslu. Slík peningaprentun gerir myntirnar verðlausar. Tryggja þarf að raunverulegt eignarhald myntarinnar flytjist við millifærslu.
