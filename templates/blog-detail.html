@@ -1,43 +1,43 @@
-<article class="p-article">
+            <article class="p-article">
 
-    <header>
-        <h2 class="c-title c-article__title">$blog.title$</h2>
-        <p class="c-article__meta">
-            <time datetime="$blog.date$">$blog.date$</time>
-        </p>
-        <p class="c-article__meta">
-            $blog.reading.time$ min read
-        </p>
-    </header>
+                <header>
+                    <h2 class="c-title c-article__title">$blog.title$</h2>
+                    <p class="c-article__meta">
+                        <time datetime="$blog.date$">$blog.date$</time>
+                    </p>
+                    <p class="c-article__meta">
+                        $blog.reading.time$ min read
+                    </p>
+                </header>
 
-    <section id="js-article" class="c-article__body">
-        $polish(page.body)$
-    </section>
+                <section id="js-article" class="c-article__body">
+$polish(page.body)$
+                </section>
 
-    <section>
-        <p>
-            $if(blog.category)-$ $blog.category$ $endif$
-            $if(blog.tags)-$ $blog.tags$ $endif$
-        </p>
-        <p>
-        </p>
-    </section>
+                <section>
+                    <p>
+                        $if(blog.category)-$ $blog.category$ $endif$
+                        $if(blog.tags)-$ $blog.tags$ $endif$
+                    </p>
+                    <p>
+                    </p>
+                </section>
 
-    <footer>
-        <nav class="c-pagination p-pagination">
-            <div class="c-pagination__ctrl">
-                <div class="c-pagination__newer">
-                    $if(blog.previous.url)-$
-                    <a href="$blog.previous.url$">Newer</a>
-                    $endif$
-                </div>
-                <div class="c-pagination__older">
-                    $if(blog.next.url)-$
-                    <a href="$blog.next.url$">Older</a>
-                    $endif$
-                </div>
-            </div>
-        </nav>
-    </footer>
+                <footer>
+                    <nav class="c-pagination p-pagination">
+                        <div class="c-pagination__ctrl">
+                            <div class="c-pagination__newer">
+                                $if(blog.previous.url)-$
+                                <a href="$blog.previous.url$">Newer</a>
+                                $endif$
+                            </div>
+                            <div class="c-pagination__older">
+                                $if(blog.next.url)-$
+                                <a href="$blog.next.url$">Older</a>
+                                $endif$
+                            </div>
+                        </div>
+                    </nav>
+                </footer>
 
-</article>
+            </article>

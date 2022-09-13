@@ -8,21 +8,21 @@
             </section>
             $for(blogs)$
             <article class="c-article p-list-article">
-            <header>
-                <h2 class="c-title c-article__title"><a href="$page.url$">$title$</a></h2>
-                <p class="c-article__meta">
-                    <time datetime="$blog.date$">$blog.date$</time> $blog.category$ $if(blog.tags)-$ $blog.tags$ $endif$
-                </p>
-            </header>
+                <header>
+                    <h2 class="c-title c-article__title"><a href="$page.url$">$title$</a></h2>
+                    <p class="c-article__meta">
+                        <time datetime="$blog.date$">$blog.date$</time> $blog.category$ $if(blog.tags)-$ $blog.tags$ $endif$
+                    </p>
+                </header>
                 <section class="c-article__summary">
                     $blog.summary$
                 </section>
-                $if(showdeadcode)$
+                $-if(showdeadcode)-$
                 <a href="$page.url$" class="c-article__btn p-list-article__btn">More</a>
                 $endif$
             </article>
             $endfor$
-            
+
             <nav class="c-pagination p-pagination">
                 <div class="c-pagination__ctrl">
                     <div class="c-pagination__newer">
