@@ -19,7 +19,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Build 🚀
-        run: scripts/docker.sh build
+        run: scripts/docker-run.sh build
 
       - name: Publish 📰
         uses: peaceiris/actions-gh-pages@v3
