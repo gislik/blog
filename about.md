@@ -15,5 +15,6 @@ Despite my affection for software I have probably written enough content managem
 <p class="center social-media">
 [[]{.fab .fa-github} Repos](https://github.com/gislik)
 [[]{.fab .fa-twitter} Social](https://twitter.com/gislik)
-[[]{.fab .fa-keybase} Chat](https://keybase.io/gislik)
+[[]{.fab .fa-telegram} Chat](https://t.me/gislik)
+<a rel="me" href="https://hachyderm.io/@gislik"><span class="fab fa-mastodon"></span> Fediverse</a>
 </p>
