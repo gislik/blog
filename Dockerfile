@@ -1,7 +1,5 @@
 FROM haskell:8.10.7 AS haskell
 
-# ENV STACK_ROOT /home/stackage/.stack
-
 WORKDIR /build
 
 COPY blog.hs .
@@ -20,7 +18,8 @@ FROM dart:stable AS dart
 
 WORKDIR /build
 
-RUN curl --silent --show-error --location https://github.com/sass/dart-sass/releases/download/1.45.2/dart-sass-1.45.2-linux-x64.tar.gz \
+RUN curl --silent --show-error \
+    --location https://github.com/sass/dart-sass/releases/download/1.45.2/dart-sass-1.45.2-linux-x64.tar.gz \
   | tar --strip-components 1 --extract --gzip --file - dart-sass/sass 
 
 FROM alpine:latest

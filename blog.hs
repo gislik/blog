@@ -4,7 +4,7 @@ import            Data.Either                     (fromRight)
 import            Data.Monoid                     ((<>), mconcat)
 import            Data.Functor                    ((<$>), fmap)
 import            Data.Char                       (isSpace, toLower, toUpper)
-import            Data.List                       (intercalate, intersperse, foldl', isPrefixOf)
+import            Data.List                       (intercalate, intersperse, foldl', isPrefixOf, isSuffixOf)
 import            Data.Text                       (pack)
 import            Data.Time.Clock                 (UTCTime(..))
 import            Control.Applicative             ((<|>), Alternative(..))
@@ -35,7 +35,7 @@ main = do
             Just True -> (blogPattern .||. draftPattern) 
             _         -> blogPattern
 
-   hakyll $ do
+   hakyllWith config $ do
       excludePattern <- liftM fromList $ includeTagM "icelandic" <=< getMatches $ blogPattern
       let visiblePattern = 
             allPattern .&&. complement excludePattern
@@ -251,6 +251,20 @@ blogWriterOptions =
          in
             eitherToMaybe (runPureWithDefaultPartials template)
       }
+
+config :: Configuration
+config = 
+   defaultConfiguration {
+      ignoreFile = ignoreFile'
+   }
+   where
+     ignoreFile' path 
+         | "#"    `isPrefixOf` fileName = True
+         | "~"    `isSuffixOf` fileName = True
+         | ".swp" `isSuffixOf` fileName = True
+         | otherwise                    = False
+      where
+         fileName = takeFileName path
 
 --------------------------------------------------------------------------------
 -- CONTEXTS
@@ -616,4 +630,5 @@ split p' s =
       go _ ("", "") = []
       go p ("", y) = go (not . p) (span (not . p) y)
       go p (x, y) = x : go (not . p) (span (not . p) y)
+
 
