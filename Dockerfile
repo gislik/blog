@@ -1,4 +1,4 @@
-FROM haskell:8.10.7 AS haskell
+FROM haskell:9.2.5 AS haskell
 
 WORKDIR /build
 
@@ -19,7 +19,7 @@ FROM dart:stable AS dart
 WORKDIR /build
 
 RUN curl --silent --show-error \
-    --location https://github.com/sass/dart-sass/releases/download/1.45.2/dart-sass-1.45.2-linux-x64.tar.gz \
+  --location https://github.com/sass/dart-sass/releases/download/1.45.2/dart-sass-1.45.2-linux-x64.tar.gz \
   | tar --strip-components 1 --extract --gzip --file - dart-sass/sass 
 
 FROM alpine:latest

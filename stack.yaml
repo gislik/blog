@@ -11,7 +11,7 @@
 # resolver: lts-3.5
 # resolver: nightly-2015-09-21
 # resolver: ghc-7.10.2
-resolver: lts-18.28
+resolver: lts-20.5
 
 #
 # The location of a snapshot can be provided as a file or url. Stack assumes
@@ -42,7 +42,7 @@ packages:
 #
 #extra-deps: []
 extra-deps:
--  hakyll-4.15.1.0
+-  hakyll-4.15.1.1
 
 # Override default flag values for local packages and extra-deps
 # flags: {}
