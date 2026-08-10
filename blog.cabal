@@ -22,7 +22,7 @@ source-repository head
   type: git
   location: https://github.com/gislik/blog
 
-executable blog-exe
+executable blog
   main-is: blog.hs
   other-modules:
       Paths_blog
