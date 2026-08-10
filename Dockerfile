@@ -1,4 +1,4 @@
-FROM haskell:9.2.5 AS haskell
+FROM haskell:9.10.3 AS haskell
 
 WORKDIR /build
 
@@ -7,6 +7,9 @@ COPY blog.cabal .
 COPY stack.yaml .
 COPY stack.yaml.lock . 
 COPY LICENSE . 
+
+RUN apt update
+RUN apt install -y pkg-config
 
 RUN stack install \
   --local-bin-path /build \
@@ -38,7 +41,7 @@ COPY --from=haskell /lib/x86_64-linux-gnu/libpthread.so* ./
 COPY --from=haskell /lib/x86_64-linux-gnu/libutil.so* ./
 COPY --from=haskell /lib/x86_64-linux-gnu/libdl.so* ./
 COPY --from=haskell /lib/x86_64-linux-gnu/librt.so* ./
-COPY --from=haskell /usr/lib/x86_64-linux-gnu/libz.so* ./
+COPY --from=haskell /lib/x86_64-linux-gnu/libz.so* ./
 COPY --from=haskell /lib/x86_64-linux-gnu/libm.so* ./
 
 WORKDIR /usr/lib/locale

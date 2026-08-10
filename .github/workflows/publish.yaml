@@ -16,10 +16,10 @@ jobs:
 
     steps:
       - name: Checkout ✔️
-        uses: actions/checkout@v2
+        uses: actions/checkout@v7
 
       - name: Build 🚀
-        run: scripts/docker-run.sh build
+        run: scripts/docker-run.sh build 0.5.0.0
 
       - name: Publish 📰
         uses: peaceiris/actions-gh-pages@v3
