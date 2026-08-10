@@ -1,3 +1,3 @@
 #!/bin/bash
 
-stack run blog clean
+stack run clean
