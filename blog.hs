@@ -1,15 +1,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 import Control.Applicative (Alternative (..), (<|>))
-import Control.Monad (filterM, liftM, msum, (<=<))
-import Control.Monad.Fail (MonadFail)
+import Control.Monad (filterM, msum, (<=<))
 import Data.Char (isSpace, toLower, toUpper)
 import Data.Either (fromRight)
-import Data.Functor (fmap, (<$>), (<&>))
-import Data.List (foldl', intercalate, intersperse, isPrefixOf, isSuffixOf)
+import Data.Functor ((<&>))
+import Data.List (intercalate, intersperse, isPrefixOf, isSuffixOf)
 import qualified Data.Map as M
 import Data.Maybe (fromMaybe, listToMaybe)
-import Data.Monoid (mconcat, (<>))
 import Data.Text (pack)
 import Data.Time.Clock (UTCTime (..))
 import Data.Time.Format (TimeLocale, defaultTimeLocale, formatTime, parseTimeM)
@@ -21,7 +19,7 @@ import Text.Blaze.Html.Renderer.String (renderHtml)
 import qualified Text.Blaze.Html5 as H
 import Text.Blaze.Html5.Attributes (class_, href)
 import Text.HTML.TagSoup (Tag (..))
-import Text.Pandoc.Class
+import Text.Pandoc.Class (runPure)
 import Text.Pandoc.Options
 import Text.Pandoc.Templates
 
@@ -398,7 +396,7 @@ nextBlog blog = do
   maybe empty (fmap (maybe empty toUrl) . getRoute) ident
   where
     itemAfter xs x =
-      lookup x $ zip xs (tail xs)
+      lookup x $ zip xs (drop 1 xs)
 
 previousBlog :: Item String -> Compiler String
 previousBlog blog = do
@@ -408,7 +406,7 @@ previousBlog blog = do
   maybe empty (fmap (maybe empty toUrl) . getRoute) ident
   where
     itemBefore xs x =
-      lookup x $ zip (tail xs) xs
+      lookup x $ zip (drop 1 xs) xs
 
 loadDecks :: Pattern -> Compiler [Item String]
 loadDecks =
@@ -425,7 +423,7 @@ rootRoute =
   where
     dropDirectory [] = []
     dropDirectory ("/" : ds) = dropDirectory ds
-    dropDirectory ds = tail ds
+    dropDirectory ds = drop 1 ds
 
 pageRoute :: Routes
 pageRoute =
@@ -516,8 +514,6 @@ summaryField key =
       summary <- getMetadataField' (itemIdentifier item) "summary"
       return . renderHtml $
         H.p (toHtml summary)
-    alias x | x == key = "summary"
-    alias x = x
 
 previewField :: String -> Snapshot -> Context String
 previewField key snapshot =
@@ -526,7 +522,7 @@ previewField key snapshot =
     trim' item = do
       body <- loadSnapshotBody (itemIdentifier item) snapshot
       return $ withTagList firstParagraph body
-    firstParagraph = map fst . takeWhile (\(_, s) -> s > 0) . acc 0 . map cnt
+    firstParagraph = map fst . takeWhile (\(_, s) -> s > (0 :: Integer)) . acc 0 . map cnt
     acc _ [] = []
     acc s ((x, s') : xs) = (x, s + s') : acc (s + s') xs
     cnt tag@(TagOpen "p" _) = (tag, 1)
