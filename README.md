@@ -9,7 +9,7 @@ The project depends on:
 
 -  The [stackage](https://www.stackage.org/) build system 
 
-    Please see the chapter [How to install](https://docs.haskellstack.org/en/stable/README/#how-to-install) in the official documentation for stack. On macOS I find it easisest to use [Homebrew](https://brew.sh/) with `brew install haskell-stack`.
+    Please see the chapter [How to install](https://docs.haskellstack.org/en/stable/README/#how-to-install) in the official documentation for stack. On macOS I find it easiest to use [Homebrew](https://brew.sh/) with `brew install haskell-stack`.
 
 - The [sass](https://sass-lang.com/install) SCSS compiler
 
@@ -29,7 +29,7 @@ Stack will pull in all the dependencies specified in the [cabal](blog.cabal) fil
 
 ## Writing content
 
-Pages and blogs are written in static Markdown like the [About](about.md) page. Metadata can be placed in the front matter formatted as [YAML](https://yaml.org/). The metadata can be made available both to the compiler and to the template. Page titles are either set explicity in the front matter or derived from the file name.
+Pages and blogs are written in static Markdown like the [About](about.md) page. Metadata can be placed in the front matter formatted as [YAML](https://yaml.org/). The metadata can be made available both to the compiler and to the template. Page titles are either set explicitly in the front matter or derived from the file name.
 
 ~~~markdown
 ---
@@ -43,9 +43,9 @@ summary: |
 This is the blog body
 ~~~
 
-Pages in the `blog` directory are considered to be blog posts which have additional features like pagination, categories and tags. Blog posts are ordered newest to oldest and each post's date is extracted from the `date` field, the `published` field or from the a prefix of the filename. Tags are generated from the `tags` field in the metadata but categories are derived from the parent folder's name. When an `image` is specified it is used in Twitter summary cards.
+Pages in the `blog` directory are considered to be blog posts which have additional features like pagination, categories and tags. Blog posts are ordered newest to oldest and each post's date is extracted from the `date` field, the `published` field or from the prefix of the filename. Tags are generated from the `tags` field in the metadata but categories are derived from the parent folder's name. When an `image` is specified it is used in Twitter summary cards.
 
-Summary is either set explicitly in the front matter, read from the content and upto the `<!--more-->` comment or derived from the first sentence. Summaryr set in the front matter is used as the description for Twitter summary cards.
+Summary is either set explicitly in the front matter, read from the content and up to the `<!--more-->` comment or derived from the first sentence. Summary set in the front matter is used as the description for Twitter summary cards.
 
 Some parts of the site are generated without an existing source using Hakyll combinators like the index page which lists a few of the latest blog.
 
@@ -96,7 +96,7 @@ Templates are found in the `templates` directory. The base layout is defined in 
 
 - `page.body` for the content body
 - `page.url` for the destination URL of the page
-- `page.path` for the original filepath of the page
+- `page.path` for the original file path of the page
 - `page.foo` where foo is specified in the metadata
 - `page.title` for the page title
 - `polish(text)` to exchange certain words in the text for an emoji
@@ -133,7 +133,7 @@ Single decks have a `theme` variable.
 For more information about templates including control flow, conditionals, partials and loops, refer to this [tutorial](https://jaspervdj.be/hakyll/tutorials/04-compilers.html).
 
 
-## Compiling the website
+## Building the blog
 
 I have created a script transforms the Markdown to HTML using the compiler. Relevant templates from the `templates` directory are applied in the build pipeline before the final results are stored in the `_site` directory. 
 
@@ -147,3 +147,11 @@ When working on the content itself it is quite convenient to have a HTTP server 
 $ ./watch
 ~~~
 
+
+## Publishing the website
+
+I have a script that publishes the output of the static build process to [https://gislik.github.io/]. There is a [CNAME](static/CNAME) for the custom domain [gisli.hamstur.is](https://gisli.hamstur.is).
+
+$ ./publish.sh
+
+Additionally there is a GitHub Action that will automatically build and publish the blog when changes to the `master` branch are committed. That means that the blog contents can be edited in GitHub's visual editor and the changes are automatically reflect on the website. The docker image for the action is stored on [docker.io/gislik/blog]. The docker image must be built on an `x86_64` architecture.
