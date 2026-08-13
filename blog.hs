@@ -179,9 +179,8 @@ main = do
       route idRoute
       compile copyFileCompiler
 
-    -- programs to include
+    -- files to include code in blog posts
     match ("blogs/**.ts" .||. "drafts/**.ts") $ do
-      route blogRoute
       compile $ getResourceLBS
 
     -- templates
@@ -386,38 +385,34 @@ includeCode (Pandoc meta blocks) =
   where
     updateCodeBlock :: Block -> Compiler Block
     updateCodeBlock (CodeBlock attr block) = do
-      CodeBlock <$> pure attr <*> loadCode block
+      CodeBlock <$> pure attr <*> includeFile block
     updateCodeBlock b = return b
 
-data Include = Include FilePath | Static Text
+data Segments = Include FilePath | Static Text
 
-loadCode :: Text -> Compiler Text
-loadCode text = do
-  mconcat <$> traverse include (parseText text)
+includeFile :: Text -> Compiler Text
+includeFile text = do
+  mconcat <$> traverse include (parseText "$include(\"" "\")$" text)
   where
-    include :: Include -> Compiler Text
+    include :: Segments -> Compiler Text
     include (Static t) = return t
     include (Include file) = do
       fp <- getResourceFilePath
       decodeUtf8 . toStrict <$> loadBody (fromFilePath (takeDirectory fp </> file))
 
-    parseText :: Text -> [Include]
-    parseText input = go input
+    parseText :: Text -> Text -> Text -> [Segments]
+    parseText before after input = go input
       where
-        delim :: Text
-        delim = "$include "
-
         go s =
-          case breakOnText delim s of
+          case breakOnText before s of
             Nothing -> [Static s]
-            Just (before, restAtDelim) ->
-              let afterDelim = T.drop (T.length delim) restAtDelim
-                  -- find closing '$' that ends the include filename
-                  (fname, afterClose) = T.breakOn "$" afterDelim
+            Just (beforeDelim, restAtDelim) ->
+              let afterDelim = T.drop (T.length before) restAtDelim
+                  (fname, afterClose) = T.breakOn after afterDelim
                in case afterClose of
-                    "" -> [Static before] -- no closing '$' found (or choose to error)
+                    "" -> [Static beforeDelim]
                     _ ->
-                      Static before : Include (T.unpack fname) : go (T.tail afterClose)
+                      Static beforeDelim : Include (T.unpack fname) : go (T.tail afterClose)
         breakOnText :: Text -> Text -> Maybe (Text, Text)
         breakOnText needle haystack =
           case T.breakOn needle haystack of
