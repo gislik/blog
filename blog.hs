@@ -379,6 +379,8 @@ blogCompiler = do
     isMaybeTrue Nothing = Nothing
     isMaybeTrue (Just s) = readMaybe s >>= \x -> if x then Just True else Nothing
 
+-- includeCode tranforms the Pandoc code blocks, to include files relative to the blog post
+--    $include("program.ts")$ will insert the contents of program.ts
 includeCode :: Pandoc -> Compiler Pandoc
 includeCode (Pandoc meta blocks) =
   Pandoc <$> pure meta <*> mapM updateCodeBlock blocks
