@@ -182,7 +182,7 @@ main = do
     -- programs to include
     match ("blogs/**.ts" .||. "drafts/**.ts") $ do
       route blogRoute
-      compile $ getResourceLBS >>= printIdentifierCompiler
+      compile $ getResourceLBS
 
     -- templates
     match "templates/*.html" $
@@ -191,11 +191,6 @@ main = do
 --------------------------------------------------------------------------------
 -- CONFIGURATION
 --------------------------------------------------------------------------------
-printIdentifierCompiler item = do
-  ident <- getUnderlying
-  unsafeCompiler $ putStrLn ("DEBUG: " <> toFilePath ident)
-  return item
-
 blogPattern :: Pattern
 blogPattern = "blog/**.md"
 
@@ -394,7 +389,7 @@ includeCode (Pandoc meta blocks) =
       CodeBlock <$> pure attr <*> loadCode block
     updateCodeBlock b = return b
 
-data Include = Include Identifier | Static Text
+data Include = Include FilePath | Static Text
 
 loadCode :: Text -> Compiler Text
 loadCode text = do
@@ -402,7 +397,9 @@ loadCode text = do
   where
     include :: Include -> Compiler Text
     include (Static t) = return t
-    include (Include path) = decodeUtf8 . toStrict <$> loadBody path
+    include (Include file) = do
+      fp <- getResourceFilePath
+      decodeUtf8 . toStrict <$> loadBody (fromFilePath (takeDirectory fp </> file))
 
     parseText :: Text -> [Include]
     parseText input = go input
@@ -420,7 +417,7 @@ loadCode text = do
                in case afterClose of
                     "" -> [Static before] -- no closing '$' found (or choose to error)
                     _ ->
-                      Static before : Include (fromFilePath (T.unpack fname)) : go (T.tail afterClose)
+                      Static before : Include (T.unpack fname) : go (T.tail afterClose)
         breakOnText :: Text -> Text -> Maybe (Text, Text)
         breakOnText needle haystack =
           case T.breakOn needle haystack of
