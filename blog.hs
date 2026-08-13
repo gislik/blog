@@ -191,7 +191,7 @@ main = do
 -- CONFIGURATION
 --------------------------------------------------------------------------------
 blogPattern :: Pattern
-blogPattern = "blog/**.md"
+blogPattern = "blog/**.md" .||. "blog/**.html"
 
 draftPattern :: Pattern
 draftPattern = "drafts/**.md"
