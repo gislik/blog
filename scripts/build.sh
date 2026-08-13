@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # include hidden files
-shopt -s dotglob 
+shopt -s dotglob
+
+export DRAFTS=${DRAFTS:-"false"}
 
 echo "Building blog"
 stack run blog rebuild
-echo "Syncing to GitHub Pages repository"
-rsync -a --delete --exclude=.git _site/ gislik.github.io

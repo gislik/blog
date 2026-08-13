@@ -8,14 +8,14 @@ import Data.Either (fromRight)
 import Data.Functor ((<&>))
 import Data.List (intercalate, intersperse, isPrefixOf, isSuffixOf)
 import qualified Data.Map as M
-import Data.Maybe (fromMaybe, listToMaybe)
+import Data.Maybe (fromMaybe)
 import Data.Text (Text, pack)
 import qualified Data.Text as T
 import Data.Text.Encoding (decodeUtf8)
 import Data.Time.Clock (UTCTime (..))
 import Data.Time.Format (TimeLocale, defaultTimeLocale, formatTime, parseTimeM)
 import Hakyll
-import System.Environment (getArgs)
+import System.Environment (lookupEnv)
 import System.FilePath
 import Text.Blaze.Html (toHtml, toValue, (!))
 import Text.Blaze.Html.Renderer.String (renderHtml)
@@ -26,7 +26,6 @@ import Text.Pandoc (Block (..), Pandoc (..))
 import Text.Pandoc.Class (runPure)
 import Text.Pandoc.Options (Extension (..), HTMLMathMethod (..), ReaderOptions (..), WriterOptions (..), extensionsFromList)
 import Text.Pandoc.Templates (WithDefaultPartials (..), compileTemplate)
-import Text.Read (readMaybe)
 
 --------------------------------------------------------------------------------
 -- CONFIGURATION
@@ -131,16 +130,16 @@ feedConfiguration =
 --------------------------------------------------------------------------------
 main :: IO ()
 main = do
-  isWatching <- fmap (== "watch") . listToMaybe <$> getArgs
-  let allPattern =
-        case isWatching of
+  drafts <- isMaybeTrue <$> lookupEnv "DRAFTS"
+  let includePattern =
+        case drafts of
           Just True -> blogPattern .||. draftPattern
           _ -> blogPattern
 
   hakyllWith blogConfig $ do
     excludePattern <- fmap fromList $ includeTagM "icelandic" <=< getMatches $ blogPattern
     let visiblePattern =
-          allPattern .&&. complement excludePattern
+          includePattern .&&. complement excludePattern
 
     pages <- buildPages visiblePattern (fromCapture "*/index.html" . show)
     categories <- buildCategories visiblePattern (fromCapture "*/index.html")
@@ -166,7 +165,7 @@ main = do
           >>= relativizeUrls
 
     -- blogs
-    match allPattern $ do
+    match includePattern $ do
       route blogRoute
       compile $
         blogCompiler
@@ -379,8 +378,6 @@ blogCompiler = do
   pandocCompilerWithTransformM blogReaderOptions (writerOptions toc) includeCode
   where
     writerOptions toc = maybe defaultHakyllWriterOptions (const blogWriterOptions) (isMaybeTrue toc)
-    isMaybeTrue Nothing = Nothing
-    isMaybeTrue (Just s) = readMaybe s >>= \x -> if x then Just True else Nothing
 
 -- includeCode tranforms the Pandoc code blocks, to include files relative to the blog post
 --    $include("program.ts")$ will insert the contents of program.ts
@@ -692,3 +689,9 @@ tryParseDateWithLocale locale ident = do
           ++ "could not parse time for "
           ++ show ident
     parseTime = parseTimeM False locale
+
+isMaybeTrue :: Maybe String -> Maybe Bool
+isMaybeTrue Nothing = Nothing
+isMaybeTrue (Just s)
+  | map toUpper s == "TRUE" = Just True
+  | otherwise = Nothing

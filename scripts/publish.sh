@@ -1,5 +1,7 @@
 #!/bin/bash
 
+echo "Syncing to GitHub Pages repository"
+rsync -a --delete --exclude=.git _site/ gislik.github.io
 echo "Adding new content and removing old"
 git -C gislik.github.io add --all .
 echo "Comitting changes"
