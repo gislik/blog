@@ -24,9 +24,103 @@ import Text.Blaze.Html5.Attributes (class_, href)
 import Text.HTML.TagSoup (Tag (..))
 import Text.Pandoc (Block (..), Pandoc (..))
 import Text.Pandoc.Class (runPure)
-import Text.Pandoc.Options
-import Text.Pandoc.Templates
+import Text.Pandoc.Options (Extension (..), HTMLMathMethod (..), ReaderOptions (..), WriterOptions (..), extensionsFromList)
+import Text.Pandoc.Templates (WithDefaultPartials (..), compileTemplate)
 import Text.Read (readMaybe)
+
+--------------------------------------------------------------------------------
+-- CONFIGURATION
+--------------------------------------------------------------------------------
+blogTitle :: String
+blogTitle = "Crypto and Code"
+
+blogDescription :: String
+blogDescription = "My thoughts on blockchains and software"
+
+blogAuthor :: String
+blogAuthor = "Gísli Kristjánsson"
+
+blogAuthorEmail :: String
+blogAuthorEmail = "gislik@hamstur.is"
+
+blogRoot :: String
+blogRoot = "https://gisli.hamstur.is"
+
+blogPattern :: Pattern
+blogPattern = "blog/**.md" .||. "blog/**.html"
+
+draftPattern :: Pattern
+draftPattern = "drafts/**.md"
+
+blogSnapshot :: Snapshot
+blogSnapshot = "blog-content"
+
+blogPerPage :: Int
+blogPerPage = 4
+
+blogConfig :: Configuration
+blogConfig =
+  defaultConfiguration
+    { ignoreFile = isIgnoredFile
+    }
+  where
+    isIgnoredFile path
+      | "#" `isPrefixOf` fileName = True
+      | "~" `isSuffixOf` fileName = True
+      | ".swp" `isSuffixOf` fileName = True
+      | otherwise = False
+      where
+        fileName = takeFileName path
+
+blogReaderOptions :: ReaderOptions
+blogReaderOptions =
+  defaultHakyllReaderOptions
+    { readerExtensions =
+        readerExtensions defaultHakyllReaderOptions
+          <> extensionsFromList
+            [ Ext_tex_math_single_backslash, -- TeX math btw (..) [..]
+              Ext_tex_math_double_backslash, -- TeX math btw \(..\) \[..\]
+              Ext_tex_math_dollars, -- TeX math between $..$ or $$..$$
+              Ext_latex_macros, -- Parse LaTeX macro definitions (for math only)
+              Ext_inline_code_attributes, -- Ext_inline_code_attributes
+              Ext_abbreviations -- PHP markdown extra abbreviation definitions
+            ]
+    }
+
+-- blogWriterOptions configures pandoc to include a table of contents
+-- and uses MathJax to render math.
+blogWriterOptions :: WriterOptions
+blogWriterOptions =
+  defaultHakyllWriterOptions
+    { writerHTMLMathMethod = MathJax "",
+      writerTableOfContents = True,
+      writerNumberSections = True,
+      writerTOCDepth = 2,
+      writerTemplate =
+        let toc = "$toc$" :: String
+            body = "$body$" :: String
+            html = pack . renderHtml $ do
+              H.div ! class_ "toc" $
+                toHtml toc
+              toHtml body
+            template = fromRight mempty <$> compileTemplate "" html
+            runPureWithDefaultPartials = runPure . runWithDefaultPartials
+            eitherToMaybe = either (const Nothing) Just
+         in eitherToMaybe (runPureWithDefaultPartials template)
+    }
+
+decksSnapshot :: Snapshot
+decksSnapshot = "decks-content"
+
+feedConfiguration :: FeedConfiguration
+feedConfiguration =
+  FeedConfiguration
+    { feedTitle = blogTitle,
+      feedDescription = blogDescription,
+      feedAuthorName = blogAuthor,
+      feedAuthorEmail = blogAuthorEmail,
+      feedRoot = blogRoot
+    }
 
 --------------------------------------------------------------------------------
 -- SITE
@@ -39,7 +133,7 @@ main = do
           Just True -> blogPattern .||. draftPattern
           _ -> blogPattern
 
-  hakyllWith config $ do
+  hakyllWith blogConfig $ do
     excludePattern <- fmap fromList $ includeTagM "icelandic" <=< getMatches $ blogPattern
     let visiblePattern =
           allPattern .&&. complement excludePattern
@@ -188,112 +282,8 @@ main = do
       compile templateCompiler
 
 --------------------------------------------------------------------------------
--- CONFIGURATION
---------------------------------------------------------------------------------
-blogPattern :: Pattern
-blogPattern = "blog/**.md" .||. "blog/**.html"
-
-draftPattern :: Pattern
-draftPattern = "drafts/**.md"
-
-blogSnapshot :: Snapshot
-blogSnapshot = "blog-content"
-
-blogPerPage :: Int
-blogPerPage = 4
-
-blogTitle :: String
-blogTitle = "Crypto and Code"
-
-blogDescription :: String
-blogDescription = "My thoughts on blockchains and software"
-
-blogAuthor :: String
-blogAuthor = "Gísli Kristjánsson"
-
-blogAuthorEmail :: String
-blogAuthorEmail = "gislik@hamstur.is"
-
-blogRoot :: String
-blogRoot = "https://gisli.hamstur.is"
-
-decksSnapshot :: Snapshot
-decksSnapshot = "decks-content"
-
-feedConfiguration :: FeedConfiguration
-feedConfiguration =
-  FeedConfiguration
-    { feedTitle = blogTitle,
-      feedDescription = blogDescription,
-      feedAuthorName = blogAuthor,
-      feedAuthorEmail = blogAuthorEmail,
-      feedRoot = blogRoot
-    }
-
-blogReaderOptions :: ReaderOptions
-blogReaderOptions =
-  defaultHakyllReaderOptions
-    { readerExtensions =
-        readerExtensions defaultHakyllReaderOptions
-          <> extensionsFromList
-            [ Ext_tex_math_single_backslash, -- TeX math btw (..) [..]
-              Ext_tex_math_double_backslash, -- TeX math btw \(..\) \[..\]
-              Ext_tex_math_dollars, -- TeX math between $..$ or $$..$$
-              Ext_latex_macros, -- Parse LaTeX macro definitions (for math only)
-              Ext_inline_code_attributes, -- Ext_inline_code_attributes
-              Ext_abbreviations -- PHP markdown extra abbreviation definitions
-            ]
-    }
-
--- blogWriterOptions configures pandoc to include a table of contents
--- and uses MathJax to render math.
-blogWriterOptions :: WriterOptions
-blogWriterOptions =
-  defaultHakyllWriterOptions
-    { writerHTMLMathMethod = MathJax "",
-      writerTableOfContents = True,
-      writerNumberSections = True,
-      writerTOCDepth = 2,
-      writerTemplate =
-        let toc = "$toc$" :: String
-            body = "$body$" :: String
-            html = pack . renderHtml $ do
-              H.div ! class_ "toc" $
-                toHtml toc
-              toHtml body
-            template = fromRight mempty <$> compileTemplate "" html
-            runPureWithDefaultPartials = runPure . runWithDefaultPartials
-            eitherToMaybe = either (const Nothing) Just
-         in eitherToMaybe (runPureWithDefaultPartials template)
-    }
-
-config :: Configuration
-config =
-  defaultConfiguration
-    { ignoreFile = ignoreFile'
-    }
-  where
-    ignoreFile' path
-      | "#" `isPrefixOf` fileName = True
-      | "~" `isSuffixOf` fileName = True
-      | ".swp" `isSuffixOf` fileName = True
-      | otherwise = False
-      where
-        fileName = takeFileName path
-
---------------------------------------------------------------------------------
 -- CONTEXTS
 --------------------------------------------------------------------------------
-pageTitleField :: String -> Context String
-pageTitleField key =
-  aliasContext alias metadataField
-    <> pathTitleField key -- use page title from metadata
-    <> constField key "Crypto and Code" -- or read from the path
-    -- alternatively use this
-  where
-    alias x | x == key = "title"
-    alias x = x
-
 defaultCtx :: Context String
 defaultCtx =
   bodyField "page.body"
@@ -304,6 +294,16 @@ defaultCtx =
     <> pathField "page.path"
     <> polishField "polish"
     <> metadataField
+
+pageTitleField :: String -> Context String
+pageTitleField key =
+  aliasContext alias metadataField
+    <> pathTitleField key -- use page title from metadata
+    <> constField key "Crypto and Code" -- or read from the path
+    -- alternatively use this
+  where
+    alias x | x == key = "title"
+    alias x = x
 
 blogCtx :: PageNumber -> Paginate -> Tags -> Tags -> Context String
 blogCtx i pages categories tags =
@@ -352,8 +352,8 @@ decksDetailCtx =
     <> defaultCtx
     <> constField "theme" "black"
 
-atomCtx :: Context String
-atomCtx =
+feedCtx :: Context String
+feedCtx =
   mapContext cdata (pageTitleField "title")
     <> aliasContext alias metadataField
     <> teaserField "description" blogSnapshot -- description from metadata
@@ -366,9 +366,8 @@ atomCtx =
     cdata s = "<![CDATA[" <> s <> "]]>"
 
 --------------------------------------------------------------------------------
--- HELPERS
+-- COMPILERS
 --------------------------------------------------------------------------------
--- compilers
 blogCompiler :: Compiler (Item String)
 blogCompiler = do
   ident <- getUnderlying
@@ -390,19 +389,19 @@ includeCode (Pandoc meta blocks) =
       CodeBlock <$> pure attr <*> includeFile block
     updateCodeBlock b = return b
 
-data Segments = Include FilePath | Static Text
+data Segment = Include FilePath | Static Text
 
 includeFile :: Text -> Compiler Text
 includeFile text = do
   mconcat <$> traverse include (parseText "$include(\"" "\")$" text)
   where
-    include :: Segments -> Compiler Text
+    include :: Segment -> Compiler Text
     include (Static t) = return t
     include (Include file) = do
       fp <- getResourceFilePath
       decodeUtf8 . toStrict <$> loadBody (fromFilePath (takeDirectory fp </> file))
 
-    parseText :: Text -> Text -> Text -> [Segments]
+    parseText :: Text -> Text -> Text -> [Segment]
     parseText before after input = go input
       where
         go s =
@@ -415,6 +414,7 @@ includeFile text = do
                     "" -> [Static beforeDelim]
                     _ ->
                       Static beforeDelim : Include (T.unpack fname) : go (T.tail afterClose)
+
         breakOnText :: Text -> Text -> Maybe (Text, Text)
         breakOnText needle haystack =
           case T.breakOn needle haystack of
@@ -467,9 +467,11 @@ loadDecks =
 
 renderBlogAtom :: [Item String] -> Compiler (Item String)
 renderBlogAtom =
-  renderAtom feedConfiguration atomCtx
+  renderAtom feedConfiguration feedCtx
 
--- routes
+--------------------------------------------------------------------------------
+-- ROUTES
+--------------------------------------------------------------------------------
 rootRoute :: Routes
 rootRoute =
   customRoute (joinPath . dropDirectory . splitPath . toFilePath)
@@ -513,7 +515,9 @@ decksAssetsRoute =
     monthRoute = gsubRoute "/[[:digit:]]{2}-" (\xs -> "/" <> (take 2 . drop 1) xs <> "/")
     dropDayRoute = gsubRoute "/[[:digit:]]{2}-" (const "/")
 
--- contexts
+--------------------------------------------------------------------------------
+-- CONTEXTS
+--------------------------------------------------------------------------------
 pathTitleField :: String -> Context String
 pathTitleField =
   flip field title
@@ -609,6 +613,15 @@ polishField name =
   where
     text' (TagText s) = TagText (concatMap f (split isSpace s))
     text' t = t
+
+    split :: (Char -> Bool) -> String -> [String]
+    split p' s =
+      go p' ("", s)
+      where
+        go _ ("", "") = []
+        go p ("", y) = go (not . p) (break p y)
+        go p (x, y) = x : go (not . p) (break p y)
+
     f "" = ""
     f ":+1:" = "👍"
     f ":coffee:" = "☕️"
@@ -625,7 +638,9 @@ polishField name =
     f ":tada:" = "🎉"
     f x = x
 
--- metadata
+--------------------------------------------------------------------------------
+-- METADATA
+--------------------------------------------------------------------------------
 includeTagM :: (MonadMetadata m) => String -> [Identifier] -> m [Identifier]
 includeTagM tag =
   filterTagsM (return . elem tag)
@@ -634,13 +649,17 @@ filterTagsM :: (MonadMetadata m) => ([String] -> m Bool) -> [Identifier] -> m [I
 filterTagsM p =
   filterM (p <=< getTags)
 
--- pagination
+--------------------------------------------------------------------------------
+-- PAGINATION
+--------------------------------------------------------------------------------
 buildPages :: (MonadMetadata m, MonadFail m) => Pattern -> (PageNumber -> Identifier) -> m Paginate
 buildPages =
   buildPaginateWith
     (return . paginateEvery blogPerPage <=< sortRecentFirst)
 
--- html
+--------------------------------------------------------------------------------
+-- HTML
+--------------------------------------------------------------------------------
 renderLink :: String -> String -> Maybe FilePath -> Maybe H.Html
 renderLink _ _ Nothing = Nothing
 renderLink pre text (Just url) =
@@ -648,7 +667,9 @@ renderLink pre text (Just url) =
     toHtml pre
     H.a ! href (toValue $ toUrl url) $ toHtml text
 
--- dates
+--------------------------------------------------------------------------------
+-- DATES
+--------------------------------------------------------------------------------
 tryParseDate :: Identifier -> Maybe UTCTime
 tryParseDate =
   tryParseDateWithLocale defaultTimeLocale
@@ -667,12 +688,3 @@ tryParseDateWithLocale locale ident = do
           ++ "could not parse time for "
           ++ show ident
     parseTime = parseTimeM False locale
-
--- misc
-split :: (Char -> Bool) -> String -> [String]
-split p' s =
-  go p' ("", s)
-  where
-    go _ ("", "") = []
-    go p ("", y) = go (not . p) (break p y)
-    go p (x, y) = x : go (not . p) (break p y)
