@@ -1,0 +1,9 @@
+  {
+  "watch": ["*.ts"],
+  "ext": "ts",
+  "quiet": true,
+  "execMap": {
+    "ts": "tsx"
+  }
+}
+
