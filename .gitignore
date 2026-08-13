@@ -11,3 +11,4 @@ _site
 gislik.github.io
 .DS_Store
 .stack-work
+.sass-cache
