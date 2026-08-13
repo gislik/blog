@@ -61,7 +61,8 @@ blogPerPage = 4
 blogConfig :: Configuration
 blogConfig =
   defaultConfiguration
-    { ignoreFile = isIgnoredFile
+    { ignoreFile = isIgnoredFile,
+      watchIgnore = isWatchIgnoreFile
     }
   where
     isIgnoredFile path
@@ -71,6 +72,9 @@ blogConfig =
       | otherwise = False
       where
         fileName = takeFileName path
+
+    isWatchIgnoreFile "blog.hs" = True
+    isWatchIgnoreFile _ = False
 
 blogReaderOptions :: ReaderOptions
 blogReaderOptions =
