@@ -1,14 +1,17 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 import Control.Applicative (Alternative (..), (<|>))
-import Control.Monad (filterM, msum, (<=<))
+import Control.Monad (filterM, (<=<))
+import Data.ByteString.Lazy (toStrict)
 import Data.Char (isSpace, toLower, toUpper)
 import Data.Either (fromRight)
 import Data.Functor ((<&>))
 import Data.List (intercalate, intersperse, isPrefixOf, isSuffixOf)
 import qualified Data.Map as M
 import Data.Maybe (fromMaybe, listToMaybe)
-import Data.Text (pack)
+import Data.Text (Text, pack)
+import qualified Data.Text as T
+import Data.Text.Encoding (decodeUtf8)
 import Data.Time.Clock (UTCTime (..))
 import Data.Time.Format (TimeLocale, defaultTimeLocale, formatTime, parseTimeM)
 import Hakyll
@@ -19,9 +22,11 @@ import Text.Blaze.Html.Renderer.String (renderHtml)
 import qualified Text.Blaze.Html5 as H
 import Text.Blaze.Html5.Attributes (class_, href)
 import Text.HTML.TagSoup (Tag (..))
+import Text.Pandoc (Block (..), Pandoc (..))
 import Text.Pandoc.Class (runPure)
 import Text.Pandoc.Options
 import Text.Pandoc.Templates
+import Text.Read (readMaybe)
 
 --------------------------------------------------------------------------------
 -- SITE
@@ -45,7 +50,7 @@ main = do
 
     -- static pages
     match "*.md" $ do
-      route pageRoute
+      route indexRoute
       compile $
         pandocCompiler
           >>= loadAndApplyTemplate "templates/page-detail.html" defaultCtx
@@ -174,6 +179,11 @@ main = do
       route idRoute
       compile copyFileCompiler
 
+    -- programs to include
+    match ("blogs/**.ts" .||. "drafts/**.ts") $ do
+      route blogRoute
+      compile $ getResourceLBS >>= printIdentifierCompiler
+
     -- templates
     match "templates/*.html" $
       compile templateCompiler
@@ -181,11 +191,16 @@ main = do
 --------------------------------------------------------------------------------
 -- CONFIGURATION
 --------------------------------------------------------------------------------
+printIdentifierCompiler item = do
+  ident <- getUnderlying
+  unsafeCompiler $ putStrLn ("DEBUG: " <> toFilePath ident)
+  return item
+
 blogPattern :: Pattern
-blogPattern = "blog/**"
+blogPattern = "blog/**.md"
 
 draftPattern :: Pattern
-draftPattern = "drafts/**"
+draftPattern = "drafts/**.md"
 
 blogSnapshot :: Snapshot
 blogSnapshot = "blog-content"
@@ -364,10 +379,54 @@ blogCompiler :: Compiler (Item String)
 blogCompiler = do
   ident <- getUnderlying
   toc <- getMetadataField ident "withtoc"
-  pandocCompilerWith blogReaderOptions (maybe defaultOptions blogOptions toc)
+  pandocCompilerWithTransformM blogReaderOptions (writerOptions toc) includeCode
   where
-    defaultOptions = defaultHakyllWriterOptions
-    blogOptions = const blogWriterOptions
+    writerOptions toc = maybe defaultHakyllWriterOptions (const blogWriterOptions) (isMaybeTrue toc)
+    isMaybeTrue Nothing = Nothing
+    isMaybeTrue (Just s) = readMaybe s >>= \x -> if x then Just True else Nothing
+
+includeCode :: Pandoc -> Compiler Pandoc
+includeCode (Pandoc meta blocks) =
+  Pandoc <$> pure meta <*> mapM updateCodeBlock blocks
+  where
+    updateCodeBlock :: Block -> Compiler Block
+    updateCodeBlock (CodeBlock attr block) = do
+      CodeBlock <$> pure attr <*> loadCode block
+    updateCodeBlock b = return b
+
+data Include = Include Identifier | Static Text
+
+loadCode :: Text -> Compiler Text
+loadCode text = do
+  mconcat <$> traverse include (parseText text)
+  where
+    include :: Include -> Compiler Text
+    include (Static t) = return t
+    include (Include path) = decodeUtf8 . toStrict <$> loadBody path
+
+    parseText :: Text -> [Include]
+    parseText input = go input
+      where
+        delim :: Text
+        delim = "$include "
+
+        go s =
+          case breakOnText delim s of
+            Nothing -> [Static s]
+            Just (before, restAtDelim) ->
+              let afterDelim = T.drop (T.length delim) restAtDelim
+                  -- find closing '$' that ends the include filename
+                  (fname, afterClose) = T.breakOn "$" afterDelim
+               in case afterClose of
+                    "" -> [Static before] -- no closing '$' found (or choose to error)
+                    _ ->
+                      Static before : Include (fromFilePath (T.unpack fname)) : go (T.tail afterClose)
+        breakOnText :: Text -> Text -> Maybe (Text, Text)
+        breakOnText needle haystack =
+          case T.breakOn needle haystack of
+            (prefix, suffix)
+              | T.null suffix -> Nothing
+              | otherwise -> Just (prefix, suffix)
 
 indexCompiler :: Item String -> Compiler (Item String)
 indexCompiler = withItemBody (return . withTags dropIndex)
@@ -425,8 +484,8 @@ rootRoute =
     dropDirectory ("/" : ds) = dropDirectory ds
     dropDirectory ds = drop 1 ds
 
-pageRoute :: Routes
-pageRoute =
+indexRoute :: Routes
+indexRoute =
   removeExtension `composeRoutes` addIndex
   where
     removeExtension = setExtension mempty
@@ -436,13 +495,13 @@ pageRoute =
 blogRoute :: Routes
 blogRoute =
   customRoute (takeFileName . toFilePath)
-    `composeRoutes` metadataRoute dateRoute
-    `composeRoutes` dropDateRoute
-    `composeRoutes` pageRoute
+    `composeRoutes` dateFolderRoute
+    `composeRoutes` dropDateFileRoute
+    `composeRoutes` indexRoute
   where
-    dateRoute metadata = customRoute $ \id' -> joinPath [dateFolder id' metadata, toFilePath id']
-    dateFolder id' = maybe mempty (formatTime defaultTimeLocale "%Y/%m") . tryParseDate id'
-    dropDateRoute = gsubRoute "[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}-" (const mempty)
+    dateFolderRoute = customRoute $ \ident -> joinPath [dateFolder ident, toFilePath ident]
+    dateFolder = maybe mempty (formatTime defaultTimeLocale "%Y/%m") . tryParseDate
+    dropDateFileRoute = gsubRoute "[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}-" (const mempty)
 
 decksRoute :: Routes
 decksRoute =
@@ -596,34 +655,24 @@ renderLink pre text (Just url) =
     H.a ! href (toValue $ toUrl url) $ toHtml text
 
 -- dates
-tryParseDate :: Identifier -> Metadata -> Maybe UTCTime
+tryParseDate :: Identifier -> Maybe UTCTime
 tryParseDate =
   tryParseDateWithLocale defaultTimeLocale
 
-tryParseDateWithLocale :: TimeLocale -> Identifier -> Metadata -> Maybe UTCTime
-tryParseDateWithLocale locale id' metadata = do
-  let tryField k fmt = lookupString k metadata >>= parseTime' fmt
-      fn = takeFileName $ toFilePath id'
-  maybe empty' return $
-    msum $
-      [tryField "published" fmt | fmt <- formats]
-        ++ [tryField "date" fmt | fmt <- formats]
-        ++ [parseTime' "%Y-%m-%d" $ intercalate "-" $ take 3 $ splitAll "-" fn]
+tryParseDateWithLocale :: TimeLocale -> Identifier -> Maybe UTCTime
+tryParseDateWithLocale locale ident = do
+  maybe failure return $
+    parseTime "%Y-%m-%d" $
+      intercalate "-" $
+        take 3 $
+          splitAll "-" (takeFileName $ toFilePath ident)
   where
-    empty' =
+    failure =
       fail $
         "Hakyll.Web.Template.Context.getItemUTC: "
           ++ "could not parse time for "
-          ++ show id'
-    parseTime' = parseTimeM True locale
-    formats =
-      [ "%a, %d %b %Y %H:%M:%S %Z",
-        "%Y-%m-%dT%H:%M:%S%Z",
-        "%Y-%m-%d %H:%M:%S%Z",
-        "%Y-%m-%d",
-        "%B %e, %Y %l:%M %p",
-        "%B %e, %Y"
-      ]
+          ++ show ident
+    parseTime = parseTimeM False locale
 
 -- misc
 split :: (Char -> Bool) -> String -> [String]

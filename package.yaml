@@ -36,6 +36,7 @@ executables:
       - hakyll
       - containers
       - text
+      - bytestring
       - time
       - filepath
       - blaze-html
