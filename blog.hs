@@ -5,7 +5,6 @@ import Control.Monad (filterM, (<=<))
 import Data.ByteString.Lazy (toStrict)
 import Data.Char (isSpace, toLower, toUpper)
 import Data.Either (fromRight)
-import Data.Functor ((<&>))
 import Data.List (intercalate, intersperse, isPrefixOf, isSuffixOf)
 import qualified Data.Map as M
 import Data.Maybe (fromMaybe)
@@ -14,7 +13,8 @@ import qualified Data.Text as T
 import Data.Text.Encoding (decodeUtf8)
 import Data.Time.Clock (UTCTime (..))
 import Data.Time.Format (TimeLocale, defaultTimeLocale, formatTime, parseTimeM)
-import Hakyll
+import Hakyll hiding (categoryField, tagsField, urlField)
+import qualified Hakyll.Web.Template.Context as C
 import System.Environment (lookupEnv)
 import System.FilePath
 import Text.Blaze.Html (toHtml, toValue, (!))
@@ -115,6 +115,9 @@ blogWriterOptions =
 decksSnapshot :: Snapshot
 decksSnapshot = "decks-content"
 
+feedLength :: Int
+feedLength = 20
+
 feedConfiguration :: FeedConfiguration
 feedConfiguration =
   FeedConfiguration
@@ -130,14 +133,14 @@ feedConfiguration =
 --------------------------------------------------------------------------------
 main :: IO ()
 main = do
-  drafts <- isMaybeTrue <$> lookupEnv "DRAFTS"
+  isDrafts <- isMaybeTrue <$> lookupEnv "DRAFTS"
   let includePattern =
-        case drafts of
-          Just True -> blogPattern .||. draftPattern
-          _ -> blogPattern
+        if isDrafts
+          then blogPattern .||. draftPattern
+          else blogPattern
 
   hakyllWith blogConfig $ do
-    excludePattern <- fmap fromList $ includeTagM "icelandic" <=< getMatches $ blogPattern
+    excludePattern <- fromList <$> (getMatches blogPattern >>= hasTag "icelandic")
     let visiblePattern =
           includePattern .&&. complement excludePattern
 
@@ -161,18 +164,18 @@ main = do
         makeItem ""
           >>= loadAndApplyTemplate "templates/blog-list.html" (blogCtx 1 pages categories tags)
           >>= loadAndApplyTemplate "templates/default.html" defaultCtx
-          >>= indexCompiler
+          >>= indexUrls
           >>= relativizeUrls
 
     -- blogs
-    match includePattern $ do
+    match visiblePattern $ do
       route blogRoute
       compile $
         blogCompiler
           >>= saveSnapshot blogSnapshot
           >>= loadAndApplyTemplate "templates/blog-detail.html" (blogDetailCtx categories tags)
           >>= loadAndApplyTemplate "templates/default.html" defaultCtx
-          >>= indexCompiler
+          >>= indexUrls
           >>= relativizeUrls
 
     -- blog pages
@@ -182,7 +185,7 @@ main = do
         makeItem (show i)
           >>= loadAndApplyTemplate "templates/blog-list.html" (blogCtx i pages categories tags)
           >>= loadAndApplyTemplate "templates/default.html" defaultCtx
-          >>= indexCompiler
+          >>= indexUrls
           >>= relativizeUrls
 
     -- blog category index
@@ -193,16 +196,17 @@ main = do
         makeItem category
           >>= loadAndApplyTemplate "templates/blog-list.html" (blogCtx 1 catPages categories tags)
           >>= loadAndApplyTemplate "templates/default.html" defaultCtx
-          >>= indexCompiler
+          >>= indexUrls
           >>= relativizeUrls
+
+      -- blog category pages
       paginateRules catPages $ \i _ -> do
-        -- blog category pages
         route idRoute
         compile $
           makeItem category
             >>= loadAndApplyTemplate "templates/blog-list.html" (blogCtx i catPages categories tags)
             >>= loadAndApplyTemplate "templates/default.html" defaultCtx
-            >>= indexCompiler
+            >>= indexUrls
             >>= relativizeUrls
 
     -- blog tags index
@@ -213,16 +217,17 @@ main = do
         makeItem tag
           >>= loadAndApplyTemplate "templates/blog-list.html" (blogCtx 1 tagPages categories tags)
           >>= loadAndApplyTemplate "templates/default.html" defaultCtx
-          >>= indexCompiler
+          >>= indexUrls
           >>= relativizeUrls
+
+      -- blog tags pages
       paginateRules tagPages $ \i _ -> do
-        -- blog tags pages
         route idRoute
         compile $
           makeItem tag
             >>= loadAndApplyTemplate "templates/blog-list.html" (blogCtx i tagPages categories tags)
             >>= loadAndApplyTemplate "templates/default.html" defaultCtx
-            >>= indexCompiler
+            >>= indexUrls
             >>= relativizeUrls
 
     -- decks
@@ -232,7 +237,7 @@ main = do
         blogCompiler
           >>= saveSnapshot decksSnapshot
           >>= loadAndApplyTemplate "templates/decks-detail.html" decksDetailCtx
-          >>= indexCompiler
+          >>= indexUrls
           >>= relativizeUrls
 
     match "decks/**" $ do
@@ -245,13 +250,15 @@ main = do
         makeItem "decks"
           >>= loadAndApplyTemplate "templates/decks-list.html" decksCtx
           >>= loadAndApplyTemplate "templates/default.html" decksCtx
-          >>= indexCompiler
+          >>= indexUrls
           >>= relativizeUrls
 
     -- atom
     create ["atom.xml"] $ do
       route idRoute
-      compile $ renderBlogAtom <=< fmap (take 20) . loadBlogs $ visiblePattern
+      compile $
+        take feedLength <$> loadBlogs visiblePattern
+          >>= renderBlogAtom
 
     -- static content
     match "static/**" $ do
@@ -265,16 +272,16 @@ main = do
 
     match ("css/**.scss" .&&. complement "css/**_*.scss") $ do
       route $ setExtension "css"
-      compile $ sassCompiler <&> fmap compressCss
+      compile $ fmap compressCss <$> sassCompiler
 
     match "css/webfonts/*" $ do
       route idRoute
       compile copyFileCompiler
 
+    -- disable GitHub's Jekyll
     create [".nojekyll"] $ do
-      -- disable GitHub's Jekyll
       route idRoute
-      compile copyFileCompiler
+      compile $ makeItem ("" :: String)
 
     -- files to include code in blog posts
     match ("blogs/**.ts" .||. "drafts/**.ts") $ do
@@ -293,7 +300,7 @@ defaultCtx =
     <> pageTitleField "page.title"
     <> constField "page.description" blogDescription
     <> constField "page.root" blogRoot
-    <> urlField' "page.url"
+    <> urlField "page.url"
     <> pathField "page.path"
     <> polishField "polish"
     <> metadataField
@@ -303,7 +310,6 @@ pageTitleField key =
   aliasContext alias metadataField
     <> pathTitleField key -- use page title from metadata
     <> constField key "Crypto and Code" -- or read from the path
-    -- alternatively use this
   where
     alias x | x == key = "title"
     alias x = x
@@ -334,9 +340,9 @@ blogDetailCtx :: Tags -> Tags -> Context String
 blogDetailCtx categories tags =
   pageTitleField "blog.title"
     <> dateField "blog.date" "%B %e, %Y"
-    <> urlField' "blog.url"
-    <> categoryField' "blog.category" categories
-    <> tagsField' "blog.tags" tags
+    <> urlField "blog.url"
+    <> categoryField "blog.category" categories
+    <> tagsField "blog.tags" tags
     <> field "blog.next.url" nextBlog
     <> field "blog.previous.url" previousBlog
     <> summaryField "blog.summary"
@@ -351,7 +357,7 @@ decksCtx =
 decksDetailCtx :: Context String
 decksDetailCtx =
   dateField "date" "%B %e, %Y"
-    <> urlField' "url"
+    <> urlField "url"
     <> defaultCtx
     <> constField "theme" "black"
 
@@ -361,7 +367,7 @@ feedCtx =
     <> aliasContext alias metadataField
     <> teaserField "description" blogSnapshot -- description from metadata
     <> previewField "description" blogSnapshot -- teaser is description
-    <> urlField' "url" -- first paragraph is description
+    <> urlField "url" -- first paragraph is description
   where
     alias "description" = "summary"
     alias x = x
@@ -374,10 +380,19 @@ feedCtx =
 blogCompiler :: Compiler (Item String)
 blogCompiler = do
   ident <- getUnderlying
-  toc <- getMetadataField ident "withtoc"
-  pandocCompilerWithTransformM blogReaderOptions (writerOptions toc) includeCode
+  isTOC <- isMaybeTrue <$> getMetadataField ident "withtoc"
+  pandocCompilerWithTransformM blogReaderOptions (writerOptions isTOC) includeCode
   where
-    writerOptions toc = maybe defaultHakyllWriterOptions (const blogWriterOptions) (isMaybeTrue toc)
+    writerOptions toc =
+      if toc
+        then blogWriterOptions
+        else defaultHakyllWriterOptions
+
+sassCompiler :: Compiler (Item String)
+sassCompiler = do
+  ident <- getUnderlying
+  output <- unixFilter "sass" [toFilePath ident] ""
+  makeItem output
 
 -- includeCode tranforms the Pandoc code blocks, to include files relative to the blog post
 --    $include("program.ts")$ will insert the contents of program.ts
@@ -423,20 +438,14 @@ includeFile text = do
               | T.null suffix -> Nothing
               | otherwise -> Just (prefix, suffix)
 
-indexCompiler :: Item String -> Compiler (Item String)
-indexCompiler = withItemBody (return . withTags dropIndex)
+indexUrls :: Item String -> Compiler (Item String)
+indexUrls = withItemBody (return . withTags dropIndex)
   where
     dropIndex (TagOpen "a" attrs) = TagOpen "a" (dropIndex' <$> attrs)
     dropIndex tag = tag
     dropIndex' ("href", url) | not (isExternal url) = ("href", dropFileName url <> takeHash url)
     dropIndex' z = z
     takeHash = dropWhile (/= '#')
-
-sassCompiler :: Compiler (Item String)
-sassCompiler = do
-  ident <- getUnderlying
-  output <- unixFilter "sass" [toFilePath ident] ""
-  makeItem output
 
 loadBlogs :: Pattern -> Compiler [Item String]
 loadBlogs =
@@ -530,12 +539,12 @@ pathTitleField =
     capitalize [] = []
     capitalize (x : xs) = toUpper x : map toLower xs
 
-urlField' :: String -> Context String
-urlField' =
-  mapContext dropFileName . urlField
+urlField :: String -> Context String
+urlField =
+  mapContext dropFileName . C.urlField
 
-categoryField' :: String -> Tags -> Context a
-categoryField' =
+categoryField :: String -> Tags -> Context a
+categoryField =
   tagsFieldWith getCategory (renderLink "@") mconcat
 
 categoryListField :: String -> Tags -> Context a
@@ -547,8 +556,8 @@ categoryListField key tags =
       "@"
       H.a ! href (toValue url) $ toHtml tag
 
-tagsField' :: String -> Tags -> Context a
-tagsField' =
+tagsField :: String -> Tags -> Context a
+tagsField =
   tagsFieldWith getTags (renderLink "#") (mconcat . intersperse " ")
 
 tagsListField :: String -> Tags -> Context a
@@ -562,10 +571,9 @@ tagsListField key tags =
 
 summaryField :: String -> Context String
 summaryField key =
-  field key meta
-    <> teaserField key blogSnapshot -- summary from metadata
-    <> previewField key blogSnapshot -- teaser is summary
-    -- first paragraph is summary
+  field key meta -- summary from metadata
+    <> teaserField key blogSnapshot -- teaser is summary
+    <> previewField key blogSnapshot -- first paragraph is summary
   where
     meta :: Item a -> Compiler String
     meta item = do
@@ -612,7 +620,7 @@ polishField name =
   functionField name $ \args _ ->
     return $ withTags text' (unwords args)
   where
-    text' (TagText s) = TagText (concatMap f (split isSpace s))
+    text' (TagText s) = TagText (concatMap emoji (split isSpace s))
     text' t = t
 
     split :: (Char -> Bool) -> String -> [String]
@@ -623,36 +631,29 @@ polishField name =
         go p ("", y) = go (not . p) (break p y)
         go p (x, y) = x : go (not . p) (break p y)
 
-    f "" = ""
-    f ":+1:" = "👍"
-    f ":coffee:" = "☕️"
-    f ":disappointed:" = "😞"
-    f ":frowning:" = "😦"
-    f ":grinning:" = "😀"
-    f ":heart:" = "❤"
-    f ":ramen:" = "🍜"
-    f ":rice_ball:" = "🍙"
-    f ":smile:" = "😄"
-    f ":sushi:" = "🍣"
-    f ":stuck_out_tongue:" = "😛"
-    f ":thumbsup:" = "👍"
-    f ":tada:" = "🎉"
-    f x = x
+    emoji "" = ""
+    emoji ":+1:" = "👍"
+    emoji ":coffee:" = "☕️"
+    emoji ":disappointed:" = "😞"
+    emoji ":frowning:" = "😦"
+    emoji ":grinning:" = "😀"
+    emoji ":heart:" = "❤"
+    emoji ":ramen:" = "🍜"
+    emoji ":rice_ball:" = "🍙"
+    emoji ":smile:" = "😄"
+    emoji ":sushi:" = "🍣"
+    emoji ":stuck_out_tongue:" = "😛"
+    emoji ":thumbsup:" = "👍"
+    emoji ":tada:" = "🎉"
+    emoji x = x
 
 --------------------------------------------------------------------------------
 -- METADATA
 --------------------------------------------------------------------------------
-includeTagM :: (MonadMetadata m) => String -> [Identifier] -> m [Identifier]
-includeTagM tag =
-  filterTagsM (return . elem tag)
+hasTag :: (MonadMetadata m) => String -> [Identifier] -> m [Identifier]
+hasTag tag =
+  filterM (fmap (elem tag) . getTags)
 
-filterTagsM :: (MonadMetadata m) => ([String] -> m Bool) -> [Identifier] -> m [Identifier]
-filterTagsM p =
-  filterM (p <=< getTags)
-
---------------------------------------------------------------------------------
--- PAGINATION
---------------------------------------------------------------------------------
 buildPages :: (MonadMetadata m, MonadFail m) => Pattern -> (PageNumber -> Identifier) -> m Paginate
 buildPages =
   buildPaginateWith
@@ -690,8 +691,8 @@ tryParseDateWithLocale locale ident = do
           ++ show ident
     parseTime = parseTimeM False locale
 
-isMaybeTrue :: Maybe String -> Maybe Bool
-isMaybeTrue Nothing = Nothing
+isMaybeTrue :: Maybe String -> Bool
+isMaybeTrue Nothing = False
 isMaybeTrue (Just s)
-  | map toUpper s == "TRUE" = Just True
-  | otherwise = Nothing
+  | map toUpper s == "TRUE" = True
+  | otherwise = False
