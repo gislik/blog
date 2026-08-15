@@ -8,15 +8,14 @@ import Data.Either (fromRight)
 import Data.List (intercalate, intersperse, isPrefixOf, isSuffixOf)
 import qualified Data.Map as M
 import Data.Maybe (fromMaybe)
-import Data.Text (Text, pack)
-import qualified Data.Text as T
+import Data.Text (Text, pack, unpack)
 import Data.Text.Encoding (decodeUtf8)
 import Data.Time.Clock (UTCTime (..))
 import Data.Time.Format (TimeLocale, defaultTimeLocale, formatTime, parseTimeM)
 import Hakyll hiding (categoryField, tagsField, urlField)
 import qualified Hakyll.Web.Template.Context as C
 import System.Environment (lookupEnv)
-import System.FilePath
+import System.FilePath (dropFileName, joinPath, splitDirectories, splitPath, takeDirectory, takeFileName, (</>))
 import Text.Blaze.Html (toHtml, toValue, (!))
 import Text.Blaze.Html.Renderer.String (renderHtml)
 import qualified Text.Blaze.Html5 as H
@@ -26,6 +25,7 @@ import Text.Pandoc (Block (..), Pandoc (..))
 import Text.Pandoc.Class (runPure)
 import Text.Pandoc.Options (Extension (..), HTMLMathMethod (..), ReaderOptions (..), WriterOptions (..), extensionsFromList)
 import Text.Pandoc.Templates (WithDefaultPartials (..), compileTemplate)
+import Text.ParserCombinators.ReadP (between, char, eof, many1, munch1, readP_to_S, string, (<++))
 
 --------------------------------------------------------------------------------
 -- CONFIGURATION
@@ -409,7 +409,7 @@ data Segment = Include FilePath | Static Text
 
 includeFile :: Text -> Compiler Text
 includeFile text = do
-  mconcat <$> traverse include (parseText "$include(\"" "\")$" text)
+  mconcat <$> traverse include (parseSegments (unpack text))
   where
     include :: Segment -> Compiler Text
     include (Static t) = return t
@@ -417,26 +417,16 @@ includeFile text = do
       fp <- getResourceFilePath
       decodeUtf8 . toStrict <$> loadBody (fromFilePath (takeDirectory fp </> file))
 
-    parseText :: Text -> Text -> Text -> [Segment]
-    parseText before after input = go input
+    parseSegments :: String -> [Segment]
+    parseSegments =
+      concatMap fst . (readP_to_S (many1 parseSegment <* eof))
       where
-        go s =
-          case breakOnText before s of
-            Nothing -> [Static s]
-            Just (beforeDelim, restAtDelim) ->
-              let afterDelim = T.drop (T.length before) restAtDelim
-                  (fname, afterClose) = T.breakOn after afterDelim
-               in case afterClose of
-                    "" -> [Static beforeDelim]
-                    _ ->
-                      Static beforeDelim : Include (T.unpack fname) : go (T.tail afterClose)
-
-        breakOnText :: Text -> Text -> Maybe (Text, Text)
-        breakOnText needle haystack =
-          case T.breakOn needle haystack of
-            (prefix, suffix)
-              | T.null suffix -> Nothing
-              | otherwise -> Just (prefix, suffix)
+        parseSegment = parseInclude <++ parseStatic
+        parseStatic = Static . pack <$> munch1 (not . (== '$'))
+        parseInclude = Include <$> (string "$include(" *> (surround '"' path <++ path) <* string ")$")
+          where
+            path = munch1 (not . flip elem ['"', ')'])
+            surround c = between (char c) (char c)
 
 indexUrls :: Item String -> Compiler (Item String)
 indexUrls = withItemBody (return . withTags dropIndex)
