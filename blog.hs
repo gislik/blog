@@ -1,7 +1,8 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 import Control.Applicative (Alternative (..), (<|>))
-import Control.Monad (filterM, (<=<))
+import Control.Monad (filterM, liftM, (<=<))
 import Data.ByteString.Lazy (toStrict)
 import Data.Char (isSpace, toLower, toUpper)
 import Data.Either (fromRight)
@@ -168,7 +169,6 @@ main = do
         makeItem ""
           >>= loadAndApplyTemplate "templates/blog-list.html" (blogCtx 1 pages categories tags)
           >>= loadAndApplyTemplate "templates/default.html" defaultCtx
-          >>= indexUrls
           >>= relativizeUrls
 
     -- blogs
@@ -176,10 +176,10 @@ main = do
       route blogRoute
       compile $
         blogCompiler
+          >>= modifyUrl
           >>= saveSnapshot blogSnapshot
           >>= loadAndApplyTemplate "templates/blog-detail.html" (blogDetailCtx categories tags)
           >>= loadAndApplyTemplate "templates/default.html" defaultCtx
-          >>= indexUrls
           >>= relativizeUrls
 
     -- blog assets
@@ -194,7 +194,6 @@ main = do
         makeItem (show i)
           >>= loadAndApplyTemplate "templates/blog-list.html" (blogCtx i pages categories tags)
           >>= loadAndApplyTemplate "templates/default.html" defaultCtx
-          >>= indexUrls
           >>= relativizeUrls
 
     -- blog category index
@@ -205,7 +204,6 @@ main = do
         makeItem category
           >>= loadAndApplyTemplate "templates/blog-list.html" (blogCtx 1 catPages categories tags)
           >>= loadAndApplyTemplate "templates/default.html" defaultCtx
-          >>= indexUrls
           >>= relativizeUrls
 
       -- blog category pages
@@ -215,7 +213,6 @@ main = do
           makeItem category
             >>= loadAndApplyTemplate "templates/blog-list.html" (blogCtx i catPages categories tags)
             >>= loadAndApplyTemplate "templates/default.html" defaultCtx
-            >>= indexUrls
             >>= relativizeUrls
 
     -- blog tags index
@@ -226,7 +223,6 @@ main = do
         makeItem tag
           >>= loadAndApplyTemplate "templates/blog-list.html" (blogCtx 1 tagPages categories tags)
           >>= loadAndApplyTemplate "templates/default.html" defaultCtx
-          >>= indexUrls
           >>= relativizeUrls
 
       -- blog tags pages
@@ -236,7 +232,6 @@ main = do
           makeItem tag
             >>= loadAndApplyTemplate "templates/blog-list.html" (blogCtx i tagPages categories tags)
             >>= loadAndApplyTemplate "templates/default.html" defaultCtx
-            >>= indexUrls
             >>= relativizeUrls
 
     -- decks
@@ -244,9 +239,9 @@ main = do
       route decksRoute
       compile $
         blogCompiler
+          >>= modifyUrl
           >>= saveSnapshot decksSnapshot
           >>= loadAndApplyTemplate "templates/decks-detail.html" decksDetailCtx
-          >>= indexUrls
           >>= relativizeUrls
 
     -- old decks (redirect)
@@ -268,7 +263,7 @@ main = do
         makeItem "decks"
           >>= loadAndApplyTemplate "templates/decks-list.html" decksCtx
           >>= loadAndApplyTemplate "templates/default.html" decksCtx
-          >>= indexUrls
+          >>= modifyUrl
           >>= relativizeUrls
 
     -- atom
@@ -446,16 +441,27 @@ includeFile text = do
             path = munch1 (not . flip elem ['"', ')'])
             surround c = between (char c) (char c)
 
-indexUrls :: Item String -> Compiler (Item String)
-indexUrls = withItemBody (return . withTags modifyUrl)
+modifyUrl :: Item String -> Compiler (Item String)
+modifyUrl item = do
+  fp <- liftM (fromMaybe mempty) $ getRoute =<< getUnderlying
+  traverse (return . withTags (modifyTag fp)) item
   where
-    modifyUrl (TagOpen "a" attrs) = TagOpen "a" (modifyAttr <$> attrs)
-    modifyUrl tag = tag
-    modifyAttr ("href", url)
-      | not (isExternal url) && takeFileName url == "index.html" =
-          ("href", dropFileName url <> dropHash url)
-    modifyAttr z = z
-    dropHash = dropWhile (/= '#')
+    modifyTag fp = \case
+      (TagOpen "a" attrs) -> TagOpen "a" (modifyAttr fp <$> attrs)
+      (TagOpen "img" attrs) -> TagOpen "img" (modifyAttr fp <$> attrs)
+      tag -> tag
+    modifyAttr fp = \case
+      ("href", url)
+        | not (isExternal url) ->
+            ("href", toUrl $ takeDirectory fp </> dropIndex url)
+      ("src", url)
+        | not (isExternal url) ->
+            ("src", toUrl $ takeDirectory fp </> dropIndex url)
+      attr -> attr
+    -- dropHash = dropWhile (/= '#')
+    dropIndex = \case
+      "index.html" -> mempty
+      url -> url
 
 loadBlogs :: Pattern -> Compiler [Item String]
 loadBlogs =
@@ -483,7 +489,8 @@ previousBlog blog = do
 
 loadDecks :: Pattern -> Compiler [Item String]
 loadDecks =
-  recentFirst
+  traverse modifyUrl
+    <=< recentFirst
     <=< flip loadAllSnapshots decksSnapshot . (.&&. hasNoVersion)
 
 renderBlogAtom :: [Item String] -> Compiler (Item String)
