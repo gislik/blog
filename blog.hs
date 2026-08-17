@@ -447,13 +447,15 @@ includeFile text = do
             surround c = between (char c) (char c)
 
 indexUrls :: Item String -> Compiler (Item String)
-indexUrls = withItemBody (return . withTags dropIndex)
+indexUrls = withItemBody (return . withTags modifyUrl)
   where
-    dropIndex (TagOpen "a" attrs) = TagOpen "a" (dropIndex' <$> attrs)
-    dropIndex tag = tag
-    dropIndex' ("href", url) | not (isExternal url) = ("href", dropFileName url <> takeHash url)
-    dropIndex' z = z
-    takeHash = dropWhile (/= '#')
+    modifyUrl (TagOpen "a" attrs) = TagOpen "a" (modifyAttr <$> attrs)
+    modifyUrl tag = tag
+    modifyAttr ("href", url)
+      | not (isExternal url) && takeFileName url == "index.html" =
+          ("href", dropFileName url <> dropHash url)
+    modifyAttr z = z
+    dropHash = dropWhile (/= '#')
 
 loadBlogs :: Pattern -> Compiler [Item String]
 loadBlogs =
