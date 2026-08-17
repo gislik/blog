@@ -240,7 +240,7 @@ main = do
             >>= relativizeUrls
 
     -- decks
-    match "decks/*.md" $ do
+    match "decks/**.md" $ do
       route decksRoute
       compile $
         blogCompiler
@@ -249,10 +249,19 @@ main = do
           >>= indexUrls
           >>= relativizeUrls
 
+    -- old decks (redirect)
+    match "decks/**.md" . version "redirect" $ do
+      route oldDecksRoute
+      compile $ do
+        dir <- maybe mempty (takeBaseName . takeDirectory) <$> (getUnderlying >>= getRoute)
+        makeItem (Redirect $ "../../../" <> dir)
+
+    -- deck assets
     match "decks/**" $ do
       route decksAssetsRoute
       compile copyFileCompiler
 
+    -- deck index
     create ["decks/index.html"] $ do
       route idRoute
       compile $
@@ -360,7 +369,7 @@ blogDetailCtx categories tags =
 
 decksCtx :: Context String
 decksCtx =
-  listField "decks" decksDetailCtx (loadDecks "decks/*.md")
+  listField "decks" decksDetailCtx (loadDecks "decks/**.md")
     <> defaultCtx
 
 decksDetailCtx :: Context String
@@ -472,7 +481,8 @@ previousBlog blog = do
 
 loadDecks :: Pattern -> Compiler [Item String]
 loadDecks =
-  recentFirst <=< flip loadAllSnapshots decksSnapshot
+  recentFirst
+    <=< flip loadAllSnapshots decksSnapshot . (.&&. hasNoVersion)
 
 renderBlogAtom :: [Item String] -> Compiler (Item String)
 renderBlogAtom =
@@ -501,13 +511,14 @@ dropDateRoute =
 
 blogRoute :: Routes
 blogRoute =
+  -- YYYY/MM/name/index.html
   assetRoute
     `composeRoutes` setExtension mempty
     `composeRoutes` customRoute ((</> "index.html") . takeDirectory . toFilePath)
 
 assetRoute :: Routes
 assetRoute =
-  -- YYYY/MM/name/index.html
+  -- YYYY/MM/name/file.ext
   (matchRoute "*/*/*/*" dateFolderRoute <> matchRoute "*/*/*" dateFileRoute)
     `composeRoutes` dropDateRoute
   where
@@ -524,12 +535,21 @@ assetRoute =
 
 decksRoute :: Routes
 decksRoute =
-  blogRoute `composeRoutes` prefixRoute "decks"
-  where
-    prefixRoute prefix = customRoute $ (prefix </>) . toFilePath
+  -- decks/name/index.html
+  decksAssetsRoute
+    `composeRoutes` customRoute ((</> "index.html") . takeDirectory . toFilePath)
 
 decksAssetsRoute :: Routes
 decksAssetsRoute =
+  -- decks/name/file.ext
+  dropDateRoute
+
+oldDecksRoute :: Routes
+oldDecksRoute =
+  blogRoute
+    `composeRoutes` prefixRoute "decks"
+  where
+    prefixRoute prefix = customRoute $ (prefix </>) . toFilePath
 
 --------------------------------------------------------------------------------
 -- CONTEXTS
