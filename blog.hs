@@ -262,7 +262,7 @@ main = do
       compile $
         makeItem "decks"
           >>= loadAndApplyTemplate "templates/decks-list.html" decksCtx
-          >>= loadAndApplyTemplate "templates/default.html" decksCtx
+          >>= loadAndApplyTemplate "templates/default.html" defaultCtx
           >>= modifyUrl
           >>= relativizeUrls
 
