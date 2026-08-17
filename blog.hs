@@ -5,17 +5,18 @@ import Control.Monad (filterM, (<=<))
 import Data.ByteString.Lazy (toStrict)
 import Data.Char (isSpace, toLower, toUpper)
 import Data.Either (fromRight)
+import Data.Foldable (asum)
 import Data.List (intercalate, intersperse, isPrefixOf, isSuffixOf)
 import qualified Data.Map as M
-import Data.Maybe (fromMaybe)
+import Data.Maybe (fromMaybe, listToMaybe, maybeToList)
 import Data.Text (Text, pack, unpack)
 import Data.Text.Encoding (decodeUtf8)
 import Data.Time.Clock (UTCTime (..))
 import Data.Time.Format (TimeLocale, defaultTimeLocale, formatTime, parseTimeM)
-import Hakyll hiding (categoryField, tagsField, urlField)
+import Hakyll hiding (buildCategories, categoryField, getCategory, tagsField, urlField)
 import qualified Hakyll.Web.Template.Context as C
 import System.Environment (lookupEnv)
-import System.FilePath (dropFileName, joinPath, splitDirectories, splitPath, takeDirectory, takeFileName, (</>))
+import System.FilePath (dropExtension, dropFileName, joinPath, splitDirectories, splitPath, takeBaseName, takeDirectory, takeFileName, (</>))
 import Text.Blaze.Html (toHtml, toValue, (!))
 import Text.Blaze.Html.Renderer.String (renderHtml)
 import qualified Text.Blaze.Html5 as H
@@ -46,10 +47,13 @@ blogRoot :: String
 blogRoot = "https://gisli.hamstur.is"
 
 blogPattern :: Pattern
-blogPattern = "blog/**.md" .||. "blog/**.html"
+blogPattern = "blog/**.md" .||. "blog/**.html" -- legacy blog posts
 
 draftPattern :: Pattern
 draftPattern = "drafts/**.md"
+
+assetPattern :: Pattern
+assetPattern = ("blog/**" .||. "drafts/**") .&&. complement (blogPattern .||. draftPattern)
 
 blogSnapshot :: Snapshot
 blogSnapshot = "blog-content"
@@ -168,7 +172,7 @@ main = do
           >>= relativizeUrls
 
     -- blogs
-    match visiblePattern $ do
+    match includePattern $ do
       route blogRoute
       compile $
         blogCompiler
@@ -177,6 +181,11 @@ main = do
           >>= loadAndApplyTemplate "templates/default.html" defaultCtx
           >>= indexUrls
           >>= relativizeUrls
+
+    -- blog assets
+    match assetPattern $ do
+      route assetRoute
+      compile copyFileCompiler
 
     -- blog pages
     paginateRules pages $ \i _ -> do
@@ -262,7 +271,7 @@ main = do
 
     -- static content
     match "static/**" $ do
-      route rootRoute
+      route uponeRoute
       compile copyFileCompiler
 
     -- static css
@@ -472,32 +481,46 @@ renderBlogAtom =
 --------------------------------------------------------------------------------
 -- ROUTES
 --------------------------------------------------------------------------------
-rootRoute :: Routes
-rootRoute =
-  customRoute (joinPath . dropDirectory . splitPath . toFilePath)
-  where
-    dropDirectory [] = []
-    dropDirectory ("/" : ds) = dropDirectory ds
-    dropDirectory ds = drop 1 ds
+uponeRoute :: Routes
+uponeRoute =
+  -- ..
+  customRoute (joinPath . drop 1 . splitPath . toFilePath)
 
 indexRoute :: Routes
 indexRoute =
+  -- name/index.html
   removeExtension `composeRoutes` addIndex
   where
     removeExtension = setExtension mempty
     addIndex = postfixRoute "index.html"
     postfixRoute postfix = customRoute $ (</> postfix) . toFilePath
 
+dropDateRoute :: Routes
+dropDateRoute =
+  gsubRoute "[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}-" (const mempty)
+
 blogRoute :: Routes
 blogRoute =
-  customRoute (takeFileName . toFilePath)
-    `composeRoutes` dateFolderRoute
-    `composeRoutes` dropDateFileRoute
-    `composeRoutes` indexRoute
+  assetRoute
+    `composeRoutes` setExtension mempty
+    `composeRoutes` customRoute ((</> "index.html") . takeDirectory . toFilePath)
+
+assetRoute :: Routes
+assetRoute =
+  -- YYYY/MM/name/index.html
+  (matchRoute "*/*/*/*" dateFolderRoute <> matchRoute "*/*/*" dateFileRoute)
+    `composeRoutes` dropDateRoute
   where
-    dateFolderRoute = customRoute $ \ident -> joinPath [dateFolder ident, toFilePath ident]
-    dateFolder = maybe mempty (formatTime defaultTimeLocale "%Y/%m") . tryParseDate
-    dropDateFileRoute = gsubRoute "[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}-" (const mempty)
+    dateFileRoute = customRoute $ \ident -> dateFolder ident </> dropExtension (fileName ident) </> fileName ident
+    dateFolderRoute = customRoute $ \ident -> dateFolder ident </> dirName ident </> fileName ident
+    dateFolder = maybe mempty (formatTime defaultTimeLocale "%Y/%m") . filePathDate
+    fileName = takeFileName . toFilePath
+    dirName = takeBaseName . takeDirectory . toFilePath
+    -- filePathDate walks down the file path from right to left,
+    -- and tries to parse a date in the file or directory name on the form YYYY-MM-DD-name.
+    filePathDate = asum . (fmap (tryParseDate "%Y-%m-%d" . takeDate) . (reverse . splitPath . toFilePath))
+      where
+        takeDate = intercalate "-" . take 3 . splitAll "-"
 
 decksRoute :: Routes
 decksRoute =
@@ -507,13 +530,6 @@ decksRoute =
 
 decksAssetsRoute :: Routes
 decksAssetsRoute =
-  yearRoute
-    `composeRoutes` monthRoute
-    `composeRoutes` dropDayRoute
-  where
-    yearRoute = gsubRoute "[[:digit:]]{4}-" (\xs -> take 4 xs <> "/")
-    monthRoute = gsubRoute "/[[:digit:]]{2}-" (\xs -> "/" <> (take 2 . drop 1) xs <> "/")
-    dropDayRoute = gsubRoute "/[[:digit:]]{2}-" (const "/")
 
 --------------------------------------------------------------------------------
 -- CONTEXTS
@@ -644,6 +660,20 @@ hasTag :: (MonadMetadata m) => String -> [Identifier] -> m [Identifier]
 hasTag tag =
   filterM (fmap (elem tag) . getTags)
 
+-- getCategory uses the second deepest folder as the category
+getCategory :: (MonadMetadata m) => Identifier -> m [String]
+getCategory =
+  return
+    . maybeToList
+    . fmap takeDirectory
+    . listToMaybe
+    . drop 1
+    . splitPath
+    . toFilePath
+
+buildCategories :: (MonadMetadata m) => Pattern -> (String -> Identifier) -> m Tags
+buildCategories = buildTagsWith getCategory
+
 buildPages :: (MonadMetadata m, MonadFail m) => Pattern -> (PageNumber -> Identifier) -> m Paginate
 buildPages =
   buildPaginateWith
@@ -662,24 +692,13 @@ renderLink pre text (Just url) =
 --------------------------------------------------------------------------------
 -- DATES
 --------------------------------------------------------------------------------
-tryParseDate :: Identifier -> Maybe UTCTime
-tryParseDate =
-  tryParseDateWithLocale defaultTimeLocale
+tryParseDate :: String -> String -> Maybe UTCTime
+tryParseDate format =
+  tryParseDateWithLocale defaultTimeLocale format
 
-tryParseDateWithLocale :: TimeLocale -> Identifier -> Maybe UTCTime
-tryParseDateWithLocale locale ident = do
-  maybe failure return $
-    parseTime "%Y-%m-%d" $
-      intercalate "-" $
-        take 3 $
-          splitAll "-" (takeFileName $ toFilePath ident)
-  where
-    failure =
-      fail $
-        "Hakyll.Web.Template.Context.getItemUTC: "
-          ++ "could not parse time for "
-          ++ show ident
-    parseTime = parseTimeM False locale
+tryParseDateWithLocale :: TimeLocale -> String -> String -> Maybe UTCTime
+tryParseDateWithLocale locale format =
+  parseTimeM True locale format
 
 isMaybeTrue :: Maybe String -> Bool
 isMaybeTrue Nothing = False
