@@ -5,7 +5,7 @@ cabal-version: 2.2
 -- see: https://github.com/sol/hpack
 
 name:           blog
-version:        0.5.0.0
+version:        0.6.0.0
 description:    Please see the README on GitHub at <https://github.com/gislik/blog#readme>
 homepage:       https://github.com/gislik/blog#readme
 bug-reports:    https://github.com/gislik/blog/issues
