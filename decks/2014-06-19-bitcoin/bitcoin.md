@@ -4,11 +4,11 @@ summary: |
   Bitcoin was the initial implementation of a blockchain protocol and although other protocols have emerged Bitcoin serves well as a foundational layer for understanding how these protocols work. I created this deck to use as talking points when ELI5 :) This is an interactive deck. Use the arrow buttons to go down and then to the right.
 reveal: true
 theme: league
-featureimage: 2014/06/bitcoin.png
+featureimage: bitcoin.png
 ---
 <section>
 <section>
-# Bitcoin 
+# Bitcoin
 
 Gísli Kristjánsson
 
@@ -41,6 +41,7 @@ Its value is derived from its scarcity and utility.
 - bitcoin units of the currency
 
 - also BTC
+
 </section>
 
 <section>
@@ -57,6 +58,7 @@ Techniques for secure communication in the presence of third parties
 - Public key is derived from the private key
 
 - Form a crypto key pair
+
 </section>
 
 <section>
@@ -74,7 +76,8 @@ Techniques for secure communication in the presence of third parties
 
 - Represents a possible destination for a Bitcoin payment
 
-- Can be generated at no cost 
+- Can be generated at no cost
+
 </section>
 
 <section>
@@ -86,6 +89,7 @@ Techniques for secure communication in the presence of third parties
 
 - Broadcast to the network <br>
 and collected into blocks
+
 </section>
 
 <section>
@@ -97,13 +101,14 @@ A collection of transactions
 <section>
 ## Blockchain
 
-- Ordered collection of blocks 
+- Ordered collection of blocks
 
 - A block points to the previous block <br>
 creating a chain of blocks
 
-- Prevents double spending 
+- Prevents double spending
 with the help of miners
+
 </section>
 
 <section>
@@ -154,12 +159,14 @@ The ledger is secured by having the nodes agree on the information stored in the
 - Agreement among the nodes is achieved by having the miners vote.
 
 - The number of total votes is based on computing power.
+
 </section>
 
 <section>
 ## Anonymity
 
 - Balance is simply associated with an address and its public-private key pair
+
 </section>
 
 <section>
@@ -178,6 +185,7 @@ The ledger is secured by having the nodes agree on the information stored in the
 - No more than 21 million bitcoins will ever exist
 
 - Happens in 2140
+
 </section>
 
 <section>
@@ -187,7 +195,6 @@ The ledger is secured by having the nodes agree on the information stored in the
 
 <img src="Blockchain.png" class="stretch" />
 </section>
-
 
 <section>
 ## How to get
@@ -199,6 +206,7 @@ The ledger is secured by having the nodes agree on the information stored in the
 - Face to face
 
 - ATM
+
 </section>
 
 <section>
@@ -213,6 +221,7 @@ While the number of bitcoins in existence will never exceed 21 million, the mone
 - Keynesian economists argue that deflation is bad
 
 - The Austrian school of thought counters this criticism
+
 </section>
 
 <section>
@@ -227,6 +236,7 @@ While the number of bitcoins in existence will never exceed 21 million, the mone
 - Created from time to time when two blocks are created just a few seconds apart
 
 - More serious forks have occurred after fixing bugs that required backward-incompatible changes
+
 </section>
 </section>
 
@@ -237,7 +247,6 @@ While the number of bitcoins in existence will never exceed 21 million, the mone
 
 <section data-background="#ff4444" data-transition="linear">
 ## Nay-sayers 1/2
-
 
 <blockquote class="fragment">[W]hen the Paris Exhibition closes electric light will close with it and no more be heard of.
 
@@ -277,7 +286,7 @@ While the number of bitcoins in existence will never exceed 21 million, the mone
 
 <blockquote class="fragment">It's got all these technical deficiencies. It's slow. It's unreliable. It doesn't work right. When you do a search, sometimes you get an answer back and sometimes you don't. Sometimes when you dial in you get a busy signal.</blockquote>
 
-<blockquote class="fragment">What happen if your ISP goes out of business? Then you can't get back online.</blockquote> 
+<blockquote class="fragment">What happen if your ISP goes out of business? Then you can't get back online.</blockquote>
 
 <blockquote class="fragment">Once you get on the internet, even assuming you get on the internet, there's nothing to do. There's no content. Time magazine isn't online, the New York Times isn't online. It's just a bunch of nerd stuff.</blockquote>
 </section>
@@ -333,29 +342,30 @@ Basically every single criticism of the Internet ended up getting solved. Every 
 </center>
 </section>
 
-
 <section>
 ## Why now? 1/2
 
-* The internet itself in the form of the ARPANET had been in existence for more than 20 years. 
+- The internet itself in the form of the ARPANET had been in existence for more than 20 years.
   
-* The ideas had been building. 
+- The ideas had been building.
   
-* They just hadn't been put together as a platform.
+- They just hadn't been put together as a platform.
+
 </section>
 
 <section>
 ## Why now? 2/2
 
-* Bitcoin is very sharply reminiscent of this. 
+- Bitcoin is very sharply reminiscent of this.
   
-* It's not an overnight thing. 
+- It's not an overnight thing.
   
-* It's a result of 35 years of cryptography research, going back to the early 1970s with RSA. 
+- It's a result of 35 years of cryptography research, going back to the early 1970s with RSA.
   
-* Digital cash is something people have been working on for 15 years leading into the Bitcoin paper. 
+- Digital cash is something people have been working on for 15 years leading into the Bitcoin paper.
   
-* So it's this long-term development of a very powerful set of ideas that people have been working on for a long time.
+- So it's this long-term development of a very powerful set of ideas that people have been working on for a long time.
+
 </section>
 </section>
 
@@ -380,6 +390,7 @@ Basically every single criticism of the Internet ended up getting solved. Every 
 - Bitcoin transaction fee $0.004
 
 - Bitcoin is 4000x cheaper on $200 transaction
+
 </section>
 
 <section>
@@ -396,6 +407,7 @@ Bitcoin Improvement Proposals
 - Hierachical Deterministic Wallets (HD)
 
 - Payment Protocol
+
 </section>
 
 <section>
@@ -408,6 +420,7 @@ Individuals pledge money to a project that is taken from them only if enough ple
 - Kickstarter
 
 - Web page translation
+
 </section>
 
 <section>
@@ -416,6 +429,7 @@ Individuals pledge money to a project that is taken from them only if enough ple
 - Car keys
 
 - Key cards
+
 </section>
 
 <section>
@@ -424,6 +438,7 @@ Individuals pledge money to a project that is taken from them only if enough ple
 - Listening to Internet radio paid by the second
 - Viewing web pages with a small tip for each ad not shown
 - Buying bandwidth from a WiFi hotspot by the kilobyte
+
 </section>
 
 <section>
@@ -452,18 +467,20 @@ A 3-party can approve or reject a transaction in case of disagreement between th
 - Funds with policies
 
 - Exchanges (Ripple)
+
 </section>
 
 <section>
 ## Platform
 
-* Like the internet, Bitcoin is a platform. 
+- Like the internet, Bitcoin is a platform.
 
-* It's less what can it do today, more what can it do in the future. 
+- It's less what can it do today, more what can it do in the future.
   
-* There are thousands and thousands of things that it might make possible in the future. 
+- There are thousands and thousands of things that it might make possible in the future.
   
-* Digital cash, digital keys, digital voting, digital stocks, digital bonds.
+- Digital cash, digital keys, digital voting, digital stocks, digital bonds.
+
 </section>
 </section>
 

@@ -4,7 +4,7 @@ reveal: true
 theme: blood
 summary: |
   Current blockchain architectures are limited by the blockchain trilemma, which states that only two of the following properties can be achieved; decentralization, security and scalability. As a result, scalability can only be achieved by sacrificing either decentralization or security. A new architecture, which breaks the monolithic design into specialized components of consensus, execution and data availability, reverses the blockchain trilemma. Based on this new understanding, is it conceivable that blockchains, will be able to support the world's economic activity without scarifying important properties?
-featureimage: 2022/02/road-to-10m-tx/10m-tx-sec.jpg
+featureimage: 10m-tx-sec.jpg
 ---
 <section>
 
@@ -173,7 +173,6 @@ Data availability 💾
   <img class="r-strech" src="merkle-tree.png"/>
   </section>
 
-
   <section data-background-color="crimson">
 Zero-knowledge Rollups
 
@@ -185,6 +184,7 @@ Zero-knowledge Rollups
   </section>
 
   <section data-background-color="crimson">
+
 zkEVM on L1
 
   Running on mobile phones and in browsers

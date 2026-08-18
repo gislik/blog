@@ -4,7 +4,7 @@ reveal: true
 theme: white
 summary: |
     Decentralized Finance or DeFi all the rage now pulling in billions of dollars into shaky smart contracts over the period of hours. Keeping track of food-finance protocols is certinaly a full time job. I spent a weekend to get a lay of the land and this here is the result. Enjoy.
-featureimage: 2020/09/current-state-of-defi/defi.png
+featureimage: defi.png
 ---
 
 <section>
@@ -33,6 +33,7 @@ The main idea is to extend the use-cases of public blockchains to not only offer
 - Insurance
 - Prediction markets
 - Staking
+
 </section>
 
 <section>
@@ -58,6 +59,7 @@ Early protocols used order books but automatic market makers are winning
 
 - Dharma vs Compound
 - 0x vs Uniswap
+
 </section>
 
 <section>
@@ -72,7 +74,7 @@ Liquidity is provided by locking tokens in a pool 🎱
 </section>
 
 <section>
-Arbitrageurs are incentivized to keep the the pool balanced 
+Arbitrageurs are incentivized to keep the the pool balanced
 <p class="fragment">
 LPs receive liquidity tokens
 </p>
@@ -90,6 +92,7 @@ The main metric to watch is the Total Value Locked
 | Feb  | 1,000   |
 | July | 2,000   |
 | Sept | 9,000+  |
+
 </section>
 </section>
 
@@ -106,6 +109,7 @@ The main metric to watch is the Total Value Locked
 | wBTC <a href="https://wbtc.network"><img style="vertical-align: middle" height="100" src="wbtc.png" /></a> |   BTCB <a href="https://info.binance.com/en/currencies/bitcoin-bep2"><img style="vertical-align: middle" height="100" src="btcb.png" /></a>   |
 | tBTC <a href="https://tbtc.network/"><img style="vertical-align: middle" height="100" src="tbtc.png" /></a> | renBTC <a href="https://renproject.io/"><img style="vertical-align: middle" height="100" src="renbtc.png" /></a> |
 | &nbsp;  |  |
+
 </section>
 
 <section>
@@ -255,7 +259,7 @@ Roboadvisor
 </p>
 
 <p class="fragment">
-Profit switching lender to optimize lending yields 
+Profit switching lender to optimize lending yields
 </p>
 </section>
 
@@ -268,7 +272,7 @@ $YFI a completely valueless 0 supply token. We reiterate, it has 0 financial val
 </p>
 
 <p class="fragment">
-$YFI rallying by more than 4,000% within days of release. 
+$YFI rallying by more than 4,000% within days of release.
 </p>
 </section>
 </section>
@@ -397,7 +401,7 @@ Security relies on staking rewards
 </section>
 
 <section>
-1/3<sup>rd</sup> of stake needed to attack the network 🦖 
+1/3<sup>rd</sup> of stake needed to attack the network 🦖
 <p class="fragment">
 Attacker could offer stakers more attractive yield than the PoS protocol
 </p>

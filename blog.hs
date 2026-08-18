@@ -371,8 +371,20 @@ decksDetailCtx :: Context String
 decksDetailCtx =
   dateField "date" "%B %e, %Y"
     <> urlField "url"
+    <> relativeUrlField "featureimage"
     <> defaultCtx
     <> constField "theme" "black"
+
+-- relativeUrlField takes the value of the field from metadata
+-- and makes it relative to the closing folder.
+relativeUrlField :: String -> Context String
+relativeUrlField key = field key $ \item -> do
+  let ident = itemIdentifier item
+  dir <- fmap takeDirectory <$> getRoute ident
+  image <- fmap takeFileName <$> (getMetadataField ident key)
+  return $ maybe mempty toUrl ((</>) <$> dir <*> image)
+
+-- toUrl (dir </> image)
 
 feedCtx :: Context String
 feedCtx =
@@ -445,12 +457,14 @@ modifyUrl :: Item String -> Compiler (Item String)
 modifyUrl item = do
   fp <- liftM (fromMaybe mempty) $ getRoute =<< getUnderlying
   traverse (return . withTags (modifyTag fp)) item
+
+modifyTag :: FilePath -> Tag String -> Tag String
+modifyTag fp = \case
+  (TagOpen "a" attrs) -> TagOpen "a" (modifyAttr <$> attrs)
+  (TagOpen "img" attrs) -> TagOpen "img" (modifyAttr <$> attrs)
+  tag -> tag
   where
-    modifyTag fp = \case
-      (TagOpen "a" attrs) -> TagOpen "a" (modifyAttr fp <$> attrs)
-      (TagOpen "img" attrs) -> TagOpen "img" (modifyAttr fp <$> attrs)
-      tag -> tag
-    modifyAttr fp = \case
+    modifyAttr = \case
       ("href", url)
         | not (isExternal url) ->
             ("href", toUrl $ takeDirectory fp </> dropIndex url)
@@ -489,8 +503,7 @@ previousBlog blog = do
 
 loadDecks :: Pattern -> Compiler [Item String]
 loadDecks =
-  traverse modifyUrl
-    <=< recentFirst
+  recentFirst
     <=< flip loadAllSnapshots decksSnapshot . (.&&. hasNoVersion)
 
 renderBlogAtom :: [Item String] -> Compiler (Item String)

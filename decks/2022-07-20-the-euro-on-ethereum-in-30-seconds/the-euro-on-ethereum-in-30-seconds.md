@@ -2,7 +2,7 @@
 title: The Euro on Ethereum in 30 seconds
 summary: |
   At EthCC[5] in Paris held in July 19 - 21, 2022, Gisli presented the digital Euro and the Monerium IBAN. The journey started by asking the fundamental question "what if your wallet was your bank account?"
-featureimage: 2022/07/the-euro-on-ethereum-in-30-seconds.svg
+featureimage: the-euro-on-ethereum-in-30-seconds.svg
 ---
 <!--
 <div class="responsive">
@@ -15,4 +15,3 @@ Gisli, CTO of Monerium, will demonstrate how a wallet IBAN works and how blockch
 <div class="responsive">
 <iframe width="960" height="540" src="https://www.youtube.com/embed/3Qh7M7CVIvk?start=11" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 </div>
-
