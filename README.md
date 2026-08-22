@@ -2,12 +2,11 @@
 
 In this repo you will find the source code for my personal [blog](https://gisli.hamstur.is) where I write about **crypto** and **code**. The website is compiled from [Markdown](https://daringfireball.net/projects/markdown/) files using [Hakyll](https://jaspervdj.be/hakyll/). Hakyll allows you to compose a compiler using a DSL which specifies the rules which transform the inputs to the final output. The source code for my compiler is [here](blog.hs).
 
-
 ## Dependencies
 
 The project depends on:
 
--  The [stackage](https://www.stackage.org/) build system 
+- The [stackage](https://www.stackage.org/) build system
 
     Please see the chapter [How to install](https://docs.haskellstack.org/en/stable/README/#how-to-install) in the official documentation for stack. On macOS I find it easiest to use [Homebrew](https://brew.sh/) with `brew install haskell-stack`.
 
@@ -15,17 +14,16 @@ The project depends on:
 
   Install using either Node.js or Homebrew.
 
-  - `npm install -g sass` (using Node.js) 
+  - `npm install -g sass` (using Node.js)
   - `brew install sass/sass/sass` (using Homebrew)
 
 ## Building
 
 ~~~
-$ stack build
+stack build
 ~~~
 
 Stack will pull in all the dependencies specified in the [cabal](blog.cabal) file, the correct version of `ghc, and build the compiler.
-
 
 ## Writing content
 
@@ -84,7 +82,7 @@ Decks and presentations are created in a similar fashion to blog files but place
 ---
 reveal: true
 theme: league
-featureimage: 2014/06/bitcoin.png
+featureimage: bitcoin.png
 ---
 
 Rest of the deck
@@ -99,7 +97,6 @@ Templates are found in the `templates` directory. The base layout is defined in 
 - `page.path` for the original file path of the page
 - `page.foo` where foo is specified in the metadata
 - `page.title` for the page title
-- `polish(text)` to exchange certain words in the text for an emoji
 
 Blog lists has a `blogs` variable which can be iterated over and these additional variables:
 
@@ -132,21 +129,19 @@ Single decks have a `theme` variable.
 
 For more information about templates including control flow, conditionals, partials and loops, refer to this [tutorial](https://jaspervdj.be/hakyll/tutorials/04-compilers.html).
 
-
 ## Building the blog
 
-I have created a script transforms the Markdown to HTML using the compiler. Relevant templates from the `templates` directory are applied in the build pipeline before the final results are stored in the `_site` directory. 
+I have created a script transforms the Markdown to HTML using the compiler. Relevant templates from the `templates` directory are applied in the build pipeline before the final results are stored in the `_site` directory.
 
 ~~~
-$ ./build
+./build
 ~~~
 
 When working on the content itself it is quite convenient to have a HTTP server which watches which files have been saved recently and compiles the website incrementally. There is also a script for that which binds the server to `http://localhost:8000`.
 
 ~~~
-$ ./watch
+./watch
 ~~~
-
 
 ## Publishing the website
 

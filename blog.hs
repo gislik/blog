@@ -4,7 +4,7 @@
 import Control.Applicative (Alternative (..), (<|>))
 import Control.Monad (filterM, liftM, (<=<))
 import Data.ByteString.Lazy (toStrict)
-import Data.Char (isSpace, toLower, toUpper)
+import Data.Char (toLower, toUpper)
 import Data.Either (fromRight)
 import Data.Foldable (asum)
 import Data.List (intercalate, intersperse, isPrefixOf, isSuffixOf)
@@ -71,6 +71,7 @@ blogConfig =
   where
     isIgnoredFile path
       | "#" `isPrefixOf` fileName = True
+      | "." `isPrefixOf` fileName = True
       | "~" `isSuffixOf` fileName = True
       | ".swp" `isSuffixOf` fileName = True
       | otherwise = False
@@ -145,7 +146,7 @@ main = do
           else blogPattern
 
   hakyllWith blogConfig $ do
-    excludePattern <- fromList <$> (getMatches blogPattern >>= hasTag "icelandic")
+    excludePattern <- fromList <$> (getMatches blogPattern >>= filterTag "icelandic")
     let visiblePattern =
           includePattern .&&. complement excludePattern
 
@@ -153,23 +154,11 @@ main = do
     categories <- buildCategories visiblePattern (fromCapture "*/index.html")
     tags <- buildTags visiblePattern (fromCapture "tags/*/index.html")
 
-    -- static pages
-    match "*.md" $ do
-      route indexRoute
-      compile $
-        pandocCompiler
-          >>= loadAndApplyTemplate "templates/page-detail.html" defaultCtx
-          >>= loadAndApplyTemplate "templates/default.html" defaultCtx
-          >>= relativizeUrls
-
     -- index
     create ["index.html"] $ do
       route idRoute
       compile $
-        makeItem ""
-          >>= loadAndApplyTemplate "templates/blog-list.html" (blogCtx 1 pages categories tags)
-          >>= loadAndApplyTemplate "templates/default.html" defaultCtx
-          >>= relativizeUrls
+        blogListCompiler "" (blogCtx 1 pages categories tags)
 
     -- blogs
     match includePattern $ do
@@ -191,48 +180,33 @@ main = do
     paginateRules pages $ \i _ -> do
       route idRoute
       compile $
-        makeItem (show i)
-          >>= loadAndApplyTemplate "templates/blog-list.html" (blogCtx i pages categories tags)
-          >>= loadAndApplyTemplate "templates/default.html" defaultCtx
-          >>= relativizeUrls
+        blogListCompiler (show i) (blogCtx i pages categories tags)
 
     -- blog category index
     tagsRules categories $ \category pattern -> do
       catPages <- buildPages pattern (\i -> fromCaptures "*/*/index.html" [category, show i])
       route idRoute
       compile $
-        makeItem category
-          >>= loadAndApplyTemplate "templates/blog-list.html" (blogCtx 1 catPages categories tags)
-          >>= loadAndApplyTemplate "templates/default.html" defaultCtx
-          >>= relativizeUrls
+        blogListCompiler category (blogCtx 1 catPages categories tags)
 
       -- blog category pages
       paginateRules catPages $ \i _ -> do
         route idRoute
         compile $
-          makeItem category
-            >>= loadAndApplyTemplate "templates/blog-list.html" (blogCtx i catPages categories tags)
-            >>= loadAndApplyTemplate "templates/default.html" defaultCtx
-            >>= relativizeUrls
+          blogListCompiler category (blogCtx i catPages categories tags)
 
     -- blog tags index
     tagsRules tags $ \tag pattern -> do
       tagPages <- buildPages pattern (\i -> fromCaptures "tags/*/*/index.html" [tag, show i])
       route idRoute
       compile $
-        makeItem tag
-          >>= loadAndApplyTemplate "templates/blog-list.html" (blogCtx 1 tagPages categories tags)
-          >>= loadAndApplyTemplate "templates/default.html" defaultCtx
-          >>= relativizeUrls
+        blogListCompiler tag (blogCtx 1 tagPages categories tags)
 
       -- blog tags pages
       paginateRules tagPages $ \i _ -> do
         route idRoute
         compile $
-          makeItem tag
-            >>= loadAndApplyTemplate "templates/blog-list.html" (blogCtx i tagPages categories tags)
-            >>= loadAndApplyTemplate "templates/default.html" defaultCtx
-            >>= relativizeUrls
+          blogListCompiler tag (blogCtx i tagPages categories tags)
 
     -- decks
     match "decks/**.md" $ do
@@ -272,6 +246,15 @@ main = do
       compile $
         take feedLength <$> loadBlogs visiblePattern
           >>= renderBlogAtom
+
+    -- static pages
+    match "*.md" $ do
+      route indexRoute
+      compile $
+        pandocCompiler
+          >>= loadAndApplyTemplate "templates/page-detail.html" defaultCtx
+          >>= loadAndApplyTemplate "templates/default.html" defaultCtx
+          >>= relativizeUrls
 
     -- static content
     match "static/**" $ do
@@ -315,7 +298,6 @@ defaultCtx =
     <> constField "page.root" blogRoot
     <> urlField "page.url"
     <> pathField "page.path"
-    <> polishField "polish"
     <> metadataField
 
 pageTitleField :: String -> Context String
@@ -324,8 +306,9 @@ pageTitleField key =
     <> pathTitleField key -- use page title from metadata
     <> constField key "Crypto and Code" -- or read from the path
   where
-    alias x | x == key = "title"
-    alias x = x
+    alias x
+      | x == key = "title"
+      | otherwise = x
 
 blogCtx :: PageNumber -> Paginate -> Tags -> Tags -> Context String
 blogCtx i pages categories tags =
@@ -413,6 +396,13 @@ blogCompiler = do
         then blogWriterOptions
         else defaultHakyllWriterOptions
 
+blogListCompiler :: String -> Context String -> Compiler (Item String)
+blogListCompiler body ctx =
+  makeItem body
+    >>= loadAndApplyTemplate "templates/blog-list.html" ctx
+    >>= loadAndApplyTemplate "templates/default.html" defaultCtx
+    >>= relativizeUrls
+
 sassCompiler :: Compiler (Item String)
 sassCompiler = do
   ident <- getUnderlying
@@ -456,10 +446,10 @@ includeFile text = do
 modifyUrl :: Item String -> Compiler (Item String)
 modifyUrl item = do
   fp <- liftM (fromMaybe mempty) $ getRoute =<< getUnderlying
-  traverse (return . withTags (modifyTag fp)) item
+  traverse (return . withTags (urlInsideFilePath fp)) item
 
-modifyTag :: FilePath -> Tag String -> Tag String
-modifyTag fp = \case
+urlInsideFilePath :: FilePath -> Tag String -> Tag String
+urlInsideFilePath fp = \case
   (TagOpen "a" attrs) -> TagOpen "a" (modifyAttr <$> attrs)
   (TagOpen "img" attrs) -> TagOpen "img" (modifyAttr <$> attrs)
   tag -> tag
@@ -663,43 +653,11 @@ aliasContext f (Context c) =
   where
     c' k = noResult $ unwords ["Tried to alias", k, "as", f k, "which doesn't exist"]
 
-polishField :: String -> Context String
-polishField name =
-  functionField name $ \args _ ->
-    return $ withTags text' (unwords args)
-  where
-    text' (TagText s) = TagText (concatMap emoji (split isSpace s))
-    text' t = t
-
-    split :: (Char -> Bool) -> String -> [String]
-    split p' s =
-      go p' ("", s)
-      where
-        go _ ("", "") = []
-        go p ("", y) = go (not . p) (break p y)
-        go p (x, y) = x : go (not . p) (break p y)
-
-    emoji "" = ""
-    emoji ":+1:" = "👍"
-    emoji ":coffee:" = "☕️"
-    emoji ":disappointed:" = "😞"
-    emoji ":frowning:" = "😦"
-    emoji ":grinning:" = "😀"
-    emoji ":heart:" = "❤"
-    emoji ":ramen:" = "🍜"
-    emoji ":rice_ball:" = "🍙"
-    emoji ":smile:" = "😄"
-    emoji ":sushi:" = "🍣"
-    emoji ":stuck_out_tongue:" = "😛"
-    emoji ":thumbsup:" = "👍"
-    emoji ":tada:" = "🎉"
-    emoji x = x
-
 --------------------------------------------------------------------------------
 -- METADATA
 --------------------------------------------------------------------------------
-hasTag :: (MonadMetadata m) => String -> [Identifier] -> m [Identifier]
-hasTag tag =
+filterTag :: (MonadMetadata m) => String -> [Identifier] -> m [Identifier]
+filterTag tag =
   filterM (fmap (elem tag) . getTags)
 
 -- getCategory uses the second deepest folder as the category

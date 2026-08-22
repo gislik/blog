@@ -8,18 +8,18 @@
         <!-- <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" /> -->
         <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 
-        <title>Gisli | $polish(page.title)$</title>
+        <title>Gisli | $page.title$</title>
 
         <meta property="og:url" content="$page.root$$page.url$" />
         <meta property="og:site_name" content="Gísli | $page.title$" />
-        <meta property="og:title" content="Gísli | $polish(page.title)$" />
+        <meta property="og:title" content="Gísli | $page.title$" />
         $if(summary)-$
-        <meta property="og:description" content="<![CDATA[$polish(summary)$]]>" />
-        <meta name="description" content="<![CDATA[$polish(summary)$]]>" />
+        <meta property="og:description" content="<![CDATA[$summary$]]>" />
+        <meta name="description" content="<![CDATA[$summary$]]>" />
         $-else-$
         $if(page.description)-$
-        <meta property="og:description" content="$polish(page.description)$" />
-        <meta name="description" content="$polish(page.description)$" />
+        <meta property="og:description" content="$page.description$" />
+        <meta name="description" content="$page.description$" />
         $-endif$
         $-endif$
         <meta name="twitter:card" content="summary" />
